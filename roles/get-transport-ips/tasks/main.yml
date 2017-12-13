@@ -5,11 +5,12 @@
 
 - name: set transport IP fact
   set_fact:
-     gcomm_addrs: "{{ gcomm_addrs|default([]) }} + [ '{{ transport_ip_number_cmd.stdout }}' ]"
+     transport_ip_number: '{{ transport_ip_number_cmd.stdout }}'
 
-- name: debug
+- name: debug one
   debug:
-    msg: "{{ gcomm_addrs }}"
+    msg: "stack1: {{ hostvars['stack1-overcloud-controller-0']['transport_ip_number'] }} stack2: {{ hostvars['stack2-overcloud-controller-0']['transport_ip_number'] }}"
+
 
 
 
