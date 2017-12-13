@@ -33,6 +33,13 @@ setup_quickstart() {
 
     if [! -d QUICKSTART_EXTRAS_CHECKOUT ] then
         git clone https://git.openstack.org/openstack/tripleo-quickstart-extras/ ${QUICKSTART_EXTRAS_CHECKOUT}
+        cd ${QUICKSTART_EXTRAS_CHECKOUT}
+        for patchfile in `ls ${SCRIPT_HOME}/oooq-extras-patches/*.patch`
+        do
+            patch -p1 < ${patchfile}
+        done
+        cd ${SCRIPT_HOME}
+
     fi
 
 
@@ -61,7 +68,7 @@ cleanup() {
     grep ${STACK} /etc/passwd
     if [ $? = 1 ]; then return; fi
 
-    for name in undercloud control_0 control_1 control_2 compute_0 ; do 
+    for name in undercloud control_0 control_1 control_2 compute_0 ; do
         sudo -u ${STACK} virsh -c qemu:///session destroy ${name}
         sudo -u ${STACK} virsh -c qemu:///session undefine ${name}
     done
@@ -80,7 +87,7 @@ file://${QUICKSTART_EXTRAS_CHECKOUT}
 EOF
 
     export OOOQ_EXTRA_REQUIREMENTS=${SCRIPT_HOME}/extras-requirements.txt
-    export CLEANALL="-T all -X" 
+    export CLEANALL="-T all -X"
 
     export UNDERCLOUD_TAGS="--tags untagged,provision,environment,libvirt,undercloud-scripts,undercloud-inventory,overcloud-scripts,undercloud-install,undercloud-post-install,overcloud-prep-config,overcloud-prep-containers,overcloud-prep-images,overcloud-prep-flavors,overcloud-prep-network"
 
@@ -99,7 +106,7 @@ EOF
 
 run_undercloud() {
     ${QUICKSTART} ${OPTS} ${UNDERCLOUD_TAGS} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
-   
+
 }
 
 run_overcloud() {
@@ -140,7 +147,7 @@ setup_quickstart
 setup_env
 for stack_arg in $STACKS ; do
     set_stack $stack_arg
-     
+
      if [[ "${CMDS}" == *"cleanup"* ]]; then
          cleanup
      fi
