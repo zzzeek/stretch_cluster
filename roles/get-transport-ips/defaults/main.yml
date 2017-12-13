@@ -1,0 +1,10 @@
+
+# name of the vlan (or network device) on the target
+# controller nodes that will be used for galera inter-cluster
+# commnication.   Typically the tenantnetvlan but can be whatever.
+# script will get the IP numbers on the controllers for this device
+# and use it to set up the galera gcomm:// handle.
+stretch_network_vlan_name: vlan50
+
+
+

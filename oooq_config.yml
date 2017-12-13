@@ -1,0 +1,113 @@
+extra_args: >-
+  --ntp-server pool.ntp.org
+
+network_isolation: true
+network_isolation_type: 'single-nic-vlans'
+enable_pacemaker: true
+overcloud_ipv6: false
+
+# disable undercloud ceilometer
+undercloud_enable_telemetry: false
+
+
+undercloud_nova_max_concurrent_builds: 2
+undercloud_nova_rpc_response_timeout: 600
+undercloud_ironic_rpc_response_timeout: 600
+
+
+
+# disable overcloud ceilometer
+telemetry_args: >-
+   {% if release != 'newton' %}
+   -e {{ overcloud_templates_path }}/environments/disable-telemetry.yaml
+   {% endif %}
+
+
+
+network_environment_args:
+  ExternalNetCidr: "{{ undercloud_external_network_cidr }}"
+  ExternalAllocationPools: >
+    [{'start': '{{ undercloud_external_network_cidr|nthhost(4) }}',
+    'end': '{{ undercloud_external_network_cidr|nthhost(250) }}'}]
+  NeutronExternalNetworkBridge: ""
+  ControlPlaneSubnetCidr: "{{ undercloud_network_cidr|ipaddr('prefix') }}"
+  ControlPlaneDefaultRoute: "{{ undercloud_network_cidr|nthhost(1) }}"
+  EC2MetadataIp: "{{ undercloud_network_cidr|nthhost(1) }}"
+  DnsServers: "{{ overcloud_dns_servers }}"
+
+  ExternalInterfaceDefaultRoute: 10.0.0.1
+
+  # these nets go onto the "external" libvirt network which is shared.   for simplicity, use the same
+  # CIDRs and just isolate the two overclouds by allocated IP number.   
+  # We only need one of these (or some new network) to stretch between overclouds
+  InternalApiNetCidr: "172.16.12.0/24"
+  InternalApiAllocationPools: [{'start': '172.16.12.{{ rh_net_range_start }}', 'end': '172.16.12.{{ rh_net_range_end }}'}]
+
+  StorageNetCidr: "172.16.11.0/24"
+  StorageAllocationPools: [{'start': '172.16.11.{{ rh_net_range_start }}', 'end': '172.16.11.{{ rh_net_range_end }}'}]
+
+  StorageMgmtNetCidr: "172.16.10.0/24"
+  StorageMgmtAllocationPools: [{'start': '172.16.10.{{ rh_net_range_start }}', 'end': '172.16.10.{{ rh_net_range_end }}'}]
+  
+  TenantNetCidr: "172.16.0.0/24"
+  TenantAllocationPools: [{'start': '172.16.0.{{ rh_net_range_start }}', 'end': '172.16.0.{{ rh_net_range_end }}'}]
+
+  HostnameMap:
+    overcloud-controller-0: "{{ rh_stack_name }}-overcloud-controller-0"
+    overcloud-controller-1: "{{ rh_stack_name }}-overcloud-controller-1"
+    overcloud-controller-2: "{{ rh_stack_name }}-overcloud-controller-2"
+    overcloud-compute-0: "{{ rh_stack_name }}-overcloud-compute-0"
+
+
+validate_ui_simple: false
+
+containerized_overcloud: true
+
+# This enables TLS for the undercloud which will also make haproxy bind to the
+# configured public-vip and admin-vip.
+undercloud_generate_service_certificate: false
+
+# This enables the deployment of the overcloud with SSL.
+ssl_overcloud: false
+
+# If `run_tempest` is `true`, run tempests tests, otherwise do not
+# run them.
+tempest_config: false
+test_ping: true
+run_tempest: false
+tempest_workers: 4
+
+# Config for custom tripleo-heat-templates, used in overcloud-prep-config
+# overcloud_templates_path: /home/stack/tripleo-heat-templates
+# overcloud_templates_repo: https://git.openstack.org/openstack/tripleo-heat-templates
+# use templates_branch when not testing with an unmerged review
+# overcloud_templates_branch: master
+# use templates_refspec when testing with an unmerged review
+# overcloud_templates_refspec:
+
+# options below direct automatic doc generation by tripleo-collect-logs
+artcl_gen_docs: true
+artcl_create_docs_payload:
+  included_deployment_scripts:
+    - undercloud-install
+    - overcloud-custom-tht-script
+    - overcloud-prep-containers
+    - overcloud-prep-flavors
+    - overcloud-prep-images
+    - overcloud-prep-network
+    - overcloud-deploy
+    - overcloud-deploy-post
+    - overcloud-validate
+  included_static_docs:
+    - env-setup-virt
+  table_of_contents:
+    - env-setup-virt
+    - undercloud-install
+    - overcloud-custom-tht-script
+    - overcloud-prep-containers
+    - overcloud-prep-flavors
+    - overcloud-prep-images
+    - overcloud-prep-network
+    - overcloud-deploy
+    - overcloud-deploy-post
+    - overcloud-validate

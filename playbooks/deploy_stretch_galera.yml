@@ -1,0 +1,7 @@
+---
+
+- name: Get cross-cluster ip numbers
+  hosts: galera_nodes
+  gather_facts: yes
+  roles:
+    - get-transport-ips
