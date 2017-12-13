@@ -92,8 +92,6 @@ EOF
 
     export OOOQ_EXTRA_REQUIREMENTS=${SCRIPT_HOME}/extras-requirements.txt
 
-    export QUICKSTART_SCRIPT=${QUICKSTART_CHECKOUT}/quickstart.sh
-
     export CLEANALL="-T all -X"
 
     export UNDERCLOUD_TAGS="--tags untagged,provision,environment,libvirt,undercloud-scripts,undercloud-inventory,overcloud-scripts,undercloud-install,undercloud-post-install,overcloud-prep-config,overcloud-prep-containers,overcloud-prep-images,overcloud-prep-flavors,overcloud-prep-network"
@@ -112,12 +110,14 @@ EOF
 
 
 run_undercloud() {
-    ${QUICKSTART_SCRIPT} ${OPTS} ${UNDERCLOUD_TAGS} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
+    cd ${QUICKSTART_CHECKOUT}
+    ./quickstart.sh ${OPTS} ${UNDERCLOUD_TAGS} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
 
 }
 
 run_overcloud() {
-    ${QUICKSTART_SCRIPT} ${OPTS} ${OVERCLOUD_ONLY} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
+    cd ${QUICKSTART_CHECKOUT}
+    ./quickstart.sh ${OPTS} ${OVERCLOUD_ONLY} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
 }
 
 build_hosts() {
