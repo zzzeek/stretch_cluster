@@ -1,5 +1,5 @@
 - name: Get transport IP
-  shell: /sbin/ip -4 addr show vlan50 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1
+  shell: /sbin/ip -4 addr show {{ stretch_network_vlan_name }} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1
   register: transport_ip_number_cmd
 
 
@@ -10,4 +10,4 @@
 
 
 
- 
+

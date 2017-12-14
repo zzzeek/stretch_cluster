@@ -1,4 +1,8 @@
-- name: get docker registry address
+# other way of doing this would be to get the insecure registry address
+# and build up the name.   the two overclouds are using different undercloud
+# and therefore different image, and the IP number is hardcoded in the image
+# name so it's all separate
+- name: get docker image name for galera from already running DB
   shell: docker inspect galera-bundle-docker-0
   register: docker_inspect_cmd
   become: true
@@ -6,7 +10,7 @@
 - name: get the image name
   set_fact: galera_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
 
-- name: get the mysql uid
+- name: get the mysql uid in the image
   docker_container:
     name: stretch_galera_cmd
     cleanup: true
@@ -16,7 +20,7 @@
   register: mysql_uid_cmd
   become: true
 
-- name: get the mysql gid
+- name: get the mysql gid in the image
   docker_container:
     name: stretch_galera_cmd
     cleanup: true
@@ -49,17 +53,17 @@
   become: true
 
 - name: set container volumes fact
-  set_fact: 
+  set_fact:
       galera_volumes:
-        - /var/log/mysql-stretch:/var/log 
-        - /etc/hosts:/etc/hosts:ro 
-        - /var/lib/mysql-stretch:/var/lib/mysql:rw 
-        - /etc/localtime:/etc/localtime:ro 
-        - /dev/log:/dev/log:rw 
-        - /etc/pacemaker/authkey:/etc/pacemaker/authkey 
-        - /var/lib/kolla/config_files/mysql.json:/var/lib/kolla/config_files/config.json:ro 
-        - /var/lib/config-data/puppet-generated/mysql/:/var/lib/kolla/config_files/src:ro 
- 
+        - /var/log/mysql-stretch:/var/log
+        - /etc/hosts:/etc/hosts:ro
+        - /var/lib/mysql-stretch:/var/lib/mysql:rw
+        - /etc/localtime:/etc/localtime:ro
+        - /dev/log:/dev/log:rw
+        - /etc/pacemaker/authkey:/etc/pacemaker/authkey
+        - /var/lib/kolla/config_files/mysql.json:/var/lib/kolla/config_files/config.json:ro
+        - /var/lib/config-data/puppet-generated/mysql/:/var/lib/kolla/config_files/src:ro
+
 - name: create mysql setup
   docker_container:
     name: stretch_galera_cmd
@@ -71,7 +75,10 @@
     detach: false
   become: true
   when: created_data_directory.changed
- 
+
+# TODO: simple single master / single follower setup to start with.  we
+# later would want this to be a little more open ended
+
 - name: set master / follower ip numbers
   set_fact:
       master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
@@ -83,12 +90,18 @@
 
 - name: set master parameters
   set_fact:
-      galera_parameters: "--bind-address={{ master_ip }} --wsrep-new-cluster --wsrep-provider-options=gmcast.listen_addr=tcp://{{ master_ip }}:4567;pc.weight=2 --wsrep-sst-receive-address={{ master_ip }}"
+      galera_parameters: >
+          --bind-address={{ master_ip }} --wsrep-new-cluster
+          --wsrep-provider-options=gmcast.listen_addr=tcp://{{ master_ip }}:4567;pc.weight=2
+          --wsrep-sst-receive-address={{ master_ip }}
   when: inventory_hostname == "{{ galera_master_inventoryname }}"
 
 - name: set follower parameters
   set_fact:
-      galera_parameters: "--bind-address={{ follower_ip }} --wsrep-provider-options=gmcast.listen_addr=tcp://{{ follower_ip }}:4567;pc.weight=1 --wsrep-sst-receive-address={{ follower_ip }}"
+      galera_parameters: >
+        --bind-address={{ follower_ip }}
+        --wsrep-provider-options=gmcast.listen_addr=tcp://{{ follower_ip }}:4567;pc.weight=1
+        --wsrep-sst-receive-address={{ follower_ip }}
   when: inventory_hostname != "{{ galera_master_inventoryname }}"
 
 # TODO: this is an interim means of doing this until we get pacemaker
@@ -100,10 +113,10 @@
     name: stretch_galera
     image: "{{ galera_image }}"
     command: >
-        /usr/bin/mysqld_safe --defaults-file=/etc/my.cnf --pid-file=/var/lib/mysql/mysqld.pid 
-        --socket=/var/lib/mysql/mysql.sock --datadir=/var/lib/mysql 
-        --port 3307 
-        --log-error=/var/log/mysqld.log --user=mysql --open-files-limit=16384 
+        /usr/bin/mysqld_safe --defaults-file=/etc/my.cnf --pid-file=/var/lib/mysql/mysqld.pid
+        --socket=/var/lib/mysql/mysql.sock --datadir=/var/lib/mysql
+        --port 3307
+        --log-error=/var/log/mysqld.log --user=mysql --open-files-limit=16384
         --wsrep-cluster-address={{ gcomm_address }}
         {{ galera_parameters }}
     volumes: "{{ galera_volumes }}"
