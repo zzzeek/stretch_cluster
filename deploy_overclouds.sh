@@ -47,9 +47,9 @@ setup_quickstart() {
 cleanup() {
 
     # do our own username teardown because with oooq, we don't want it
-    # tearing down the libvirt networks.   we probably don't need to 
+    # tearing down the libvirt networks.   we probably don't need to
     # tear all this down each time but during development it was necessary
-    # to start clean each time for individual stacks without breaking the 
+    # to start clean each time for individual stacks without breaking the
     # other one, this makes sure it proceeds without issue
 
     rm -fr ${QUICKSTART_ARG}
@@ -65,8 +65,8 @@ cleanup() {
 
 
     for name in undercloud control_0 control_1 control_2 compute_0 ; do
-        sudo -u ${STACK} virsh -c qemu:///session destroy ${name} 
-        sudo -u ${STACK} virsh -c qemu:///session undefine ${name} 
+        sudo -u ${STACK} virsh -c qemu:///session destroy ${name}
+        sudo -u ${STACK} virsh -c qemu:///session undefine ${name}
     done
 
     ps -ef | grep -e "^${STACK}" | cut -c 9-16 | xargs -n1 sudo kill -9
@@ -117,7 +117,7 @@ run_overcloud() {
 
 
 build_hosts() {
-    # build a hosts file that our own ansible playbook will use, based on the 
+    # build a hosts file that our own ansible playbook will use, based on the
     # hosts file that oooq builds out when it does full overcloud playbook.
     # includes all the ssh forwarding nicely done
 
@@ -152,13 +152,13 @@ EOF
 
 run_playbook() {
     cd ${SCRIPT_HOME}
-    ${QUICKSTART1}/bin/ansible-playbook  -vv -i hosts --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml 
+    ${QUICKSTART1}/bin/ansible-playbook  -vv -i ${ANSIBLE_HOSTS} --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml
 }
 
 
 # it probably would have been possible to build
 # one playbook that runs the quickstart playbooks directly,
-# so that everything is one giant ansible run.   this 
+# so that everything is one giant ansible run.   this
 # looks a lot like tasks w/ tags in any case.  not sure
 # if there are lots more complexities to organizing that
 
@@ -195,7 +195,7 @@ for stack_arg in $STACKS ; do
      fi
 
      if [[ "${CMDS}" == *"run_overcloud"* ]]; then
-         run_overcloud 
+         run_overcloud
      fi
 
 done
