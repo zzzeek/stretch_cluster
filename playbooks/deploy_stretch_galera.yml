@@ -6,3 +6,5 @@
   roles:
     - get-transport-ips
     - run-galera-containers
+  tags:
+    - run_galera

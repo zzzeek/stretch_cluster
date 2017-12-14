@@ -11,12 +11,9 @@ CHECKOUTS=${SCRIPT_HOME}/checkouts
 QUICKSTART1=${HOME}/.quickstart1
 QUICKSTART2=${HOME}/.quickstart2
 
-: ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts"}
+ALL_PLAYBOOK_TAGS="run_galera setup_clustercheck"
 
-if [[ ! $STACKS ]]; then
-    echo "STACKS not defined, e.g. STACKS='stack1 stack2'"
-    exit -1
-fi
+: ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts run_galera setup_clustercheck"}
 
 
 RELEASE=master
@@ -152,6 +149,13 @@ stack2-overcloud-controller-0
 EOF
 }
 
+
+run_playbook() {
+    cd ${SCRIPT_HOME}
+    ${QUICKSTART1}/bin/ansible-playbook  -vv -i hosts --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml 
+}
+
+
 # it probably would have been possible to build
 # one playbook that runs the quickstart playbooks directly,
 # so that everything is one giant ansible run.   this 
@@ -200,5 +204,15 @@ if [[ "${CMDS}" == *"build_hosts"* ]]; then
     build_hosts
 fi
 
+PLAYBOOK_TAGS=""
 
+for tag in $ALL_PLAYBOOK_TAGS ; do
+    if [[ "${CMDS}" == *"${tag}"* ]]; then
+        PLAYBOOK_TAGS="${PLAYBOOK_TAGS}${tag},"
+    fi
+done
+
+if [ $PLAYBOOK_TAGS ]; then
+   run_playbook
+fi
 

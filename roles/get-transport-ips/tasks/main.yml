@@ -7,10 +7,6 @@
   set_fact:
      transport_ip_number: '{{ transport_ip_number_cmd.stdout }}'
 
-- name: debug one
-  debug:
-    msg: "stack1: {{ hostvars['stack1-overcloud-controller-0']['transport_ip_number'] }} stack2: {{ hostvars['stack2-overcloud-controller-0']['transport_ip_number'] }}"
-
 
 
 

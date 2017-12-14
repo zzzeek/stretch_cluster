@@ -1,7 +1,112 @@
 - name: get docker registry address
   shell: docker inspect galera-bundle-docker-0
   register: docker_inspect_cmd
+  become: true
 
 - name: get the image name
   set_fact: galera_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
+
+- name: get the mysql uid
+  docker_container:
+    name: stretch_galera_cmd
+    cleanup: true
+    image: "{{ galera_image }}"
+    command: id -u mysql
+    detach: false
+  register: mysql_uid_cmd
+  become: true
+
+- name: get the mysql gid
+  docker_container:
+    name: stretch_galera_cmd
+    cleanup: true
+    image: "{{ galera_image }}"
+    command: id -g mysql
+    detach: false
+  register: mysql_gid_cmd
+  become: true
+
+- name: set mysql uid/gid facts
+  set_fact:
+    mysql_uid: "{{ mysql_uid_cmd.ansible_facts.docker_container.Output | trim }}"
+    mysql_gid: "{{ mysql_gid_cmd.ansible_facts.docker_container.Output | trim }}"
+
+- name: create host mysql dir
+  file:
+    path: /var/lib/mysql-stretch
+    state: directory
+    owner: "{{ mysql_uid }}"
+    group: "{{ mysql_gid }}"
+  register: created_data_directory
+  become: true
+
+- name: create host mysql log dir
+  file:
+    path: /var/log/mysql-stretch
+    state: directory
+    owner: "{{ mysql_uid }}"
+    group: "{{ mysql_gid }}"
+  become: true
+
+- name: set container volumes fact
+  set_fact: 
+      galera_volumes:
+        - /var/log/mysql-stretch:/var/log 
+        - /etc/hosts:/etc/hosts:ro 
+        - /var/lib/mysql-stretch:/var/lib/mysql:rw 
+        - /etc/localtime:/etc/localtime:ro 
+        - /dev/log:/dev/log:rw 
+        - /etc/pacemaker/authkey:/etc/pacemaker/authkey 
+        - /var/lib/kolla/config_files/mysql.json:/var/lib/kolla/config_files/config.json:ro 
+        - /var/lib/config-data/puppet-generated/mysql/:/var/lib/kolla/config_files/src:ro 
+ 
+- name: create mysql setup
+  docker_container:
+    name: stretch_galera_cmd
+    cleanup: true
+    image: "{{ galera_image }}"
+    command: /bin/mysql_install_db --datadir=/var/lib/mysql --user=mysql
+    volumes: "{{ galera_volumes }}"
+    network_mode: host
+    detach: false
+  become: true
+  when: created_data_directory.changed
+ 
+- name: set master / follower ip numbers
+  set_fact:
+      master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
+      follower_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
+
+- name: create gcomm address
+  set_fact:
+      gcomm_address: "gcomm://{{ master_ip }},{{ follower_ip }}"
+
+- name: set master parameters
+  set_fact:
+      galera_parameters: "--bind-address={{ master_ip }} --wsrep-new-cluster --wsrep-provider-options=gmcast.listen_addr=tcp://{{ master_ip }}:4567;pc.weight=2 --wsrep-sst-receive-address={{ master_ip }}"
+  when: inventory_hostname == "{{ galera_master_inventoryname }}"
+
+- name: set follower parameters
+  set_fact:
+      galera_parameters: "--bind-address={{ follower_ip }} --wsrep-provider-options=gmcast.listen_addr=tcp://{{ follower_ip }}:4567;pc.weight=1 --wsrep-sst-receive-address={{ follower_ip }}"
+  when: inventory_hostname != "{{ galera_master_inventoryname }}"
+
+# TODO: this is an interim means of doing this until we get pacemaker
+# to run the galera nodes here.    running the docker container straight here
+# opens us up to data dir corruption if the container gets ungracefully
+# stopped and restarted
+- name: start galera!
+  docker_container:
+    name: stretch_galera
+    image: "{{ galera_image }}"
+    command: >
+        /usr/bin/mysqld_safe --defaults-file=/etc/my.cnf --pid-file=/var/lib/mysql/mysqld.pid 
+        --socket=/var/lib/mysql/mysql.sock --datadir=/var/lib/mysql 
+        --port 3307 
+        --log-error=/var/log/mysqld.log --user=mysql --open-files-limit=16384 
+        --wsrep-cluster-address={{ gcomm_address }}
+        {{ galera_parameters }}
+    volumes: "{{ galera_volumes }}"
+    network_mode: host
+  become: true
 
