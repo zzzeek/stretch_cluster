@@ -48,8 +48,17 @@ setup_quickstart() {
 }
 
 cleanup() {
+
+    # do our own username teardown because with oooq, we don't want it
+    # tearing down the libvirt networks.   we probably don't need to 
+    # tear all this down each time but during development it was necessary
+    # to start clean each time for individual stacks without breaking the 
+    # other one, this makes sure it proceeds without issue
+
     rm -fr ${QUICKSTART_ARG}
 
+
+    # we may be able to avoid the +e/-e complexity here if we use awk
     set +e
     grep ${STACK} /etc/passwd
     if [ $? != '0' ]; then
@@ -98,11 +107,6 @@ EOF
     OVERCLOUD_ONLY="--retain-inventory -p quickstart-extras-overcloud.yml --tags overcloud-scripts,overcloud-deploy"
 }
 
-install_quickstart() {
-    cd ${QUICKSTART_CHECKOUT}
-    OOOQ_EXTRA_REQUIREMENTS="${OOOQ_EXTRA_REQUIREMENTS}" ./quickstart.sh ${OPTS} ${UNDERCLOUD_TAGS} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
-}
-
 run_undercloud() {
     cd ${QUICKSTART_CHECKOUT}
     OOOQ_EXTRA_REQUIREMENTS="${OOOQ_EXTRA_REQUIREMENTS}" ./quickstart.sh ${OPTS} ${UNDERCLOUD_TAGS} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
@@ -114,7 +118,12 @@ run_overcloud() {
     OOOQ_EXTRA_REQUIREMENTS="${OOOQ_EXTRA_REQUIREMENTS}" ./quickstart.sh ${OPTS} ${OVERCLOUD_ONLY} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
 }
 
+
 build_hosts() {
+    # build a hosts file that our own ansible playbook will use, based on the 
+    # hosts file that oooq builds out when it does full overcloud playbook.
+    # includes all the ssh forwarding nicely done
+
    cat /dev/null > ${ANSIBLE_HOSTS}
    grep ${QUICKSTART1}/hosts -e "^stack1.*ansible" >> ${ANSIBLE_HOSTS}
    grep ${QUICKSTART2}/hosts -e "^stack2.*ansible" >> ${ANSIBLE_HOSTS}
@@ -143,12 +152,22 @@ stack2-overcloud-controller-0
 EOF
 }
 
+# it probably would have been possible to build
+# one playbook that runs the quickstart playbooks directly,
+# so that everything is one giant ansible run.   this 
+# looks a lot like tasks w/ tags in any case.  not sure
+# if there are lots more complexities to organizing that
+
 
 if [[ "${CMDS}" == *"setup_quickstart"* ]]; then
     setup_quickstart
 fi
 
 setup_env
+
+# loop that does things for the two stacks individually.
+# build one undercloud + overcloud, then build the other.
+
 for stack_arg in $STACKS ; do
      STACK="${stack_arg}"
      if [[ $stack_arg == "stack1" ]]; then
