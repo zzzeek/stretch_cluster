@@ -10,9 +10,11 @@ overcloud_ipv6: false
 undercloud_enable_telemetry: false
 
 
-undercloud_nova_max_concurrent_builds: 2
-undercloud_nova_rpc_response_timeout: 600
-undercloud_ironic_rpc_response_timeout: 600
+# see https://review.openstack.org/#/c/527718/ for what these would do,
+# however these changes are being rejected
+# undercloud_nova_max_concurrent_builds: 2
+# undercloud_nova_rpc_response_timeout: 600
+# undercloud_ironic_rpc_response_timeout: 600
 
 
 
