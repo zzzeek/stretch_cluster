@@ -1,0 +1,7 @@
+- name: get docker registry address
+  shell: docker inspect galera-bundle-docker-0
+  register: docker_inspect_cmd
+
+- name: get the image name
+  set_fact: galera_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
+
