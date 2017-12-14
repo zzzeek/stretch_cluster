@@ -11,7 +11,7 @@ CHECKOUTS=${SCRIPT_HOME}/checkouts
 QUICKSTART1=${HOME}/.quickstart1
 QUICKSTART2=${HOME}/.quickstart2
 
-: ${CMDS:="setup_quickstart cleanup run_undercloud fix_undercloud run_overcloud build_hosts"}
+: ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts"}
 
 if [[ ! $STACKS ]]; then
     echo "STACKS not defined, e.g. STACKS='stack1 stack2'"
@@ -113,10 +113,6 @@ run_undercloud() {
 
 }
 
-fix_undercloud() {
-   ssh -F ${QUICKSTARG_ARG}/ssh.config.local.ansible undercloud 'bash -s' < ${SCRIPT_HOME}/optimize_undercloud.sh
-}
-
 run_overcloud() {
     cd ${QUICKSTART_CHECKOUT}
     OOOQ_EXTRA_REQUIREMENTS="${OOOQ_EXTRA_REQUIREMENTS}" ./quickstart.sh ${OPTS} ${OVERCLOUD_ONLY} ${SKIP_TAGS} ${STACK_ARGS} 127.0.0.2
@@ -192,10 +188,6 @@ for stack_arg in $STACKS ; do
 
      if [[ "${CMDS}" == *"run_undercloud"* ]]; then
          run_undercloud
-     fi
-
-     if [[ "${CMDS}" == *"fix_undercloud"* ]]; then
-         fix_undercloud
      fi
 
      if [[ "${CMDS}" == *"run_overcloud"* ]]; then
