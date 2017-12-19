@@ -28,13 +28,13 @@
     name: stretch_galera_cmd
     cleanup: true
     image: "{{ galera_image }}"
-    command:  bash -c  'echo "{'uid': `id mysql -u`, 'gid': `id mysql -g`}"'
+    command:  'bash -c  ''echo {\"uid\": `id mysql -u`, \"gid\": `id mysql -g`}'''
     detach: false
   register: mysql_id_cmd
   become: true
 
-- name: set mysql uid/gid facts
-  set_fact:
+- name: set mysql uid / gid facts
+  set_fact: 
     mysql_uid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['uid'] }}"
     mysql_gid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['gid'] }}"
 
