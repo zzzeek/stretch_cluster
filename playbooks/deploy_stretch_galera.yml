@@ -1,10 +1,25 @@
 ---
 
+- name: get galera node facts
+  hosts: galera_nodes
+  gather_facts: yes
+  roles:
+    - gather-info
+  tags:
+    - all
+
 - name: Run galera on the two hosts
   hosts: galera_nodes
   gather_facts: yes
   roles:
-    - get-transport-ips
     - run-galera-containers
   tags:
     - run_galera
+
+- name: install clustercheck
+  hosts: galera_nodes
+  gather_facts: yes
+  roles:
+    - run-clustercheck
+  tags:
+    - run_clustercheck

@@ -1,0 +1,43 @@
+- name: Get transport IP
+  shell: /sbin/ip -4 addr show {{ stretch_network_vlan_name }} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1
+  register: transport_ip_number_cmd
+
+
+- name: set transport IP fact
+  set_fact:
+     transport_ip_number: '{{ transport_ip_number_cmd.stdout }}'
+
+- name: get docker image name for galera from already running DB
+  shell: docker inspect galera-bundle-docker-0
+  register: docker_inspect_cmd
+  become: true
+
+- name: get galera image name
+  set_fact: galera_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
+
+- name: get docker image name for clustercheck already running
+  shell: docker inspect clustercheck
+  register: docker_inspect_cmd
+  become: true
+
+- name: get clustercheck image name
+  set_fact: clustercheck_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
+
+- name: get mysql uid / gid
+  docker_container:
+    name: stretch_galera_cmd
+    cleanup: true
+    image: "{{ galera_image }}"
+    command:  bash -c  'echo "{'uid': `id mysql -u`, 'gid': `id mysql -g`}"'
+    detach: false
+  register: mysql_id_cmd
+  become: true
+
+- name: set mysql uid/gid facts
+  set_fact:
+    mysql_uid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['uid'] }}"
+    mysql_gid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['gid'] }}"
+
+
+
+

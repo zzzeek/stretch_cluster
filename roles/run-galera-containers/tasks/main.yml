@@ -2,38 +2,6 @@
 # and build up the name.   the two overclouds are using different undercloud
 # and therefore different image, and the IP number is hardcoded in the image
 # name so it's all separate
-- name: get docker image name for galera from already running DB
-  shell: docker inspect galera-bundle-docker-0
-  register: docker_inspect_cmd
-  become: true
-
-- name: get the image name
-  set_fact: galera_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
-
-- name: get the mysql uid in the image
-  docker_container:
-    name: stretch_galera_cmd
-    cleanup: true
-    image: "{{ galera_image }}"
-    command: id -u mysql
-    detach: false
-  register: mysql_uid_cmd
-  become: true
-
-- name: get the mysql gid in the image
-  docker_container:
-    name: stretch_galera_cmd
-    cleanup: true
-    image: "{{ galera_image }}"
-    command: id -g mysql
-    detach: false
-  register: mysql_gid_cmd
-  become: true
-
-- name: set mysql uid/gid facts
-  set_fact:
-    mysql_uid: "{{ mysql_uid_cmd.ansible_facts.docker_container.Output | trim }}"
-    mysql_gid: "{{ mysql_gid_cmd.ansible_facts.docker_container.Output | trim }}"
 
 - name: create host mysql dir
   file:

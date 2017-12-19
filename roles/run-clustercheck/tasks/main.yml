@@ -1,0 +1,52 @@
+
+- name: copy kolla config
+  copy:
+      remote_src: true
+      src: /var/lib/config-data/puppet-generated/clustercheck
+      dest: /var/lib/config-data/puppet-generated/clustercheck_stretch
+      owner: clustercheck_uid
+      group: clustercheck_gid
+   become: true
+
+- name: setup clustercheck config
+  template:
+      src: clustercheck.j2
+      dest: /var/lib/config-data/puppet-generated/clustercheck_stretch/etc/sysconfig/clustercheck
+      owner: clustercheck_uid
+      group: clustercheck_gid
+   become: true
+
+- name: create clustercheck user on galera_stretch
+  shell: docker   exec -it galera_stretch mysql -u root -e "GRANT PROCESS ON *.* TO   'clustercheck'@'localhost' IDENTIFIED BY 'ccheck'"
+  become: true
+
+- name: edit xinetd
+  lineinfile:
+      path: /var/lib/config-data/puppet-generated/clustercheck_stretch/etc/xinetd.d/galera-monitor
+      regexp: bind.*=
+      line: "bind={{ transport_ip_number }}"
+  become: true
+
+- name: set container volumes fact
+  set_fact:
+      clustercheck_volumes:
+        - /etc/hosts:/etc/hosts:ro
+        - /var/lib/mysql-stretch:/var/lib/mysql:rw
+        - /etc/localtime:/etc/localtime:ro
+        - /dev/log:/dev/log:rw
+        - /etc/puppet:/etc/puppet:ro
+        - /etc/pacemaker/authkey:/etc/pacemaker/authkey
+        - /var/lib/kolla/config_files/clustercheck.json:/var/lib/kolla/config_files/config.json:ro
+        - /var/lib/config-data/puppet-generated/clustercheck_stretch/:/var/lib/kolla/config_files/src:ro
+
+- name: run container
+  docker_container:
+    name: stretch_clustercheck
+    image: "{{ clustercheck_image }}"
+    command: kolla_start
+    volumes: "{{ clustercheck_volumes }}"
+    env:
+      KOLLA_CONFIG_STRATEGY: "COPY_ALWAYS"
+    network_mode: host
+  become: true
+
