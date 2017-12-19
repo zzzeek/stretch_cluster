@@ -7,6 +7,8 @@ QUICKSTART_CONFIG=${SCRIPT_HOME}/oooq_config.yml
 ANSIBLE_HOSTS=${SCRIPT_HOME}/hosts
 
 CHECKOUTS=${SCRIPT_HOME}/checkouts
+QUICKSTART_CHECKOUT=${CHECKOUTS}/tripleo-quickstart
+QUICKSTART_EXTRAS_CHECKOUT=${CHECKOUTS}/tripleo-quickstart-extras
 
 QUICKSTART1=${HOME}/.quickstart1
 QUICKSTART2=${HOME}/.quickstart2
@@ -24,8 +26,6 @@ set -x
 
 setup_quickstart() {
     mkdir -p ${CHECKOUTS}
-    QUICKSTART_CHECKOUT=${CHECKOUTS}/tripleo-quickstart
-    QUICKSTART_EXTRAS_CHECKOUT=${CHECKOUTS}/tripleo-quickstart-extras
 
     if [ ! -d $QUICKSTART_CHECKOUT ]; then
         git clone https://git.openstack.org/openstack/tripleo-quickstart/ ${QUICKSTART_CHECKOUT}
