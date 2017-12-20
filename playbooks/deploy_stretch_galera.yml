@@ -7,9 +7,12 @@
      - { role: run-galera-containers, tags: ['run_galera'] }
      - { role: run-clustercheck, tags: ['run_clustercheck'] }
 
-- name: setup pacemaker 
-  hosts: pacemaker_control_nodes
+- name: point openstack at galera
+  hosts:
+    - stack1
+    - stack2
   roles:
-    - setup-pacemaker
-  tags:
-    - setup_pacemaker
+     - { role: setup-pacemaker, tags: ['setup_pacemaker'] }
+     - { role: setup-haproxy, tags: ['setup_haproxy'] }
+
+   

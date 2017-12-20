@@ -12,3 +12,8 @@ stretch_network_vlan_name: vlan50
 stretch_galera_vip: 172.16.0.180
 
 
+galera_master_inventoryname: stack1-overcloud-controller-0
+galera_follower_inventoryname: stack2-overcloud-controller-0
+
+
+

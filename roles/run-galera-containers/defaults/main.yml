@@ -1,4 +1,0 @@
-# TODO: this would be better as a tag in the inventory
-galera_master_inventoryname: stack1-overcloud-controller-0
-galera_follower_inventoryname: stack2-overcloud-controller-0
-
