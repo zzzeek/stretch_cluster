@@ -1,0 +1,35 @@
+- name: get local/remote names, stack1
+  set_fact:
+    local_server: "{{ galera_master_inventoryname }}"
+    local_galera_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
+    remote_server: "{{ galera_follower_inventoryname }}"
+    remote_galera_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
+  when: "'stack1' in group_names"
+
+- name: get local/remote names, stack2
+  set_fact:
+    local_server: "{{ galera_follower_inventoryname }}"
+    local_galera_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
+    remote_server: "{{ galera_master_inventoryname }}"
+    remote_galera_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
+  when: "'stack2' in group_names"
+
+
+- name: add haproxy cfg
+  blockinfile:
+    path: /var/lib/config-data/puppet-generated/haproxy/etc/haproxy/haproxy.cfg
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    insertbefore: "listen mysql"
+    content: |
+      listen mysql-stretch
+        bind {{ stretch_galera_vip }}:3306 transparent
+        option tcpka
+        option httpchk
+        stick on dst
+        stick-table type ip size 1000
+        timeout client 90m
+        timeout server 90m
+        server {{ local_server }} {{ local_galera_ip }}:3307 check inter 1s on-marked-down shutdown-sessions port 9200
+        server {{ remote_server }} {{ remote_galera_ip }}:3307 backup check inter 1s on-marked-down shutdown-sessions port 9200
+  become: true
+
