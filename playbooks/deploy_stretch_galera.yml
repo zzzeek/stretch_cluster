@@ -1,22 +1,15 @@
 ---
 
-- name: get galera node facts
+- name: deploy galera
   hosts: galera_nodes
   roles:
-    - gather-info
-  tags:
-    - always
+     - { role: gather-info, tags: ['always'] }
+     - { role: run-galera-containers, tags: ['run_galera'] }
+     - { role: run-clustercheck, tags: ['run_clustercheck'] }
 
-- name: Run galera on the two hosts
-  hosts: galera_nodes
+- name: setup pacemaker 
+  hosts: pacemaker_control_nodes
   roles:
-    - run-galera-containers
+    - setup-pacemaker
   tags:
-    - run_galera
-
-- name: install clustercheck
-  hosts: galera_nodes
-  roles:
-    - run-clustercheck
-  tags:
-    - run_clustercheck
+    - setup_pacemaker

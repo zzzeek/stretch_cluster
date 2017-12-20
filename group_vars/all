@@ -1,4 +1,3 @@
-
 # name of the vlan (or network device) on the target
 # controller nodes that will be used for galera inter-cluster
 # commnication.   Typically the tenantnetvlan but can be whatever.
@@ -6,5 +5,10 @@
 # and use it to set up the galera gcomm:// handle.
 stretch_network_vlan_name: vlan50
 
+# ip address to set up as the vip where services
+# will access the new galera over haproxy.
+# this is on the tenant network above the two ranges
+# we create for overcloud1 and overcloud2
+stretch_galera_vip: 172.16.0.180
 
 

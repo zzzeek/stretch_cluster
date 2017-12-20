@@ -146,6 +146,10 @@ stack2-overcloud-controller-2
 stack1-overcloud-controller-0
 stack2-overcloud-controller-0
 
+[pacemaker_control_nodes]
+stack1-overcloud-controller-0
+stack2-overcloud-controller-0
+
 EOF
 }
 
