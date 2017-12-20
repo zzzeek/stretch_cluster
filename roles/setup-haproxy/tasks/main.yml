@@ -33,3 +33,8 @@
         server {{ remote_server }} {{ remote_galera_ip }}:3307 backup check inter 1s on-marked-down shutdown-sessions port 9200
   become: true
 
+- name: restart haproxy via pcs
+  shell: pcs resource restart haproxy-bundle
+  become: true
+  when:  "'pacemaker_control_nodes' in group_names"
+

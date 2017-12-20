@@ -72,6 +72,18 @@
         --wsrep-sst-receive-address={{ follower_ip }}
   when: inventory_hostname != "{{ galera_master_inventoryname }}"
 
+- name: open up iptables rule
+  lineinfile:
+    path: /etc/sysconfig/iptables
+    insertafter: "-A INPUT .* 3306 .* -j ACCEPT"
+    line: '-A INPUT -p tcp -m multiport --dports 3307 -m state --state NEW -m comment --comment "100 mysql_stretch_haproxy ipv4" -j ACCEPT'
+  notify: reload iptables
+  become: true
+
+- name: ensure restart happens
+  meta: flush_handlers
+
+    
 # TODO: this is an interim means of doing this until we get pacemaker
 # to run the galera nodes here.    running the docker container straight here
 # opens us up to data dir corruption if the container gets ungracefully
