@@ -58,6 +58,7 @@ network_environment_args:
     overcloud-controller-2: "{{ rh_stack_name }}-overcloud-controller-2"
     overcloud-compute-0: "{{ rh_stack_name }}-overcloud-compute-0"
 
+  KeystoneRegion: "region_{{ rh_stack_name }}"
 
 validate_ui_simple: false
 
