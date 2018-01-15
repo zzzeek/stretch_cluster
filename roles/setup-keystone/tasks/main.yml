@@ -1,20 +1,22 @@
 
 - name: get keystone grants
-  shell: docker exec  galera-bundle-docker-1   mysql -u root -s -N -e "'show grants for keystone'" >  keystone_{{ stack_name }}_grants.sql
+  shell: docker exec  galera-bundle-docker-0   mysql -u root -s -N -e "show grants for keystone" >  keystone_{{ stack_name }}_grants.sql
   become: true
 
 - name: get keystone data
-  shell: docker exec  galera-bundle-docker-1   mysqldump -u root --single-transaction --databases keystone >  keystone_{{ stack_name }}_database.sql
+  shell: docker exec  galera-bundle-docker-0   mysqldump -u root --single-transaction --databases keystone >  keystone_{{ stack_name }}_database.sql
   become: true
 
 - name: create placeholder keystone database in stretch galera
-  shell: docker exec stretch_galera mysql -u root -e "CREATE DATABASE keystone_{{ stack_name }} CHARSET utf8mb4"
+  shell: docker exec stretch_galera mysql -u root -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
   become: true
 
 # TODO TODO
 # - name: pass grants
 #   shell: docker exec stretch_galera mysql -u root < keystone_{{ stack_name }}_grants.sql
 
-- name: copy data
-  shell: docker exec stretch_galera mysql -u root keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
+# TODO: rediretion not working here, need to use docker cp
+# - name: copy data
+#  shell: cat keystone_{{ stack_name }}_database.sql | docker exec -i stretch_galera mysql -u root keystone_{{ stack_name }} 
+#  become: true
 
