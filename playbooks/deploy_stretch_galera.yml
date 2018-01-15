@@ -14,5 +14,6 @@
   roles:
      - { role: setup-pacemaker, tags: ['setup_pacemaker'] }
      - { role: setup-haproxy, tags: ['setup_haproxy'] }
+     - { role: setup-keystone, tags: ['setup_keystone'] }
 
-   
+

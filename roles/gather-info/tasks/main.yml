@@ -1,3 +1,12 @@
+- name: get short stack name 1
+  set_fact:
+    stack_name: 'stack1'
+  when: "'stack1' in group_names"
+
+- name: get short stack name 2
+  set_fact:
+    stack_name: 'stack2'
+  when: "'stack2' in group_names"
 
 - name: Get transport IP
   shell: /sbin/ip -4 addr show {{ stretch_network_vlan_name }} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1
@@ -35,7 +44,7 @@
   become: true
 
 - name: set mysql uid / gid facts
-  set_fact: 
+  set_fact:
     mysql_uid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['uid'] }}"
     mysql_gid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['gid'] }}"
 
