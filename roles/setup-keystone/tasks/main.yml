@@ -1,22 +1,64 @@
 
 - name: get keystone grants
-  shell: docker exec  galera-bundle-docker-0   mysql -u root -s -N -e "show grants for keystone" >  keystone_{{ stack_name }}_grants.sql
+  shell: docker exec  galera-bundle-docker-0   mysql -u root -s -N -e "show grants for keystone" | sed 's/$/;/' >  keystone_{{ stack_name }}_grants.sql
   become: true
 
+# note that by omitting --databases, we get a dump that's local to "keystone" and doesn't include
+# CREATE DATABASE or USE
 - name: get keystone data
-  shell: docker exec  galera-bundle-docker-0   mysqldump -u root --single-transaction --databases keystone >  keystone_{{ stack_name }}_database.sql
+  shell: docker exec  galera-bundle-docker-0   mysqldump -u root --single-transaction keystone >  keystone_{{ stack_name }}_database.sql
   become: true
+
+- name: ping
+  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} -e "SELECT 1"
 
 - name: create placeholder keystone database in stretch galera
-  shell: docker exec stretch_galera mysql -u root -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
-  become: true
+  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
 
-# TODO TODO
-# - name: pass grants
-#   shell: docker exec stretch_galera mysql -u root < keystone_{{ stack_name }}_grants.sql
+- name: copy keystone db to placeholder db
+  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
 
-# TODO: rediretion not working here, need to use docker cp
-# - name: copy data
-#  shell: cat keystone_{{ stack_name }}_database.sql | docker exec -i stretch_galera mysql -u root keystone_{{ stack_name }} 
-#  become: true
+
+- name: setup master keystone db
+  block:
+    - name: create main keystone DB
+      shell: mysql -u root -proot -P 3307 -h {{ master_ip }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
+
+    - name: copy stack1 keystone to main keystone db
+      shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone < keystone_stack1_database.sql
+
+    - name: setup grants in main keystone db
+      shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone < keystone_stack1_grants.sql
+
+    - name: rebuild keystone regions and endpoints
+      shell: |
+        mysql -u root -proot -P 3307 -h {{ master_ip }} keystone << "EOF"
+
+        DELETE from endpoint;
+        DELETE FROM region;
+
+        INSERT INTO keystone.region (id, description, parent_region_id, extra)
+        SELECT id, description, parent_region_id, extra FROM keystone_stack1.region;
+
+        INSERT INTO keystone.region (id, description, parent_region_id, extra)
+        SELECT id, description, parent_region_id, extra FROM keystone_stack2.region;
+        
+        INSERT INTO keystone.endpoint (id, interface, service_id, url, extra, enabled, region_id)
+        SELECT replace(md5(rand()), '-', ''), k1e.interface, k_s.id, k1e.url, k1e.extra, k1e.enabled, k1e.region_id
+        FROM keystone_stack1.endpoint AS k1e
+        JOIN keystone_stack1.service AS k1s ON k1e.service_id=k1s.id
+        JOIN keystone.service as k_s ON k_s.type=k1s.type AND k_s.extra=k1s.extra;
+
+        INSERT INTO keystone.endpoint (id, interface, service_id, url, extra, enabled, region_id)
+        SELECT replace(md5(rand()), '-', ''), k2e.interface, k_s.id, k2e.url, k2e.extra, k2e.enabled, k2e.region_id
+        FROM keystone_stack2.endpoint AS k2e
+        JOIN keystone_stack2.service AS k2s ON k2e.service_id=k2s.id
+        JOIN keystone.service as k_s ON k_s.type=k2s.type AND k_s.extra=k2s.extra;
+     
+  when: "'master_overcloud' in group_names"
+
+
+
+#- name: set grants on placeholder db
+#  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_grants.sql
 

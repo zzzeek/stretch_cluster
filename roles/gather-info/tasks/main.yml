@@ -17,6 +17,11 @@
   set_fact:
      transport_ip_number: '{{ transport_ip_number_cmd.stdout }}'
 
+- name: set master / follower ip numbers
+  set_fact:
+      master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
+      follower_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
+
 - name: get docker image name for galera from already running DB
   shell: docker inspect galera-bundle-docker-0
   register: docker_inspect_cmd
