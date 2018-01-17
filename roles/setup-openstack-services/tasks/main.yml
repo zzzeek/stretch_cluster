@@ -1,0 +1,11 @@
+
+
+- name: change DB url in keystone.conf
+  lineinfile:
+    path: /var/lib/config-data/puppet-generated/keystone/etc/keystone/keystone.conf
+    regexp: ^connection=
+    line: connection=mysql+pymysql://keystone:stretch_keystone@{{ stretch_galera_vip }}/keystone?read_default_group=tripleo&read_default_file=/etc/my.cnf.d/tripleo.cnf
+  become: true
+
+- name: restart keystone!
+  shell: docker restart keystone
