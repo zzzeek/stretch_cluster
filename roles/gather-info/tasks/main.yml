@@ -1,12 +1,15 @@
-- name: get short stack name 1
+- name: setup stack1-local variables
   set_fact:
     stack_name: 'stack1'
+    stretch_galera_vip: "{{ stack1_stretch_galera_vip }}"
   when: "'stack1' in group_names"
 
-- name: get short stack name 2
+- name: setup stack2-local variables
   set_fact:
     stack_name: 'stack2'
+    stretch_galera_vip: "{{ stack2_stretch_galera_vip }}"
   when: "'stack2' in group_names"
+
 
 - name: Get transport IP
   shell: /sbin/ip -4 addr show {{ stretch_network_vlan_name }} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1

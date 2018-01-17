@@ -19,6 +19,13 @@
   hosts:
     - galera_nodes
   roles:
-    - { role: setup-keystone, tags: ['setup_keystone'] }
+    - { role: setup-keystone-db, tags: ['setup_keystone_db'] }
 
+
+- name: point keystone services to the new galera DB
+  hosts:
+    - stack1
+    - stack2
+  roles:
+    - { role: setup-openstack-services, tags: ['setup_openstack_services'] }
 

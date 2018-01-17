@@ -9,7 +9,9 @@ stretch_network_vlan_name: vlan50
 # will access the new galera over haproxy.
 # this is on the tenant network above the two ranges
 # we create for overcloud1 and overcloud2
-stretch_galera_vip: 172.16.0.180
+
+stack1_stretch_galera_vip: 172.16.0.180
+stack2_stretch_galera_vip: 172.16.0.181
 
 
 galera_master_inventoryname: stack1-overcloud-controller-0

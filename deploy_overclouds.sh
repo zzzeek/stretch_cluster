@@ -13,9 +13,9 @@ QUICKSTART_EXTRAS_CHECKOUT=${CHECKOUTS}/tripleo-quickstart-extras
 QUICKSTART1=${HOME}/.quickstart1
 QUICKSTART2=${HOME}/.quickstart2
 
-ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone"
+ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"
 
-: ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone"}
+: ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
 
 
 RELEASE=master
@@ -34,10 +34,10 @@ setup_quickstart() {
     if [ ! -d $QUICKSTART_EXTRAS_CHECKOUT ]; then
         git clone https://git.openstack.org/openstack/tripleo-quickstart-extras/ ${QUICKSTART_EXTRAS_CHECKOUT}
         cd ${QUICKSTART_EXTRAS_CHECKOUT}
-        for patchfile in `ls ${SCRIPT_HOME}/oooq-extras-patches/*.patch`
-        do
-            patch -p1 < ${patchfile}
-        done
+        # for patchfile in `ls ${SCRIPT_HOME}/oooq-extras-patches/*.patch`
+        # do
+        #    patch -p1 < ${patchfile}
+        #   done
         cd ${SCRIPT_HOME}
 
     fi
@@ -90,18 +90,38 @@ EOF
 
     CLEANALL="-T all -X"
 
-    UNDERCLOUD_TAGS="--tags untagged,provision,environment,libvirt,undercloud-scripts,undercloud-inventory,overcloud-scripts,undercloud-install,undercloud-post-install,overcloud-prep-config,overcloud-prep-containers,overcloud-prep-images,overcloud-prep-flavors,overcloud-prep-network"
+    UNDERCLOUD_TAGS="--tags untagged,provision,environment,libvirt,\
+undercloud-scripts,undercloud-inventory,overcloud-scripts,\
+undercloud-install,undercloud-post-install,overcloud-prep-config,\
+overcloud-prep-containers,overcloud-prep-images,\
+overcloud-prep-flavors,overcloud-prep-network"
 
     SKIP_TAGS="--skip-tags overcloud-validate,tripleoui-validate,teardown-all,teardown-environment"
     ALL_TAGS="--tags all"
 
-    OPTS="-n -R ${RELEASE}  --config ${QUICKSTART_CONFIG} --nodes config/nodes/3ctlr_1comp.yml -e undercloud_disk=250  -e   control_memory=8192 -e undercloud_undercloud_nameservers=10.5.30.160 -e enable_pacemaker=true -e enable_port_forward_for_tripleo_ui=false -e tripleo_ui_secure_access=false"
+    OPTS="-n -R ${RELEASE}  --config ${QUICKSTART_CONFIG} \
+    --nodes config/nodes/3ctlr_1comp.yml -e undercloud_disk=250  \
+    -e   control_memory=8192 -e undercloud_undercloud_nameservers=10.5.30.160 \
+    -e enable_pacemaker=true -e enable_port_forward_for_tripleo_ui=false \
+    -e tripleo_ui_secure_access=false"
 
-    STACK1_ARGS="-e rh_stack_name=stack1 -e rh_net_range_start=10 -e rh_net_range_end=80 -e ssh_user=stack1 -e non_root_user=stack1 -e  working_dir=/home/stack1 -e undercloud_user=stack1 -w ${QUICKSTART1}"
+    STACK1_ARGS="-e rh_stack_name=stack1 -e rh_net_range_start=10 -e rh_net_range_end=80 \
+    -e undercloud_external_network_cidr=10.0.0.1/24 \
+    -e undercloud_network_cidr=192.168.24.0/24 \
+    -e undercloud_
+    -e undercloud_external_network_cidr6=2001:db8:fd00:1000::/64 \
+    -e ssh_user=stack1 -e non_root_user=stack1 \
+    -e  working_dir=/home/stack1 -e undercloud_user=stack1 -w ${QUICKSTART1}"
 
-    STACK2_ARGS="-e rh_stack_name=stack2 -e rh_net_range_start=100 -e rh_net_range_end=170 -e undercloud_external_network_cidr=10.0.1.1/24 -e undercloud_network_cidr=192.168.25.0/24 -e undercloud_external_network_cidr6=2001:db8:fd00:1001::1/64 -e ssh_user=stack2 -e non_root_user=stack2 -e   working_dir=/home/stack2 -e undercloud_user=stack2 -w ${QUICKSTART2}"
+    STACK2_ARGS="-e rh_stack_name=stack2 -e rh_net_range_start=100 -e rh_net_range_end=170 \
+    -e undercloud_external_network_cidr=10.0.1.1/24 \
+    -e undercloud_network_cidr=192.168.25.0/24 \
+    -e undercloud_external_network_cidr6=2001:db8:fd00:1001::1/64 \
+    -e ssh_user=stack2 -e non_root_user=stack2 \
+    -e   working_dir=/home/stack2 -e undercloud_user=stack2 -w ${QUICKSTART2}"
 
-    OVERCLOUD_ONLY="--retain-inventory -p quickstart-extras-overcloud.yml --tags overcloud-scripts,overcloud-deploy"
+    OVERCLOUD_ONLY="--retain-inventory -p quickstart-extras-overcloud.yml \
+    --tags overcloud-scripts,overcloud-deploy"
 }
 
 run_undercloud() {
@@ -156,7 +176,8 @@ EOF
 
 run_playbook() {
     cd ${SCRIPT_HOME}
-    ${QUICKSTART1}/bin/ansible-playbook  -vv -i ${ANSIBLE_HOSTS} --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml
+    ${QUICKSTART1}/bin/ansible-playbook  -vv -i ${ANSIBLE_HOSTS} \
+    --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml
 }
 
 
