@@ -1,10 +1,11 @@
 
 - name: set region names
-  lineinfile:
+  ini_file:
     path: /var/lib/config-data/puppet-generated/{{ item }}
-    insertafter: ^[DEFAULT]
-    regexp: ^region_name=
-    line: region_name=region_{{ stack_name }}
+    section: DEFAULT
+    option: region_name
+    value: "region_{{ stack_name }}"
+  become: true
   with_items:
     - heat_api/etc/heat/heat.conf
     - nova_placement/etc/nova/nova.conf
@@ -17,11 +18,12 @@
     - neutron/etc/neutron/neutron.conf
 
 - name: set region names
-  lineinfile:
+  ini_file:
     path: /var/lib/config-data/puppet-generated/{{ item }}
-    insertafter: ^[DEFAULT]
-    regexp: ^os_region_name=
-    line: os_region_name=region_{{ stack_name }}
+    section: DEFAULT
+    option: os_region_name
+    value: "region_{{ stack_name }}"
+  become: true
   with_items:
     - heat_api/etc/heat/heat.conf
     - nova_placement/etc/nova/nova.conf
@@ -48,6 +50,7 @@
   become: true
   with_items:
     - keystone
+    - memcached
     - nova_conductor
     - nova_metadata
     - nova_api
