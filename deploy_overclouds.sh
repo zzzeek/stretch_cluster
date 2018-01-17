@@ -13,9 +13,9 @@ QUICKSTART_EXTRAS_CHECKOUT=${CHECKOUTS}/tripleo-quickstart-extras
 QUICKSTART1=${HOME}/.quickstart1
 QUICKSTART2=${HOME}/.quickstart2
 
-ALL_PLAYBOOK_TAGS="run_galera setup_clustercheck"
+ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone"
 
-: ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts run_galera setup_clustercheck"}
+: ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone"}
 
 
 RELEASE=master
