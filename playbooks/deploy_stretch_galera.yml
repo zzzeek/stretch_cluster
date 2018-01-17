@@ -1,9 +1,15 @@
 ---
 
+- name: gather info
+  hosts:
+    - stack1
+    - stack2
+  roles:
+     - { role: gather-info, tags: ['always'] }
+
 - name: deploy galera
   hosts: galera_nodes
   roles:
-     - { role: gather-info, tags: ['always'] }
      - { role: run-galera-containers, tags: ['run_galera'] }
      - { role: run-clustercheck, tags: ['run_clustercheck'] }
 
