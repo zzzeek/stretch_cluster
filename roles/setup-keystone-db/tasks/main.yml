@@ -34,7 +34,7 @@
       shell: |
         mysql -u root -proot -P 3307 -h {{ master_ip }} keystone << "EOF"
 
-        GRANT USAGE ON *.* TO 'keystone'@'%' IDENTIFIED BY PASSWORD 'stretch_keystone';
+        GRANT USAGE ON *.* TO 'keystone'@'%' IDENTIFIED BY 'stretch_keystone';
         GRANT ALL PRIVILEGES ON `keystone`.* TO 'keystone'@'%';
 
         DELETE from endpoint;
