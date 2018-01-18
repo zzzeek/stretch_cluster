@@ -44,7 +44,7 @@ interface due to the fact that quickstart runs fail so often, and once you
 get one to work you *really* won't want to lose it by accident.
 
 The script should be run from where it sits, so a hypothetical "do everything"
-looks like:
+looks like::
 
     $ git clone https://github.com/zzzeek/stretch_cluster/
     $ cd stretch_cluster
@@ -61,7 +61,7 @@ various RDO servers being slow / down, you will be *very* upset to lose one.
 
 In practice, one would likely want to build things partially.   What the
 script does is determined by setting the STACKS and CMDS variables.   So
-a complete run one step at a time looks like:
+a complete run one step at a time looks like::
 
     # get oooq installed and set up, clean up VMs that might have been around.
     # this part runs without issue.
@@ -88,6 +88,9 @@ Not Done Yet
 ============
 
 * We aren't using Pacemaker to control the new Galera cluster or the clustercheck
-engine, we are just launching the Docker container from Ansible here.
+  engine, we are just launching the Docker container from Ansible here.
 
-
+* At the moment, pointing Keystone services at the new database with two regions
+  and restarting everything using "docker restart <service>" is producing a non-working
+  setup.  I've set region configuration for all services but need to debug where it's
+  going wrong.
