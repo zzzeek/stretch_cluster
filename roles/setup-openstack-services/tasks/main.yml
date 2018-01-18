@@ -1,21 +1,21 @@
 
-- name: set region names
-  replace:
-    path: /var/lib/config-data/puppet-generated/{{ item }}
-    regexp: '^#?(os_)?region_name=.*$'
-    replace: '\1region_name=region_{{ stack_name }}'
-    backup: yes
-  become: true
-  with_items:
-    - heat_api/etc/heat/heat.conf
-    - nova_placement/etc/nova/nova.conf
-    - heat/etc/heat/heat.conf
-    - nova/etc/nova/nova.conf
-    - glance_api/etc/glance/glance-api.conf
-    - glance_api/etc/glance/glance-cache.conf
-    - cinder/etc/cinder/cinder.conf
-    - heat_api_cfn/etc/heat/heat.conf
-    - neutron/etc/neutron/neutron.conf
+#- name: set region names
+#  replace:
+#    path: /var/lib/config-data/puppet-generated/{{ item }}
+#    regexp: '^#?(os_)?region_name=.*$'
+#    replace: '\1region_name=region_{{ stack_name }}'
+#    backup: yes
+#  become: true
+#  with_items:
+#    - heat_api/etc/heat/heat.conf
+#    - nova_placement/etc/nova/nova.conf
+#    - heat/etc/heat/heat.conf
+#    - nova/etc/nova/nova.conf
+#    - glance_api/etc/glance/glance-api.conf
+#    - glance_api/etc/glance/glance-cache.conf
+#    - cinder/etc/cinder/cinder.conf
+#    - heat_api_cfn/etc/heat/heat.conf
+#    - neutron/etc/neutron/neutron.conf
 
 
 - name: change DB url in keystone.conf
@@ -33,13 +33,13 @@
   with_items:
     - keystone
     - memcached
-    - nova_conductor
-    - nova_metadata
-    - nova_api
-    - glance_api
-    - cinder_api
-    - cinder_scheduler
-    - neutron_metadata_agent
-    - neutron_ovs_agent
-    - neutron_api
-    - heat_engine
+#    - nova_conductor
+#    - nova_metadata
+#    - nova_api
+#    - glance_api
+#    - cinder_api
+#    - cinder_scheduler
+#    - neutron_metadata_agent
+#    - neutron_ovs_agent
+#    - neutron_api
+#    - heat_engine
