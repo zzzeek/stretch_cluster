@@ -25,6 +25,7 @@
     # TODO: need a new cnf file with an appropriate bind_address for this to work
     #line: connection=mysql+pymysql://keystone:stretch_keystone@{{ stretch_galera_vip }}/keystone?read_default_group=tripleo&read_default_file=/etc/my.cnf.d/tripleo.cnf
     line: connection=mysql+pymysql://keystone:stretch_keystone@{{ stretch_galera_vip }}/keystone
+    backup: true
   become: true
 
 - name: restart services!
