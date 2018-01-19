@@ -90,25 +90,24 @@ EOF
 
     CLEANALL="-T all -X"
 
-    UNDERCLOUD_TAGS="--tags untagged,provision,environment,libvirt,\
+    : ${UNDERCLOUD_TAGS:="--tags untagged,provision,environment,libvirt,\
 undercloud-scripts,undercloud-inventory,overcloud-scripts,\
 undercloud-install,undercloud-post-install,overcloud-prep-config,\
 overcloud-prep-containers,overcloud-prep-images,\
-overcloud-prep-flavors,overcloud-prep-network"
+overcloud-prep-flavors,overcloud-prep-network"}
 
-    SKIP_TAGS="--skip-tags overcloud-validate,tripleoui-validate,teardown-all,teardown-environment"
+    SKIP_TAGS="--skip-tags teardown-nodes,overcloud-validate,tripleoui-validate,teardown-all,teardown-environment"
     ALL_TAGS="--tags all"
 
     OPTS="-n -R ${RELEASE}  --config ${QUICKSTART_CONFIG} \
     --nodes config/nodes/3ctlr_1comp.yml -e undercloud_disk=250  \
     -e   control_memory=8192 -e undercloud_undercloud_nameservers=10.5.30.160 \
     -e enable_pacemaker=true -e enable_port_forward_for_tripleo_ui=false \
-    -e tripleo_ui_secure_access=false"
+    -e tripleo_ui_secure_access=false --retain-inventory -e enable_vbmc=false"
 
     STACK1_ARGS="-e rh_stack_name=stack1 -e rh_net_range_start=10 -e rh_net_range_end=80 \
     -e undercloud_external_network_cidr=10.0.0.1/24 \
     -e undercloud_network_cidr=192.168.24.0/24 \
-    -e undercloud_
     -e undercloud_external_network_cidr6=2001:db8:fd00:1000::/64 \
     -e ssh_user=stack1 -e non_root_user=stack1 \
     -e  working_dir=/home/stack1 -e undercloud_user=stack1 -w ${QUICKSTART1}"
@@ -120,7 +119,7 @@ overcloud-prep-flavors,overcloud-prep-network"
     -e ssh_user=stack2 -e non_root_user=stack2 \
     -e   working_dir=/home/stack2 -e undercloud_user=stack2 -w ${QUICKSTART2}"
 
-    OVERCLOUD_ONLY="--retain-inventory -p quickstart-extras-overcloud.yml \
+    OVERCLOUD_ONLY="-p quickstart-extras-overcloud.yml \
     --tags overcloud-scripts,overcloud-deploy"
 }
 

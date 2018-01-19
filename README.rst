@@ -83,6 +83,10 @@ a complete run one step at a time looks like::
     $ CMDS="hosts run_galera run_clustercheck setup_pacemaker \
       setup_haproxy setup_keystone setup_openstack_services" ./deploy_overclouds.sh
 
+When the undercloud build fails on "preparing for containerized deployment", which is 
+frequent because it needs to download dozens of docker images::
+
+    UNDERCLOUD_TAGS="--tags undercloud-post-install,overcloud-prep-containers" STACKS="stack1" CMDS=run_undercloud ./deploy_overclouds.sh
 
 Not Done Yet
 ============
