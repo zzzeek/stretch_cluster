@@ -110,6 +110,29 @@ network_environment_args:
   # endpoint discovery w/ regions is cooler.
   KeystoneRegion: "region_{{ rh_stack_name }}"
 
+  # since we are sharing the same keystone, the services on both
+  # overclouds need to use the same passwords.  clearly this would have
+  # to be integrated into the "make a bunch of passwords" thing :)
+  ManilaPassword: "Manila_password"
+  NeutronPassword: "Neutron_password"
+  GlancePassword: "Glance_password"
+  HeatPassword: "Heat_password"
+  AdminPassword: "Admin_password"
+  IronicPassword: "Ironic_password"
+  HeatStackDomainAdminPassword: "HeatStackDomainAdmin_password"
+  ZaqarPassword: "Zaqar_password"
+  GnocchiPassword: "Gnocchi_password"
+  CeilometerPassword: "Ceilometer_password"
+  CinderPassword: "Cinder_password"
+  NovaPassword: "Nova_password"
+  MistralPassword: "Mistral_password"
+  AodhPassword: "Aodh_password"
+  SwiftPassword: "Swift_password"
+  BarbicanPassword: "Barbican_password"
+  SaharaPassword: "Sahara_password"
+
+   
+
 # MAKE IT EASY TO BUILD, STEP 5.  This is some feature in oooq that seems to
 # just fail.   We also have ensured we don't run the playbook tags
 # overcloud-validate or tripleoui-validate, the latter of which seems to be
