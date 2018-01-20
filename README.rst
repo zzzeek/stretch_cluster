@@ -94,7 +94,8 @@ Not Done Yet
 * We aren't using Pacemaker to control the new Galera cluster or the clustercheck
   engine, we are just launching the Docker container from Ansible here.
 
-* At the moment, pointing Keystone services at the new database with two regions
-  and restarting everything using "docker restart <service>" is producing a non-working
-  setup.  I've set region configuration for all services but need to debug where it's
-  going wrong.
+* All the openstack .conf files need to have "region_name" or "os_region_name"
+  set correctly, ooo does not seem to do this consistently based on KeystoneRegion
+  (some versions did it, others don't) so we have to finish writing out every possible
+  region config.   Nova is working so far so you can see "nova --os-region_name region_stack2 list" 
+  work (assuming you do that from the corresponding region's undercloud)
