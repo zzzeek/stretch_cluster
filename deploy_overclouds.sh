@@ -103,7 +103,7 @@ overcloud-prep-flavors,overcloud-prep-network"}
     --nodes config/nodes/3ctlr_1comp.yml -e undercloud_disk=250  \
     -e   control_memory=8192 -e undercloud_undercloud_nameservers=10.5.30.160 \
     -e enable_pacemaker=true -e enable_port_forward_for_tripleo_ui=false \
-    -e tripleo_ui_secure_access=false --retain-inventory -e enable_vbmc=false"
+    -e tripleo_ui_secure_access=false --retain-inventory "
 
     STACK1_ARGS="-e rh_stack_name=stack1 -e rh_net_range_start=10 -e rh_net_range_end=80 \
     -e undercloud_external_network_cidr=10.0.0.1/24 \
