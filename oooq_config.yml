@@ -108,6 +108,10 @@ network_environment_args:
   # at the moment it seems like the OSP12 overclouds default to not using
   # keystone endpoints and instead have service IPs hardcoded, but using
   # endpoint discovery w/ regions is cooler.
+  # Unfortunately, this option appears to work only sporadically as 
+  # far as being correctly populated into .conf files, some
+  # OSP versions seem to honor it and others ignore it, so we have to 
+  # populate .conf files with it after the fact regardless
   KeystoneRegion: "region_{{ rh_stack_name }}"
 
   # since we are sharing the same keystone, the services on both
