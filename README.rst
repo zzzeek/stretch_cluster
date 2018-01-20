@@ -81,7 +81,7 @@ a complete run one step at a time looks like::
     # pacemaker, copy and merge keystone databases to the new cluster and
     # re-point services.
     $ CMDS="hosts run_galera run_clustercheck setup_pacemaker \
-      setup_haproxy setup_keystone setup_openstack_services" ./deploy_overclouds.sh
+      setup_haproxy setup_keystone_db setup_openstack_services" ./deploy_overclouds.sh
 
 When the undercloud build fails on "preparing for containerized deployment", which is 
 frequent because it needs to download dozens of docker images::
