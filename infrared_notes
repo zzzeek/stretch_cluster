@@ -1,0 +1,10 @@
+virsh network:
+
+"msg": "internal error: Check the host setup: enabling IPv6 forwarding with RA rou
+tes without accept_ra set to 2 is likely to cause routes loss. Interfaces to look at: em1"
+
+https://superuser.com/questions/1208952/qemu-kvm-libvirt-forwarding
+
+sysctl -w net.ipv6.conf.em1.accept_ra=2
+# cat /etc/sysctl.d/99-accept-ra.conf
+net.ipv6.conf.em1.accept_ra = 2
