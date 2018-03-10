@@ -8,3 +8,22 @@ https://superuser.com/questions/1208952/qemu-kvm-libvirt-forwarding
 sysctl -w net.ipv6.conf.em1.accept_ra=2
 # cat /etc/sysctl.d/99-accept-ra.conf
 net.ipv6.conf.em1.accept_ra = 2
+
+
+infrared workspace create stretch
+infrared workspace checkout stretch
+
+infrared virsh -vv --topology-node undercloud:2 --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
+
+cat << EOF > undercloud_hierdata.yaml
+nova::compute::ironic::max_concurrent_builds: 2
+nova::rpc_response_timeout: 600
+ironic::rpc_response_timeout: 600
+EOF
+
+scp -F .workspaces/stretch/ansible.ssh.config undercloud_hierdata.yaml root@undercloud-0:/usr/local/share/
+scp -F .workspaces/stretch/ansible.ssh.config undercloud_hierdata.yaml root@undercloud-1:/usr/local/share/
+
+infrared tripleo-undercloud -vv --version queens \
+	--config-options DEFAULT.hieradata_override=/usr/local/share/undercloud_hierdata.yaml \
+	--config-options DEFAULT.enable_telemetry=false
