@@ -26,4 +26,89 @@ scp -F .workspaces/stretch/ansible.ssh.config undercloud_hierdata.yaml root@unde
 
 infrared tripleo-undercloud -vv --version queens \
 	--config-options DEFAULT.hieradata_override=/usr/local/share/undercloud_hierdata.yaml \
-	--config-options DEFAULT.enable_telemetry=false
+	--config-options DEFAULT.enable_telemetry=false \
+	--images-task import --images-url https://images.rdoproject.org/queens/delorean/current-tripleo-rdo/
+
+infrared virsh -vv --topology-nodes "controller:6,compute:2" --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2 --topology-extend true -e override.controller.memory=16384
+
+cp .workspaces/stretch/hosts .workspaces/stretch/stack2
+< edit stack2 to have only one undercloud / three controllers / one compute >
+
+# docs: http://infrared.readthedocs.io/en/latest/rdo.html
+
+infrared tripleo-overcloud -vv --inventory .workspaces/stretch/stack2 --deployment-files=virt \
+--tagging=true --deploy=true \
+--introspect=true  --version=queens \
+--containers yes \
+    --registry-mirror trunk.registry.rdoproject.org \
+    --registry-namespace tripleoqueens \
+    --registry-tag current-tripleo-rdo \
+    --registry-skip-puddle yes --post
+
+infrared tripleo-overcloud -vv --deployment-files=virt \
+--controller-nodes=3 --compute-nodes=1 \
+--tagging=true \
+--introspect=true  --version=queens \
+--containers yes \
+    --registry-mirror trunk.registry.rdoproject.org \
+    --registry-namespace master \
+    --registry-tag current-tripleo-rdo \
+    --registry-prefix=centos-binary- \
+    --registry-skip-puddle yes \
+-------------------------------------------------------------------------------------
+ATTEMPT #2
+--------------------------------------------------------------------------------------
+
+create
+plugins/virsh/vars/topology/network/mike_nets.yml
+plugins/virsh/vars/topology/nodes/s1undercloud.yml  has 192.168.24.1 / 10.0.0.1 nets
+plugins/virsh/vars/topology/nodes/s2undercloud.yml  has 192.168.25.1 / 10.0.1.1 nets
+
+infrared virsh -vv --topology-nodes="s1undercloud:1,s2undercloud:1" --topology-network=mike_nets --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
+
+infrared tripleo-undercloud -vv --version queens \
+    --ansible-args="limit=s1undercloud-0,localhost,hypervisor" \
+    --config-options DEFAULT.enable_telemetry=false \
+    --config-options DEFAULT.local_ip=192.168.24.1/24 \
+    --config-options DEFAULT.network_gateway=192.168.24.1 \
+    --config-options DEFAULT.undercloud_public_vip=192.168.24.2 \
+    --config-options DEFAULT.undercloud_admin_vip=192.168.24.3 \
+    --config-options DEFAULT.network_cidr=192.168.24.0/24 \
+    --config-options DEFAULT.masquerade_network=192.168.24.0/24 \
+    --config-options DEFAULT.dhcp_start=192.168.24.5 \
+    --config-options DEFAULT.dhcp_end=192.168.24.24 \
+    --config-options DEFAULT.inspection_iprange=192.168.24.100,192.168.24.120 \
+    --config-options DEFAULT.undercloud_nameservers=10.16.36.29,10.11.5.19,10.5.30.160 \
+    --images-task import --images-url https://images.rdoproject.org/queens/delorean/current-tripleo-rdo/
+
+infrared tripleo-undercloud -vv --version queens \
+    --ansible-args="limit=s2undercloud-0,localhost,hypervisor" \
+    --config-options DEFAULT.enable_telemetry=false \
+    --config-options DEFAULT.local_ip=192.168.25.1/24 \
+    --config-options DEFAULT.network_gateway=192.168.25.1 \
+    --config-options DEFAULT.undercloud_public_vip=192.168.25.2 \
+    --config-options DEFAULT.undercloud_admin_vip=192.168.25.3 \
+    --config-options DEFAULT.network_cidr=192.168.25.0/24 \
+    --config-options DEFAULT.masquerade_network=192.168.25.0/24 \
+    --config-options DEFAULT.dhcp_start=192.168.25.5 \
+    --config-options DEFAULT.dhcp_end=192.168.25.24 \
+    --config-options DEFAULT.inspection_iprange=192.168.25.100,192.168.25.120 \
+    --config-options DEFAULT.undercloud_nameservers=10.16.36.29,10.11.5.19,10.5.30.160 \
+    --images-task import --images-url https://images.rdoproject.org/queens/delorean/current-tripleo-rdo/
+
+
+
+local_ip = 192.168.24.1/24
+network_gateway = 192.168.24.1
+undercloud_public_vip = 192.168.24.2
+undercloud_admin_vip = 192.168.24.3
+network_cidr = 192.168.24.0/24
+masquerade_network = 192.168.24.0/24
+dhcp_start = 192.168.24.5
+dhcp_end = 192.168.24.24
+inspection_iprange = 192.168.24.100,192.168.24.120
+
+
+
+
+
