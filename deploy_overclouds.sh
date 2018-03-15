@@ -18,8 +18,8 @@ ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy set
 : ${CMDS:="setup_quickstart cleanup run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
 
 
-RELEASE=master
-# RELEASE=pike
+#RELEASE=master
+RELEASE=queens
 
 set -e
 set -x

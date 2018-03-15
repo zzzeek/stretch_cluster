@@ -68,11 +68,13 @@ download_images() {
 }
 
 setup_env() {
-    . ${INFRARED_CHECKOUT}/.venv/bin/activate
+    if [[ -d $_INFRARED_CHECKOUT ]] ; then
+        . ${INFRARED_CHECKOUT}/.venv/bin/activate
 
-    # checkout -c doesn't work, still errors out if the workspace exists.
-    infrared_cmd workspace create ${INFRARED_WORKSPACE} && true
-    infrared_cmd workspace checkout ${INFRARED_WORKSPACE}
+        # checkout -c doesn't work, still errors out if the workspace exists.
+        infrared_cmd workspace create ${INFRARED_WORKSPACE} && true
+        infrared_cmd workspace checkout ${INFRARED_WORKSPACE}
+    fi
 }
 
 cleanup_networks() {
