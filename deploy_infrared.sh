@@ -63,12 +63,13 @@ setup_infrared() {
 download_images() {
     mkdir -p ${OVERCLOUD_IMAGES}/${RELEASE}
     pushd ${OVERCLOUD_IMAGES}/${RELEASE}
-    wget --no-parent -r -N ${RDO_OVERCLOUD_IMAGES}
+    curl -O ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar
+    curl -O ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar
     popd
 }
 
 setup_env() {
-    if [[ -d $_INFRARED_CHECKOUT ]] ; then
+    if [[ -d $INFRARED_CHECKOUT ]] ; then
         . ${INFRARED_CHECKOUT}/.venv/bin/activate
 
         # checkout -c doesn't work, still errors out if the workspace exists.
@@ -84,8 +85,8 @@ cleanup_networks() {
     NETWORK_NAMES="s1external s1provisioning s2external s2provisioning"
 
     for name in ${NETWORK_NAMES} ; do
-        virsh net-destroy $name;
-        virsh net-undefine $name;
+        sudo virsh net-destroy $name;
+        sudo virsh net-undefine $name;
     done
 
     set -e
@@ -106,8 +107,8 @@ cleanup_vms() {
     fi
 
     for name in ${VM_NAMES} ; do
-        virsh destroy $name;
-        virsh undefine $name;
+        sudo virsh destroy $name;
+        sudo virsh undefine $name;
     done
 
     set -e
@@ -175,10 +176,12 @@ build_networks() {
     infrared_cmd virsh -vv \
         --topology-nodes="s1undercloud:0,s2undercloud:0" \
         --topology-network=stretch_nets \
+        --ansible-args="tags=networks" \
         ${INFRARED_ANSIBLE_ARGS}
 }
 
 build_vms() {
+    # TODO: do this in one infrared command for both
     if [[ $STACK == "stack1" ]]; then
         #NODES="s1undercloud:1,s1controller:3,s1compute:1"
         NODES="s1undercloud:1"
