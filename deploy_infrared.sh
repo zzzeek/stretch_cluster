@@ -170,10 +170,10 @@ build_hosts() {
     # view of hosts.
 
     # build stack1-only hosts file
-    cat ${INFRARED_WORKSPACE}/hosts  | grep -e "^\[\\|s1\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack1_hosts_install
+    cat ${INFRARED_WORKSPACE}/hosts-prov  | grep -e "^\[\\|s1\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack1_hosts_install
 
     # build stack2-only hosts file
-    cat ${INFRARED_WORKSPACE}/hosts  | grep -e "^\[\\|s2\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack2_hosts_install
+    cat ${INFRARED_WORKSPACE}/hosts-prov  | grep -e "^\[\\|s2\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack2_hosts_install
 
     # build hosts file for our own playbooks
    cat /dev/null > ${ANSIBLE_HOSTS}
@@ -225,16 +225,19 @@ upload_images() {
 
 setup_undercloud_vlan() {
 
+    # TODO: nameservers are hardcoded in the playbook a second time.
+    # get them to be defined in one place
+
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${INFRARED_WORKSPACE}/stack1_hosts_install \
         -e undercloud_external_network_cidr=10.0.0.1/24 \
-        -e overcloud_dns_servers="${NAMESERVERS}" \
+        -e working_dir=/home/stack \
         playbooks/setup_undercloud_vlan.yml
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${INFRARED_WORKSPACE}/stack2_hosts_install \
         -e undercloud_external_network_cidr=10.0.1.1/24 \
-        -e overcloud_dns_servers="${NAMESERVERS}" \
+        -e working_dir=/home/stack \
         playbooks/setup_undercloud_vlan.yml
     popd
 
@@ -266,7 +269,7 @@ run_undercloud() {
         --config-options DEFAULT.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
         --config-options DEFAULT.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
         --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
-        --config-options DEFAULT.undercloud_nameservers=${NAMESERVERS} \
+        --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
@@ -310,6 +313,9 @@ for stack_arg in $STACKS ; do
     if [[ "${CMDS}" == *"run_undercloud"* ]]; then
      run_undercloud
      build_hosts
+    fi
+
+    if [[ "${CMDS}" == *"run_undercloud"* || "${CMDS}" == *"setup_undercloud_vlan"* ]]; then
      setup_undercloud_vlan
     fi
 
