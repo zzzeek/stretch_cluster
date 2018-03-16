@@ -12,12 +12,12 @@ INFRARED_WORKSPACE=stack
 
 ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"
 
-: ${CMDS:="cleanup_infrared setup_infrared download_images cleanup_networks build_networks cleanup_vms build_vms run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
+: ${CMDS:="cleanup_infrared setup_infrared download_images cleanup_networks build_networks cleanup_vms build_vms upload_images run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
 
 
 RELEASE=queens
 RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE}/delorean/current-tripleo-rdo/"
-IMAGE_URL="file:///${OVERCLOUD_IMAGES}/${RELEASE}/"
+IMAGE_URL="file:///tmp/"
 
 set -e
 set -x
@@ -98,12 +98,14 @@ cleanup_vms() {
 
     # VM_NAMES=$( virsh list --all | cut -c 5-30 | grep -v "Name" | grep -v "\-\-\-" )
 
-    if [[ $STACK == "stack1" ]]; then
-        VM_NAMES="s1undercloud-0 s1controller-0 s1controller-1 s1controller-2 s1compute-0"
+    VM_NAMES=""
+
+    if [[ "${STACKS}" == *"stack1"* ]]; then
+        VM_NAMES="${VM_NAMES} s1undercloud-0 s1controller-0 s1controller-1 s1controller-2 s1compute-0"
     fi
 
-    if [[ $STACK == "stack2" ]]; then
-        VM_NAMES="s2undercloud-0 s2controller-0 s2controller-1 s2controller-2 s2compute-0"
+    if [[ "${STACKS}" == *"stack2"* ]]; then
+        VM_NAMES="${VM_NAMES} s2undercloud-0 s2controller-0 s2controller-1 s2controller-2 s2compute-0"
     fi
 
     for name in ${VM_NAMES} ; do
@@ -180,15 +182,17 @@ build_networks() {
 }
 
 build_vms() {
-    # TODO: do this in one infrared command for both
-    if [[ $STACK == "stack1" ]]; then
+
+    NODES=""
+
+    if [[ "${STACKS}" == *"stack1"* ]]; then
         #NODES="s1undercloud:1,s1controller:3,s1compute:1"
-        NODES="s1undercloud:1"
+        NODES="${NODES}s1undercloud:1,"
     fi
 
-    if [[ $STACK == "stack2" ]]; then
+    if [[ "${STACKS}" == *"stack2"* ]]; then
         #NODES="s2undercloud:1,s2controller:3,s2compute:1"
-        NODES="s2undercloud:1"
+        NODES="${NODES}s2undercloud:1,"
     fi
 
     infrared_cmd virsh -vv \
@@ -196,6 +200,18 @@ build_vms() {
         --topology-network=stretch_nets \
         --topology-extend=yes \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
+
+}
+
+upload_images() {
+    pushd ${INFRARED_CHECKOUT}
+    if [[ "${STACKS}" == *"stack1"* ]]; then
+        scp -F .workspace/${WORKSPACE_NAME}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s1undercloud-0:/tmp/
+    fi
+    if [[ "${STACKS}" == *"stack2"* ]]; then
+        scp -F .workspace/${WORKSPACE_NAME}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s2undercloud-0:/tmp/
+    fi
+    popd
 }
 
 run_undercloud() {
@@ -248,16 +264,21 @@ if [[ "${CMDS}" == *"build_networks"* ]]; then
     build_networks
 fi
 
+if [[ "${CMDS}" == *"cleanup_vms"* ]]; then
+    cleanup_vms
+fi
+
+if [[ "${CMDS}" == *"build_vms"* ]]; then
+    build_vms
+fi
+
+if [[ "${CMDS}" == *"upload_images"* ]]; then
+    upload_images
+fi
+
+
 for stack_arg in $STACKS ; do
      STACK="${stack_arg}"
-
-    if [[ "${CMDS}" == *"cleanup_vms"* ]]; then
-        cleanup_vms
-    fi
-
-    if [[ "${CMDS}" == *"build_vms"* ]]; then
-        build_vms
-    fi
 
     if [[ "${CMDS}" == *"run_undercloud"* ]]; then
      run_undercloud
