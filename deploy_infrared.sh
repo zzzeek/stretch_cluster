@@ -4,15 +4,18 @@ DIRNAME=`dirname $0`
 SCRIPT_HOME=`realpath $DIRNAME`
 ANSIBLE_HOSTS=${SCRIPT_HOME}/hosts
 
+NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
 INFRARED_CHECKOUT=${CHECKOUTS}/infrared
 INFRARED_WORKSPACE_NAME=stack
 INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
+ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
 ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"
 
-: ${CMDS:="cleanup_infrared setup_infrared download_images reset_workspace cleanup_networks build_networks cleanup_vms build_vms upload_images run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
+
+: ${CMDS:="cleanup_infrared setup_infrared download_images rebuild_vms run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
 
 
 RELEASE=queens
@@ -121,56 +124,8 @@ cleanup_vms() {
 }
 
 
-
-
-build_hosts() {
-    # build a hosts file that our own ansible playbook will use, based on the
-    # hosts file that oooq builds out when it does full overcloud playbook.
-    # includes all the ssh forwarding nicely done
-
-   cat /dev/null > ${ANSIBLE_HOSTS}
-   grep ${QUICKSTART1}/hosts -e "^stack1.*ansible" >> ${ANSIBLE_HOSTS}
-   grep ${QUICKSTART2}/hosts -e "^stack2.*ansible" >> ${ANSIBLE_HOSTS}
-
-   cat << EOF >> ${ANSIBLE_HOSTS}
-[master_overcloud]
-stack1-overcloud-controller-0
-
-[follower_overcloud]
-stack2-overcloud-controller-0
-
-[stack1]
-stack1-overcloud-controller-0
-stack1-overcloud-controller-1
-stack1-overcloud-controller-2
-
-[stack2]
-stack2-overcloud-controller-0
-stack2-overcloud-controller-1
-stack2-overcloud-controller-2
-
-[galera_nodes]
-stack1-overcloud-controller-0
-stack2-overcloud-controller-0
-
-[pacemaker_control_nodes]
-stack1-overcloud-controller-0
-stack2-overcloud-controller-0
-
-EOF
-}
-
-
 infrared_cmd() {
     IR_HOME=${INFRARED_CHECKOUT} ANSIBLE_CONFIG=${INFRARED_CHECKOUT}/ansible.cfg infrared $@
-}
-
-
-run_playbook() {
-    pushd ${SCRIPT_HOME}
-    ansible-playbook  -vv -i ${ANSIBLE_HOSTS} \
-    --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml
-    popd
 }
 
 
@@ -207,9 +162,54 @@ build_vms() {
         --topology-extend=yes \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
 
+
+}
+
+build_hosts() {
+    # build out hostfiles for next steps.   different steps need a different
+    # view of hosts.
+
+    # build stack1-only hosts file
     cat ${INFRARED_WORKSPACE}/hosts  | grep -e "^\[\\|s1\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack1_hosts_install
+
+    # build stack2-only hosts file
     cat ${INFRARED_WORKSPACE}/hosts  | grep -e "^\[\\|s2\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack2_hosts_install
 
+    # build hosts file for our own playbooks
+   cat /dev/null > ${ANSIBLE_HOSTS}
+   grep ${INFRARED_WORKSPACE}/hosts -e ".*ansible" >> ${ANSIBLE_HOSTS}
+
+   cat << EOF >> ${ANSIBLE_HOSTS}
+
+[undercloud]
+s1undercloud-0
+s2undercloud-0
+
+[master_overcloud]
+s1controller-0
+
+[follower_overcloud]
+s2controller-0
+
+[stack1]
+s1controller-0
+s1controller-1
+s1controller-2
+
+[stack2]
+s2-controller-0
+s2-controller-1
+s2-controller-2
+
+[galera_nodes]
+s1-controller-0
+s2-controller-0
+
+[pacemaker_control_nodes]
+s1-controller-0
+s2-controller-0
+
+EOF
 }
 
 upload_images() {
@@ -223,6 +223,22 @@ upload_images() {
     popd
 }
 
+setup_undercloud_vlan() {
+
+    pushd ${SCRIPT_HOME}
+    ${ANSIBLE_PLAYBOOK} -vv \
+        -i ${INFRARED_WORKSPACE}/stack1_hosts_install \
+        -e undercloud_external_network_cidr=10.0.0.1/24 \
+        -e overcloud_dns_servers="${NAMESERVERS}"
+        playbooks/setup_undercloud_vlan.yml
+    ${ANSIBLE_PLAYBOOK} -vv \
+        -i ${INFRARED_WORKSPACE}/stack2_hosts_install \
+        -e undercloud_external_network_cidr=10.0.1.1/24 \
+        -e overcloud_dns_servers="${NAMESERVERS}" \
+        playbooks/setup_undercloud_vlan.yml
+    popd
+
+}
 
 run_undercloud() {
 
@@ -250,7 +266,7 @@ run_undercloud() {
         --config-options DEFAULT.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
         --config-options DEFAULT.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
         --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
-        --config-options DEFAULT.undercloud_nameservers=10.16.36.29,10.11.5.19,10.5.30.160 \
+        --config-options DEFAULT.undercloud_nameservers=${NAMESERVERS} \
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
@@ -269,55 +285,34 @@ if [[ "${CMDS}" == *"download_images"* ]]; then
     download_images
 fi
 
-if [[ "${CMDS}" == *"reset_workspace"* ]]; then
+if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
     reset_workspace
 fi
 
 setup_env
 
-if [[ "${CMDS}" == *"cleanup_networks"* ]]; then
+if [[ "${CMDS}" == *"rebuild_vms"* || "${CMDS}" == *"cleanup_virt"* ]]; then
     cleanup_networks
-fi
-
-if [[ "${CMDS}" == *"build_networks"* ]]; then
-    build_networks
-fi
-
-if [[ "${CMDS}" == *"cleanup_vms"* ]]; then
     cleanup_vms
 fi
 
-if [[ "${CMDS}" == *"build_vms"* ]]; then
+if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
+    build_networks
     build_vms
-fi
-
-if [[ "${CMDS}" == *"upload_images"* ]]; then
+    build_hosts
     upload_images
 fi
 
 
 for stack_arg in $STACKS ; do
-     STACK="${stack_arg}"
+    STACK="${stack_arg}"
 
     if [[ "${CMDS}" == *"run_undercloud"* ]]; then
      run_undercloud
     fi
-done
 
-
-if [[ "${CMDS}" == *"build_hosts"* ]]; then
     build_hosts
-fi
-
-PLAYBOOK_TAGS=""
-
-for tag in $ALL_PLAYBOOK_TAGS ; do
-    if [[ "${CMDS}" == *"${tag}"* ]]; then
-        PLAYBOOK_TAGS="${PLAYBOOK_TAGS}${tag},"
-    fi
+    setup_undercloud_vlan
 done
 
-if [ $PLAYBOOK_TAGS ]; then
-   run_playbook
-fi
 

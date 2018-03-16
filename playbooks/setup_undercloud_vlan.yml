@@ -1,0 +1,5 @@
+- name: setup undercloud vlan
+  hosts:
+    - undercloud
+  roles:
+     - { role: setup-undercloud-vlan, tags: ['vlan'] }

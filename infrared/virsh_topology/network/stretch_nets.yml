@@ -9,18 +9,15 @@ networks:
     net2:
         external_connectivity: yes
         name: "s1external"
-        ip_address: "10.0.0.1"
+        ip_address: "192.168.22.1"
         netmask: "255.255.255.0"
         forward: nat
         dhcp:
             range:
-                start: "10.0.0.2"
-                end: "10.0.0.100"
-            subnet_cidr: "10.0.0.0/24"
-            subnet_gateway: "10.0.0.1"
-        floating_ip:
-            start: "10.0.0.101"
-            end: "10.0.0.150"
+                start: "192.168.22.10"
+                end: "192.168.22.50"
+            subnet_cidr: "192.168.22.1/24"
+            subnet_gateway: "192.168.22.1"
     net3:
         external_connectivity: no
         name: "s2provisioning"
@@ -29,18 +26,15 @@ networks:
     net4:
         external_connectivity: yes
         name: "s2external"
-        ip_address: "10.0.1.1"
+        ip_address: "192.168.23.1"
         netmask: "255.255.255.0"
         forward: nat
         dhcp:
             range:
-                start: "10.0.1.2"
-                end: "10.0.1.100"
-            subnet_cidr: "10.0.1.0/24"
-            subnet_gateway: "10.0.1.1"
-        floating_ip:
-            start: "10.0.1.101"
-            end: "10.0.1.150"
+                start: "192.168.23.10"
+                end: "192.168.23.50"
+            subnet_cidr: "192.168.23.1/24"
+            subnet_gateway: "192.168.23.1"
 
 nodes:
     s1undercloud:
