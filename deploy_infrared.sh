@@ -229,7 +229,7 @@ setup_undercloud_vlan() {
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${INFRARED_WORKSPACE}/stack1_hosts_install \
         -e undercloud_external_network_cidr=10.0.0.1/24 \
-        -e overcloud_dns_servers="${NAMESERVERS}"
+        -e overcloud_dns_servers="${NAMESERVERS}" \
         playbooks/setup_undercloud_vlan.yml
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${INFRARED_WORKSPACE}/stack2_hosts_install \
@@ -309,10 +309,10 @@ for stack_arg in $STACKS ; do
 
     if [[ "${CMDS}" == *"run_undercloud"* ]]; then
      run_undercloud
+     build_hosts
+     setup_undercloud_vlan
     fi
 
-    build_hosts
-    setup_undercloud_vlan
 done
 
 
