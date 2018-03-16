@@ -81,8 +81,7 @@ setup_env() {
 cleanup_networks() {
     set +e
 
-    # NETWORK_NAMES=$( virsh net-list --all | cut -c 1-20 | grep -v "Name" | grep -v "\-\-\-" )
-    NETWORK_NAMES="s1external s1provisioning s2external s2provisioning"
+    NETWORK_NAMES=$( sudo virsh net-list --all | cut -c 1-20 | grep -e '^ *\(s1\|s2\)' )
 
     for name in ${NETWORK_NAMES} ; do
         sudo virsh net-destroy $name;
@@ -96,16 +95,16 @@ cleanup_networks() {
 cleanup_vms() {
     set +e
 
-    # VM_NAMES=$( virsh list --all | cut -c 5-30 | grep -v "Name" | grep -v "\-\-\-" )
-
     VM_NAMES=""
 
     if [[ "${STACKS}" == *"stack1"* ]]; then
-        VM_NAMES="${VM_NAMES} s1undercloud-0 s1controller-0 s1controller-1 s1controller-2 s1compute-0"
+        NAMES=$( sudo virsh list --all | cut -c 5-30 | grep -e "^\ *s1" )
+        VM_NAMES="${VM_NAMES} ${NAMES}"
     fi
 
     if [[ "${STACKS}" == *"stack2"* ]]; then
-        VM_NAMES="${VM_NAMES} s2undercloud-0 s2controller-0 s2controller-1 s2controller-2 s2compute-0"
+        NAMES=$( sudo virsh list --all | cut -c 5-30 | grep -e "^\ *s2" )
+        VM_NAMES="${VM_NAMES} ${NAMES}"
     fi
 
     for name in ${VM_NAMES} ; do
@@ -177,26 +176,26 @@ build_networks() {
     infrared_cmd virsh -vv \
         --topology-nodes="s1undercloud:0,s2undercloud:0" \
         --topology-network=stretch_nets \
-        --ansible-args="tags=networks" \
+        --ansible-args="skip-tags=vms" \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
 }
 
 build_vms() {
 
-    NODES=","
+    NODES=""
 
     if [[ "${STACKS}" == *"stack1"* ]]; then
-        #NODES="s1undercloud:1,s1controller:3,s1compute:1"
-        NODES="${NODES}s1undercloud:1"
+        #NODES="s1undercloud:1,s1controller:3,s1compute:1,"
+        NODES="${NODES}s1undercloud:1,"
     fi
 
     if [[ "${STACKS}" == *"stack2"* ]]; then
-        #NODES="s2undercloud:1,s2controller:3,s2compute:1"
-        NODES="${NODES}s2undercloud:1"
+        #NODES="s2undercloud:1,s2controller:3,s2compute:1,"
+        NODES="${NODES}s2undercloud:1,"
     fi
 
-    # trim leading comma
-    NODES=${NODES:1}
+    # trim trailing comma
+    NODES=${NODES:0:-1}
 
     infrared_cmd virsh -vv \
         --topology-nodes="${NODES}" \
