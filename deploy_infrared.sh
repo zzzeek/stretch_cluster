@@ -7,12 +7,12 @@ ANSIBLE_HOSTS=${SCRIPT_HOME}/hosts
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
 INFRARED_CHECKOUT=${CHECKOUTS}/infrared
-INFRARED_WORKSPACE=stack
-
+INFRARED_WORKSPACE_NAME=stack
+INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
 
 ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"
 
-: ${CMDS:="cleanup_infrared setup_infrared download_images cleanup_networks build_networks cleanup_vms build_vms upload_images run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
+: ${CMDS:="cleanup_infrared setup_infrared download_images reset_workspace cleanup_networks build_networks cleanup_vms build_vms upload_images run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
 
 
 RELEASE=queens
@@ -68,13 +68,17 @@ download_images() {
     popd
 }
 
+reset_workspace() {
+    rm -fr ${INFRARED_WORKSPACE}
+}
+
 setup_env() {
     if [[ -d $INFRARED_CHECKOUT ]] ; then
         . ${INFRARED_CHECKOUT}/.venv/bin/activate
 
         # checkout -c doesn't work, still errors out if the workspace exists.
-        infrared_cmd workspace create ${INFRARED_WORKSPACE} && true
-        infrared_cmd workspace checkout ${INFRARED_WORKSPACE}
+        infrared_cmd workspace create ${INFRARED_WORKSPACE_NAME} && true
+        infrared_cmd workspace checkout ${INFRARED_WORKSPACE_NAME}
     fi
 }
 
@@ -203,32 +207,39 @@ build_vms() {
         --topology-extend=yes \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
 
+    cat ${INFRARED_WORKSPACE}/hosts  | grep -e "^\[\\|s1\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack1_hosts_install
+    cat ${INFRARED_WORKSPACE}/hosts  | grep -e "^\[\\|s2\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack2_hosts_install
+
 }
 
 upload_images() {
     pushd ${INFRARED_CHECKOUT}
     if [[ "${STACKS}" == *"stack1"* ]]; then
-        scp -F .workspaces/${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s1undercloud-0:/tmp/
+        scp -F ${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s1undercloud-0:/tmp/
     fi
     if [[ "${STACKS}" == *"stack2"* ]]; then
-        scp -F .workspaces/${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s2undercloud-0:/tmp/
+        scp -F ${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s2undercloud-0:/tmp/
     fi
     popd
 }
 
+
 run_undercloud() {
+
     if [[ $STACK == "stack1" ]]; then
         PROVISIONING_IP_PREFIX=192.168.24
-        LIMIT_UNDERCLOUD=s1undercloud-0
+        LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_install
+	WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
     fi
 
     if [[ $STACK == "stack2" ]]; then
         PROVISIONING_IP_PREFIX=192.168.25
-        LIMIT_UNDERCLOUD=s2undercloud-0
+        LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_install
+	WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
     fi
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
-        --ansible-args="limit=${LIMIT_UNDERCLOUD},localhost,hypervisor" \
+        --inventory=${LIMIT_HOSTFILE} \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.local_ip=${PROVISIONING_IP_PREFIX}.1/24 \
         --config-options DEFAULT.network_gateway=${PROVISIONING_IP_PREFIX}.1 \
@@ -241,6 +252,8 @@ run_undercloud() {
         --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
         --config-options DEFAULT.undercloud_nameservers=10.16.36.29,10.11.5.19,10.5.30.160 \
         --images-task import --images-url ${IMAGE_URL}
+
+    cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
 }
 
 
@@ -254,6 +267,10 @@ fi
 
 if [[ "${CMDS}" == *"download_images"* ]]; then
     download_images
+fi
+
+if [[ "${CMDS}" == *"reset_workspace"* ]]; then
+    reset_workspace
 fi
 
 setup_env
