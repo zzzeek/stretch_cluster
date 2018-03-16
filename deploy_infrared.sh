@@ -183,17 +183,20 @@ build_networks() {
 
 build_vms() {
 
-    NODES=""
+    NODES=","
 
     if [[ "${STACKS}" == *"stack1"* ]]; then
         #NODES="s1undercloud:1,s1controller:3,s1compute:1"
-        NODES="${NODES}s1undercloud:1,"
+        NODES="${NODES}s1undercloud:1"
     fi
 
     if [[ "${STACKS}" == *"stack2"* ]]; then
         #NODES="s2undercloud:1,s2controller:3,s2compute:1"
-        NODES="${NODES}s2undercloud:1,"
+        NODES="${NODES}s2undercloud:1"
     fi
+
+    # trim leading comma
+    NODES=${NODES:1}
 
     infrared_cmd virsh -vv \
         --topology-nodes="${NODES}" \
@@ -206,10 +209,10 @@ build_vms() {
 upload_images() {
     pushd ${INFRARED_CHECKOUT}
     if [[ "${STACKS}" == *"stack1"* ]]; then
-        scp -F .workspace/${WORKSPACE_NAME}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s1undercloud-0:/tmp/
+        scp -F .workspaces/${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s1undercloud-0:/tmp/
     fi
     if [[ "${STACKS}" == *"stack2"* ]]; then
-        scp -F .workspace/${WORKSPACE_NAME}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s2undercloud-0:/tmp/
+        scp -F .workspaces/${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s2undercloud-0:/tmp/
     fi
     popd
 }
