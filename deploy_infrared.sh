@@ -168,7 +168,6 @@ run_playbook() {
     popd
 }
 
-INFRARED_ANSIBLE_ARGS="--host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2"
 
 build_networks() {
     # use virsh with zero machines so the networks build
@@ -177,7 +176,7 @@ build_networks() {
         --topology-nodes="s1undercloud:0,s2undercloud:0" \
         --topology-network=stretch_nets \
         --ansible-args="tags=networks" \
-        ${INFRARED_ANSIBLE_ARGS}
+        --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
 }
 
 build_vms() {
@@ -196,7 +195,7 @@ build_vms() {
         --topology-nodes="${NODES}" \
         --topology-network=stretch_nets \
         --topology-extend=yes \
-        ${INFRARED_ANSIBLE_ARGS}
+        --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
 }
 
 run_undercloud() {
@@ -223,8 +222,7 @@ run_undercloud() {
         --config-options DEFAULT.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
         --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
         --config-options DEFAULT.undercloud_nameservers=10.16.36.29,10.11.5.19,10.5.30.160 \
-        --images-task import --images-url ${IMAGE_URL} \
-        ${INFRARED_ANSIBLE_ARGS}
+        --images-task import --images-url ${IMAGE_URL}
 }
 
 
