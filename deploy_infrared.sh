@@ -230,12 +230,12 @@ setup_undercloud_vlan() {
 
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${INFRARED_WORKSPACE}/stack1_hosts_install \
+        -i ${INFRARED_WORKSPACE}/stack1_hosts_undercloud \
         -e undercloud_external_network_cidr=10.0.0.1/24 \
         -e working_dir=/home/stack \
         playbooks/setup_undercloud_vlan.yml
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${INFRARED_WORKSPACE}/stack2_hosts_install \
+        -i ${INFRARED_WORKSPACE}/stack2_hosts_undercloud \
         -e undercloud_external_network_cidr=10.0.1.1/24 \
         -e working_dir=/home/stack \
         playbooks/setup_undercloud_vlan.yml
