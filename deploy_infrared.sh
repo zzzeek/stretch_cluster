@@ -88,7 +88,7 @@ setup_env() {
 cleanup_networks() {
     set +e
 
-    NETWORK_NAMES=$( sudo virsh net-list --all | cut -c 1-20 | grep -e '^ *\(s1\|s2\)' )
+    NETWORK_NAMES=$( sudo virsh net-list --all | cut -c 1-20 | grep -e '^ *\(s1\|s2\|stretch\)' )
 
     for name in ${NETWORK_NAMES} ; do
         sudo virsh net-destroy $name;

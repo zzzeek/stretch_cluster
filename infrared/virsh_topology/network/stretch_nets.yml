@@ -35,12 +35,28 @@ networks:
                 end: "192.168.23.50"
             subnet_cidr: "192.168.23.1/24"
             subnet_gateway: "192.168.23.1"
+    net5:
+        external_connectivity: yes
+        name: "stretch"
+        ip_address: "172.16.0.1"
+        netmask: "255.255.255.0"
+        forward: nat
+        dhcp:
+            range:
+                start: "172.16.0.2"
+                end: "172.16.0.100"
+            subnet_cidr: "172.16.0.0/24"
+            subnet_gateway: "172.16.0.1"
+        floating_ip:
+            start: "172.16.0.101"
+            end: "172.16.0.150"
 
 nodes:
     s1undercloud:
         interfaces:
             - network: "s1provisioning"
             - network: "s1external"
+            - network: "stretch"
         external_network:
             network: "s1external"
 
@@ -48,6 +64,7 @@ nodes:
         interfaces:
             - network: "s2provisioning"
             - network: "s2external"
+            - network: "stretch"
         external_network:
             network: "s2external"
 
@@ -55,6 +72,7 @@ nodes:
         interfaces:
             - network: "s1provisioning"
             - network: "s1external"
+            - network: "stretch"
         external_network:
             network: "s1external"
 
@@ -62,6 +80,7 @@ nodes:
         interfaces:
             - network: "s2provisioning"
             - network: "s2external"
+            - network: "stretch"
         external_network:
             network: "s2external"
 
