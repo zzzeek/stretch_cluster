@@ -1,0 +1,6 @@
+- name: prep and deploy overcloud
+  hosts: undercloud
+  gather_facts: no
+  roles:
+    - deploy-overcloud
+

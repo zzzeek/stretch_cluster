@@ -2,7 +2,7 @@
 
 DIRNAME=`dirname $0`
 SCRIPT_HOME=`realpath $DIRNAME`
-ANSIBLE_HOSTS=${SCRIPT_HOME}/hosts
+
 
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 CHECKOUTS=${SCRIPT_HOME}/checkouts
@@ -12,10 +12,16 @@ INFRARED_WORKSPACE_NAME=stack
 INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
 ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
-ALL_PLAYBOOK_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"
+COMBINED_HOSTS=${SCRIPT_HOME}/hosts
+
+SETUP_CMDS="cleanup_infrared setup_infrared download_images"
+BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud build_hosts"
+DEPLOY_STRETCH_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"
+
+DEPLOY_OVERCLOUD_TAGS="setup_vlan create_instackenv introspect_nodes create_flavors build_heat_config prepare_container_images deploy_overcloud"
 
 
-: ${CMDS:="cleanup_infrared setup_infrared download_images rebuild_vms run_undercloud run_overcloud build_hosts ${ALL_PLAYBOOK_TAGS}"}
+: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} ${DEPLOY_OVERCLOUD_TAGS} ${DEPLOY_STRETCH_TAGS}"}
 
 
 RELEASE=queens
@@ -75,7 +81,7 @@ reset_workspace() {
     rm -fr ${INFRARED_WORKSPACE}
 }
 
-setup_env() {
+setup_infrared_env() {
     if [[ -d $INFRARED_CHECKOUT ]] ; then
         . ${INFRARED_CHECKOUT}/.venv/bin/activate
 
@@ -175,11 +181,10 @@ build_hosts() {
     # build stack2-only hosts file
     cat ${INFRARED_WORKSPACE}/hosts-prov  | grep -e "^\[\\|s2\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack2_hosts_install
 
-    # build hosts file for our own playbooks
-   cat /dev/null > ${ANSIBLE_HOSTS}
-   grep ${INFRARED_WORKSPACE}/hosts -e ".*ansible" >> ${ANSIBLE_HOSTS}
+   cat /dev/null > ${COMBINED_HOSTS}
+   grep ${INFRARED_WORKSPACE}/hosts -e ".*ansible" >> ${COMBINED_HOSTS}
 
-   cat << EOF >> ${ANSIBLE_HOSTS}
+   cat << EOF >> ${COMBINED_HOSTS}
 
 [undercloud]
 s1undercloud-0
@@ -223,38 +228,18 @@ upload_images() {
     popd
 }
 
-setup_undercloud_vlan() {
-
-    # TODO: nameservers are hardcoded in the playbook a second time.
-    # get them to be defined in one place
-
-    pushd ${SCRIPT_HOME}
-    ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${INFRARED_WORKSPACE}/stack1_hosts_undercloud \
-        -e undercloud_external_network_cidr=10.0.0.1/24 \
-        -e working_dir=/home/stack \
-        playbooks/setup_undercloud_vlan.yml
-    ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${INFRARED_WORKSPACE}/stack2_hosts_undercloud \
-        -e undercloud_external_network_cidr=10.0.1.1/24 \
-        -e working_dir=/home/stack \
-        playbooks/setup_undercloud_vlan.yml
-    popd
-
-}
-
-run_undercloud() {
+deploy_undercloud() {
 
     if [[ $STACK == "stack1" ]]; then
         PROVISIONING_IP_PREFIX=192.168.24
         LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_install
-	WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
+        WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
     fi
 
     if [[ $STACK == "stack2" ]]; then
         PROVISIONING_IP_PREFIX=192.168.25
         LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_install
-	WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
+        WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
     fi
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
@@ -275,6 +260,59 @@ run_undercloud() {
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
 }
 
+deploy_overcloud() {
+    if [[ $STACK == "stack1" ]]; then
+        PROVISIONING_IP_PREFIX=192.168.24
+        UNDERCLOUD_EXTERNAL_NETWORK_CIDR=10.0.0.1/24
+        ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
+    fi
+
+    if [[ $STACK == "stack2" ]]; then
+        PROVISIONING_IP_PREFIX=192.168.25
+        UNDERCLOUD_EXTERNAL_NETWORK_CIDR=10.0.1.1/24
+        ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
+    fi
+
+    PLAYBOOK_TAGS=""
+
+    for tag in $DEPLOY_OVERCLOUD_TAGS ; do
+        if [[ "${CMDS}" == *"${tag}"* ]]; then
+            PLAYBOOK_TAGS="${PLAYBOOK_TAGS}${tag},"
+        fi
+    done
+
+    if [ $PLAYBOOK_TAGS ]; then
+
+        pushd ${SCRIPT_HOME}
+        ${ANSIBLE_PLAYBOOK} -vv \
+            -i ${ANSIBLE_HOSTS} \
+            -e undercloud_external_network_cidr=${UNDERCLOUD_EXTERNAL_NETWORK_CIDR} \
+            -e working_dir=/home/stack \
+            playbooks/deploy_overcloud.yml
+        popd
+
+fi
+}
+
+deploy_stretch_cluster() {
+    PLAYBOOK_TAGS=""
+
+    for tag in $DEPLOY_STRETCH_TAGS ; do
+        if [[ "${CMDS}" == *"${tag}"* ]]; then
+            PLAYBOOK_TAGS="${PLAYBOOK_TAGS}${tag},"
+        fi
+    done
+
+    if [ $PLAYBOOK_TAGS ]; then
+        pushd ${SCRIPT_HOME}
+        ${ANSIBLE_PLAYBOOK} -vv \
+            -i ${COMBINED_HOSTS} \
+            --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml
+        popd
+    fi
+
+
+}
 
 if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
     cleanup_infrared
@@ -292,7 +330,7 @@ if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
     reset_workspace
 fi
 
-setup_env
+setup_infrared_env
 
 if [[ "${CMDS}" == *"rebuild_vms"* || "${CMDS}" == *"cleanup_virt"* ]]; then
     cleanup_networks
@@ -310,13 +348,13 @@ fi
 for stack_arg in $STACKS ; do
     STACK="${stack_arg}"
 
-    if [[ "${CMDS}" == *"run_undercloud"* ]]; then
-     run_undercloud
+    if [[ "${CMDS}" == *"deploy_undercloud"* ]]; then
+     deploy_undercloud
      build_hosts
     fi
 
-    if [[ "${CMDS}" == *"run_undercloud"* || "${CMDS}" == *"setup_undercloud_vlan"* ]]; then
-     setup_undercloud_vlan
+    if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
+     deploy_overcloud
     fi
 
 done
