@@ -14,8 +14,15 @@
   vars:
     vbmc_nodes: "{{ groups.get('overcloud_nodes', []) }}"
     vbmc_host: undercloud
-  tags: install_vbmc
+  tags: 
+    - install_vbmc
+    - create_instackenv
 
+# creating the instackenv requires some of the vbmc info.
+# the infrared vbmc role currently is hardcoded to remove
+# and re-add the vbmc nodes for each machine every time,
+# but we only need to create instackenv once so it's not worth
+# trying to make this more efficient
 - name: create instackenv
   import_tasks: create_instackenv.yml
   tags: create_instackenv
