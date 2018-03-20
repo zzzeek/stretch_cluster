@@ -150,13 +150,13 @@ build_vms() {
     NODES=""
 
     if [[ "${STACKS}" == *"stack1"* ]]; then
-        #NODES="s1undercloud:1,s1controller:3,s1compute:1,"
-        NODES="${NODES}s1undercloud:1,"
+        NODES="s1undercloud:1,s1controller:3,s1compute:1,"
+        #NODES="${NODES}s1undercloud:1,"
     fi
 
     if [[ "${STACKS}" == *"stack2"* ]]; then
-        #NODES="s2undercloud:1,s2controller:3,s2compute:1,"
-        NODES="${NODES}s2undercloud:1,"
+        NODES="s2undercloud:1,s2controller:3,s2compute:1,"
+        #NODES="${NODES}s2undercloud:1,"
     fi
 
     # trim trailing comma
@@ -279,6 +279,7 @@ deploy_overcloud() {
             --tags "${DEPLOY_OVERCLOUD_TAGS}" \
             -e release_name=${RELEASE} \
             -e undercloud_external_network_cidr=${UNDERCLOUD_EXTERNAL_NETWORK_CIDR} \
+            -e rh_stack_name="${STACK}" \
             -e working_dir=/home/stack \
             playbooks/deploy_overcloud.yml
         popd
