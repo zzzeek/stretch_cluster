@@ -1,6 +1,3 @@
-- name: set fact
-  set_fact:
-    management_ipv4_address: "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}"
 
 - block:
     - name: Add VirtualBMC as systemd service

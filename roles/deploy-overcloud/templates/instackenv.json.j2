@@ -3,7 +3,7 @@
   "ssh-user": "{{ ansible_user|default(ansible_ssh_user) }}",
   "ssh-key": "{{ undercloud_private_key }}",
   "power_manager": "nova.virt.baremetal.virtual_power_driver.VirtualPowerManager",
-  "host-ip": "{{ hostvars['hypervisor'].ansible_management.ipv4.address }}",
+  "host-ip": "{{ management_ipv4_address }}",
   "arch": "x86_64",
   {% endif %}
   "nodes": [
@@ -19,10 +19,19 @@
         "disks": {{ host_data.disks }},
       {% endif %}
       "arch": "{{ host_data.arch }}",
-        "pm_addr": "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}",
+      {% if release_numeric_version >= 11 %}
+        "pm_addr": "{{ vbmc_management_address }}",
+        "pm_type": "pxe_ipmitool",
+        "pm_user": "{{ vbmc_username }}",
+        "pm_password": "{{ vbmc_password }}",
+        "pm_port": "{{ vbmc_ports[host_data.name] }}"
+      {% else %}
+        "pm_addr": "{{ management_ipv4_address }}",
         "pm_type": "pxe_ssh",
         "pm_user": "{{ ansible_user|default(ansible_ssh_user) }}",
         "pm_password": "{{ undercloud_private_key }}"
+      {% endif %}
+
     }{% if not loop.last %},{% endif %}
 {% endfor %}
     ]

@@ -1,19 +1,12 @@
-- name: set release number
+- name: set release number, hypervisor management address
   set_fact:
     release_numeric_version: "{{ release_numeric_versions[release_name] }}"
+    management_ipv4_address: "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}"
   tags: always
 
 - name: set up vlan
   import_tasks: setup_vlan.yml
   tags: setup_vlan
-
-- name: create instackenv
-  import_tasks: create_instackenv.yml
-  tags: create_instackenv
-
-- name: build heat config
-  import_tasks: build_heat_config.yml
-  tags: build_heat_config
 
 - name: Configure vbmc
   include_role:
@@ -22,6 +15,14 @@
     vbmc_nodes: "{{ groups.get('overcloud_nodes', []) }}"
     vbmc_host: undercloud
   tags: install_vbmc
+
+- name: create instackenv
+  import_tasks: create_instackenv.yml
+  tags: create_instackenv
+
+- name: build heat config
+  import_tasks: build_heat_config.yml
+  tags: build_heat_config
 
 - name: introspect nodes
   import_tasks: introspect_nodes.yml
