@@ -1,31 +1,40 @@
 - name: set release number
   set_fact:
     release_numeric_version: "{{ release_numeric_versions[release_name] }}"
+  tags: always
 
 - name: set up vlan
   import_tasks: setup_vlan.yml
-  tags: vlan
+  tags: setup_vlan
 
 - name: create instackenv
   import_tasks: create_instackenv.yml
-  tags: instackenv
+  tags: create_instackenv
 
 - name: build heat config
   import_tasks: build_heat_config.yml
-  tags: heat-config
+  tags: build_heat_config
+
+- name: Configure vbmc
+  include_role:
+    name: vbmc
+  vars:
+    vbmc_nodes: "{{ groups.get('overcloud_nodes', []) }}"
+    vbmc_host: undercloud
+  tags: install_vbmc
 
 - name: introspect nodes
   import_tasks: introspect_nodes.yml
-  tags: introspect
+  tags: introspect_nodes
 
 - name: create flavors
   import_tasks: create_flavors.yml
-  tags: flavors
+  tags: create_flavors
 
 - name: setup container stuff
   import_tasks: setup_containers.yml
-  tags: containers
+  tags: prepare_containers
 
 - name: deploy overcloud
   import_tasks: deploy_overcloud.yml
-  tags: deploy
+  tags: deploy_overcloud

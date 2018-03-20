@@ -3,6 +3,9 @@ overcloud_dns_servers:
   - "10.11.5.19"
   - "10.5.30.160"
 
+vbmc_username: vbmc
+vbmc_password: vbmc
+
 # should be called "working_undercloud_dir"
 working_dir: "/home/stack/"
 

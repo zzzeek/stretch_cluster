@@ -19,18 +19,10 @@
         "disks": {{ host_data.disks }},
       {% endif %}
       "arch": "{{ host_data.arch }}",
-      {% if release_numeric_version >= 11 %}
-        "pm_addr": "{{ vbmc_management_address }}",
-        "pm_type": "pxe_ipmitool",
-        "pm_user": "{{ install.vbmc.username }}",
-        "pm_password": "{{ install.vbmc.password }}",
-        "pm_port": "{{ vbmc_ports[host_data.name] }}"
-      {% else %}
-        "pm_addr": "{{ hostvars['hypervisor'].ansible_management.ipv4.address }}",
+        "pm_addr": "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}",
         "pm_type": "pxe_ssh",
         "pm_user": "{{ ansible_user|default(ansible_ssh_user) }}",
         "pm_password": "{{ undercloud_private_key }}"
-      {% endif %}
     }{% if not loop.last %},{% endif %}
 {% endfor %}
     ]

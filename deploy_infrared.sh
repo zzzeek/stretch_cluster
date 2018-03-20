@@ -20,7 +20,7 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud build_hosts"
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud deploy_stretch"}
 
 : ${DEPLOY_STRETCH_TAGS:="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"}
-: ${DEPLOY_OVERCLOUD_TAGS:="setup_vlan create_instackenv introspect_nodes create_flavors build_heat_config prepare_container_images deploy_overcloud"}
+: ${DEPLOY_OVERCLOUD_TAGS:="setup_vlan create_instackenv install_vbmc introspect_nodes create_flavors build_heat_config prepare_container_images deploy_overcloud"}
 
 
 

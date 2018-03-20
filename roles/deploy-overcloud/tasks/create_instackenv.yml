@@ -62,11 +62,11 @@
 
 - name: prepare instackenv.json file
   vars:
-      instack_output: "~/instackenv.json"
+      instack_output: "{{ working_dir }}/instackenv.json"
       # json file shouldn't hold newlines
       undercloud_private_key: "{{ uc_pkey_result.stdout_lines | join('\\n')}}"
   template:
-      src: templates/instackenv.json.j2
+      src: instackenv.json.j2
       dest: "{{ instack_output }}"
 
 # Using delegete here because of

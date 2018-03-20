@@ -1,7 +1,7 @@
 - name: register hosts to instack and configure boot
   shell: |
       set -eo pipefail
-      source ~/stackrc
+      source {{ working_dir }}/stackrc
 
       {% if release_numeric_version < 13 %}
       openstack baremetal import --json {{ working_dir }}/instackenv.json
@@ -9,35 +9,19 @@
       {% else %}
       openstack overcloud node import --instance-boot-option=local {{ working_dir }}/instackenv.json
       {% endif %}
-  tags:
-      - ironic
-      # FIXME(yfried) use "--os-cloud" instead of "source rc" and replace with command
-      - skip_ansible_lint
-
-- name: set the root device for baremetal nodes (with size hint)
-  shell: |
-      source ~/stackrc
-      NODE_UUID=$(ironic node-list | grep -w {{ item }} | awk '{print $2}' )
-      ironic node-update ${NODE_UUID} add properties/root_device='{"size": {{ hostvars[item].disk  }} }'
-  with_items: "{{ groups['overcloud_nodes'] | default([])}}"
-  when: "'bmc' in groups"
-
 
 - name: start node introspection
   shell: |
-      source ~/stackrc
+      source {{ working_dir }}/stackrc
       {% if release_numeric_version < 13 %}
       openstack baremetal introspection bulk start
       {% else %}
       openstack overcloud node introspect --provide --all-manageable
       {% endif %}
-  tags:
-      # FIXME(yfried) use "--os-cloud" instead of "source rc" and replace with command
-      - skip_ansible_lint
   register: bulk_intro_result
   poll: 50
   async: 1000
   retries: 20
   delay: 90
-  ignore_errors: yes
+  ignore_errors: no
 
