@@ -1,6 +1,5 @@
 - name: Create network environment file for network isolation
   template:
-    src: "{{ network_environment_file }}"
+    src: "network-environment.yaml.j2"
     dest: "{{ working_dir }}/network-environment.yaml"
     mode: 0644
-  when: network_isolation|bool and undercloud_type != "baremetal" or deployed_server|bool

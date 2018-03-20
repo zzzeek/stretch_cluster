@@ -286,6 +286,7 @@ deploy_overcloud() {
         pushd ${SCRIPT_HOME}
         ${ANSIBLE_PLAYBOOK} -vv \
             -i ${ANSIBLE_HOSTS} \
+            -e release_name=${RELEASE} \
             -e undercloud_external_network_cidr=${UNDERCLOUD_EXTERNAL_NETWORK_CIDR} \
             -e working_dir=/home/stack \
             playbooks/deploy_overcloud.yml

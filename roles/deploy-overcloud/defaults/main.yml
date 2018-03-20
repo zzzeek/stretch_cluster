@@ -6,12 +6,13 @@ overcloud_dns_servers:
 # should be called "working_undercloud_dir"
 working_dir: "/home/stack/"
 
-# release_numeric_versions:
-release_numeric_version: 13
+release_numeric_versions: {"queens": 13, "pike": 12}
 
-# taken from
-# # tripleo-quickstart-extras/roles/overcloud-prep-config/defaults.main.yml
 network_environment_args:
+  # first we're repeating what oooq already has in
+  # oooq-extras/roles/overcloud-prep-config/defaults/main.yml
+  # note that undercloud cidrs are set up in deploy_overclouds.sh
+  # to be *separate* for stack1 and stack2.
   ExternalNetCidr: "{{ undercloud_external_network_cidr }}"
   ExternalAllocationPools: >
     [{'start': '{{ undercloud_external_network_cidr|nthhost(4) }}',
@@ -21,3 +22,64 @@ network_environment_args:
   ControlPlaneDefaultRoute: "{{ undercloud_network_cidr|nthhost(1) }}"
   EC2MetadataIp: "{{ undercloud_network_cidr|nthhost(1) }}"
   DnsServers: "{{ overcloud_dns_servers }}"
+
+  # TODO: this was hardcoded to 10.0.0.1 which I think meant that stack2
+  # overcloud would route through stack1 undercloud network, changing
+  # this but needs to be tested
+  ExternalInterfaceDefaultRoute: "{{ undercloud_external_network_cidr|nthhost(1) }}"
+
+  # Set up overcloud CIDRs to be shared between both stack1 and stack2
+  # overclouds.    With the oooq setup, these networks are handled by the
+  # single "external" libvirt network set up on th hypervisor host by oooq. For
+  # simplicity, use the same CIDRs and just isolate the two overclouds by
+  # allocated IP number, where the rh_net_range_start / rh_net_range_end values
+  # are local to stack1/stack2 and fed in by deploy_overclouds.sh.
+  #
+  # We only need one of these (or some new network) to
+  # stretch between overclouds, which is where the new Galera sits.  We're
+  # using the tenant net in this demo, but in a real two-datacenter
+  # environment there'd be some other totally new network that is stretched;
+  # I didn't figure out how to add a whole new network to oooq / heat templates
+  # was easier just to use one that was there.
+
+  # When we have two overclouds, we need to SSH around and we will see these
+  # names in our command prompts and you are really going to want to see which
+  # stack this is, e.g. "stack1-overcloud-controller-0" and not "overcloud-
+  # controller-0", in those names.
+  HostnameMap:
+    overcloud-controller-0: "{{ rh_stack_name }}-overcloud-controller-0"
+    overcloud-controller-1: "{{ rh_stack_name }}-overcloud-controller-1"
+    overcloud-controller-2: "{{ rh_stack_name }}-overcloud-controller-2"
+    overcloud-compute-0: "{{ rh_stack_name }}-overcloud-compute-0"
+
+  # The overclouds are going to share the same Keystone database.  So lets
+  # set up for two different regions, e.g. region_stack1 and region_stack2.
+  # at the moment it seems like the OSP12 overclouds default to not using
+  # keystone endpoints and instead have service IPs hardcoded, but using
+  # endpoint discovery w/ regions is cooler.
+  # Unfortunately, this option appears to work only sporadically as
+  # far as being correctly populated into .conf files, some
+  # OSP versions seem to honor it and others ignore it, so we have to
+  # populate .conf files with it after the fact regardless
+  KeystoneRegion: "region_{{ rh_stack_name }}"
+
+  # since we are sharing the same keystone, the services on both
+  # overclouds need to use the same passwords.  clearly this would have
+  # to be integrated into the "make a bunch of passwords" thing :)
+  ManilaPassword: "Manila_password"
+  NeutronPassword: "Neutron_password"
+  GlancePassword: "Glance_password"
+  HeatPassword: "Heat_password"
+  AdminPassword: "Admin_password"
+  IronicPassword: "Ironic_password"
+  HeatStackDomainAdminPassword: "HeatStackDomainAdmin_password"
+  ZaqarPassword: "Zaqar_password"
+  GnocchiPassword: "Gnocchi_password"
+  CeilometerPassword: "Ceilometer_password"
+  CinderPassword: "Cinder_password"
+  NovaPassword: "Nova_password"
+  MistralPassword: "Mistral_password"
+  AodhPassword: "Aodh_password"
+  SwiftPassword: "Swift_password"
+  BarbicanPassword: "Barbican_password"
+  SaharaPassword: "Sahara_password"

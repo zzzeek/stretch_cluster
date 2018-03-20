@@ -1,0 +1,31 @@
+- name: set release number
+  set_fact:
+    release_numeric_version: "{{ release_numeric_versions[release_name] }}"
+
+- name: set up vlan
+  import_tasks: setup_vlan.yml
+  tags: vlan
+
+- name: create instackenv
+  import_tasks: create_instackenv.yml
+  tags: instackenv
+
+- name: build heat config
+  import_tasks: build_heat_config.yml
+  tags: heat-config
+
+- name: introspect nodes
+  import_tasks: introspect_nodes.yml
+  tags: introspect
+
+- name: create flavors
+  import_tasks: create_flavors.yml
+  tags: flavors
+
+- name: setup container stuff
+  import_tasks: setup_containers.yml
+  tags: containers
+
+- name: deploy overcloud
+  import_tasks: deploy_overcloud.yml
+  tags: deploy
