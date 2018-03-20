@@ -273,16 +273,6 @@ deploy_overcloud() {
         ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
     fi
 
-    PLAYBOOK_TAGS=""
-
-    for tag in $DEPLOY_OVERCLOUD_TAGS ; do
-        if [[ "${CMDS}" == *"${tag}"* ]]; then
-            PLAYBOOK_TAGS="${PLAYBOOK_TAGS}${tag},"
-        fi
-    done
-
-    if [ $PLAYBOOK_TAGS ]; then
-
         pushd ${SCRIPT_HOME}
         ${ANSIBLE_PLAYBOOK} -vv \
             -i ${ANSIBLE_HOSTS} \
@@ -292,7 +282,6 @@ deploy_overcloud() {
             playbooks/deploy_overcloud.yml
         popd
 
-fi
 }
 
 deploy_stretch_cluster() {
