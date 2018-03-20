@@ -1,3 +1,4 @@
+
 - name: Use instackenv provided
   set_fact:
     instack_file: "{{ working_dir }}/instackenv.json"
@@ -50,7 +51,9 @@
       - name: check for original flavors
         shell: >
             source {{ working_dir }}/stackrc;
-            openstack flavor list | awk '/{{ item.name.rstrip('1234567890-').split('-')[-1] }}/ {print $4}'
+            openstack flavor list | awk '/{{ item_name }}/ {print $4}'
+        vars:
+          item_name: "{{ item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
         with_items: "{{ overcloud_facts.nodes | default([]) }}"
         register: original_flavors
 
@@ -60,6 +63,7 @@
             flv_min_disk_size: 6
             flv_min_cpu: 1
             searched_string: "Flavor with name {{ item.name }} already exists"
+            item_name: "{{ item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
         shell: >
             source {{ working_dir }}/stackrc;
             openstack flavor create
@@ -67,7 +71,7 @@
             --ram {{ (hostvars[item.name] | default({})).ram | default(item.memory) }}
             --disk {{ [((hostvars[item.name] | default({})).disk | default(item.disk) | int) - 3, flv_min_disk_size] | max }}
             --vcpus {{ [((hostvars[item.name] | default({})).vcpus | default(item.cpu) | int) - 1, flv_min_cpu] | max }}
-            {{ item.name | regex_replace('(?:s1|s2)(.+?)-\d', '\\1') }}
+            {{ item_name }}
         register: flavor_result
         failed_when: flavor_result.rc != 0 and flavor_result.stderr.find(searched_string) != -1
         with_items: "{{ overcloud_facts.nodes | default([]) }}"
@@ -95,11 +99,10 @@
   shell: |
       source {{ working_dir }}/stackrc;
       ironic node-update {{ item[0].stdout }} add properties/capabilities='profile:{{ item[1].cmd.split() | last }},boot_option:local'
+  vars:
+    item_name: "{{ item[0].item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
   tags: skip_ansible_lint
-  when:
-    - "item[0].item.name is defined"
-    - "item[1].cmd is defined"
-    - "{{ item.name | regex_replace('(?:s1|s2)(.+?)-\d', '\\1') }} in item[1].cmd"
+  when: "item[0].item.name is defined and item[1].cmd is defined and item_name in item[1].cmd"
   with_together:
       - "{{ node_list.results }}"
       - "{{ tagged_flavors | default([]) }}"

@@ -279,6 +279,7 @@ deploy_overcloud() {
             --tags "${DEPLOY_OVERCLOUD_TAGS}" \
             -e release_name=${RELEASE} \
             -e undercloud_external_network_cidr=${UNDERCLOUD_EXTERNAL_NETWORK_CIDR} \
+	    -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
             -e rh_stack_name="${STACK}" \
             -e working_dir=/home/stack \
             playbooks/deploy_overcloud.yml
