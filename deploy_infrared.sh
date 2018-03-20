@@ -16,12 +16,12 @@ COMBINED_HOSTS=${SCRIPT_HOME}/hosts
 
 SETUP_CMDS="cleanup_infrared setup_infrared download_images"
 BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud build_hosts"
-DEPLOY_STRETCH_TAGS="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"
 
-DEPLOY_OVERCLOUD_TAGS="setup_vlan create_instackenv introspect_nodes create_flavors build_heat_config prepare_container_images deploy_overcloud"
+: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud deploy_stretch"}
 
+: ${DEPLOY_STRETCH_TAGS:="run_galera run_clustercheck setup_pacemaker setup_haproxy setup_keystone_db setup_openstack_services"}
+: ${DEPLOY_OVERCLOUD_TAGS:="setup_vlan create_instackenv introspect_nodes create_flavors build_heat_config prepare_container_images deploy_overcloud"}
 
-: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} ${DEPLOY_OVERCLOUD_TAGS} ${DEPLOY_STRETCH_TAGS}"}
 
 
 RELEASE=queens
@@ -276,6 +276,7 @@ deploy_overcloud() {
         pushd ${SCRIPT_HOME}
         ${ANSIBLE_PLAYBOOK} -vv \
             -i ${ANSIBLE_HOSTS} \
+            --tags "${DEPLOY_OVERCLOUD_TAGS}" \
             -e release_name=${RELEASE} \
             -e undercloud_external_network_cidr=${UNDERCLOUD_EXTERNAL_NETWORK_CIDR} \
             -e working_dir=/home/stack \
@@ -285,21 +286,12 @@ deploy_overcloud() {
 }
 
 deploy_stretch_cluster() {
-    PLAYBOOK_TAGS=""
-
-    for tag in $DEPLOY_STRETCH_TAGS ; do
-        if [[ "${CMDS}" == *"${tag}"* ]]; then
-            PLAYBOOK_TAGS="${PLAYBOOK_TAGS}${tag},"
-        fi
-    done
-
-    if [ $PLAYBOOK_TAGS ]; then
-        pushd ${SCRIPT_HOME}
-        ${ANSIBLE_PLAYBOOK} -vv \
-            -i ${COMBINED_HOSTS} \
-            --tags ${PLAYBOOK_TAGS} playbooks/deploy_stretch_galera.yml
-        popd
-    fi
+    pushd ${SCRIPT_HOME}
+    ${ANSIBLE_PLAYBOOK} -vv \
+        -i ${COMBINED_HOSTS} \
+        --tags "${DEPLOY_STRETCH_TAGS}" \
+        playbooks/deploy_stretch_galera.yml
+    popd
 
 
 }
