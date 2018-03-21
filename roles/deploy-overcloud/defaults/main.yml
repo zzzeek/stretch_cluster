@@ -46,8 +46,8 @@ network_environment_args:
 
   InternalApiAllocationPools: >
     [{
-      'start': '{{ external_network_cidr|nthhost(10) }}',
-      'end': '{{ external_network_cidr|nthhost(200) }}',
+      'start': '{{ internalapi_network_cidr|nthhost(10) }}',
+      'end': '{{ internalapi_network_cidr|nthhost(200) }}',
     }]
   StorageAllocationPools: >
     [{
