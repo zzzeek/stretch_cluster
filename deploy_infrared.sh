@@ -150,12 +150,12 @@ build_vms() {
     NODES=""
 
     if [[ "${STACKS}" == *"stack1"* ]]; then
-        NODES="s1undercloud:1,s1controller:3,s1compute:1,"
+        NODES="${NODES}s1undercloud:1,s1controller:3,s1compute:1,"
         #NODES="${NODES}s1undercloud:1,"
     fi
 
     if [[ "${STACKS}" == *"stack2"* ]]; then
-        NODES="s2undercloud:1,s2controller:3,s2compute:1,"
+        NODES="${NODES}s2undercloud:1,s2controller:3,s2compute:1,"
         #NODES="${NODES}s2undercloud:1,"
     fi
 
@@ -336,6 +336,10 @@ for stack_arg in $STACKS ; do
      deploy_undercloud
      build_hosts
     fi
+done
+
+for stack_arg in $STACKS ; do
+    STACK="${stack_arg}"
 
     if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
      deploy_overcloud
