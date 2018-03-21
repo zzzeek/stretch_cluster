@@ -1,5 +1,5 @@
 - name: create container configs
-  shell: |
+  shell: >
       source {{ working_dir }}/stackrc;
       openstack overcloud container image prepare
         --namespace docker.io/tripleo{{ release_name }}
@@ -10,7 +10,7 @@
         --output-images-file overcloud_containers.yaml
 
 - name: transfer docker images
-  shell: |
+  shell: >
       source {{ working_dir }}/stackrc;
       openstack overcloud container image upload --verbose
         --config-file overcloud_containers.yaml

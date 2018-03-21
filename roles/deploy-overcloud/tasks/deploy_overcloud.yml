@@ -1,7 +1,7 @@
 - name: transfer overcloud script
   template:
     src: deploy_overcloud.sh.j2
-    dest: {{ working_dir }}/deploy_overcloud.sh
+    dest: "{{ working_dir }}/deploy_overcloud.sh"
     mode: 0755
 
 - name: deploy!

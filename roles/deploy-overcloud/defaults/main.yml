@@ -60,6 +60,7 @@ network_environment_args:
     overcloud-controller-1: "{{ rh_stack_name }}-overcloud-controller-1"
     overcloud-controller-2: "{{ rh_stack_name }}-overcloud-controller-2"
     overcloud-compute-0: "{{ rh_stack_name }}-overcloud-compute-0"
+    overcloud-novacompute-0: "{{ rh_stack_name }}-overcloud-compute-0"
 
   # The overclouds are going to share the same Keystone database.  So lets
   # set up for two different regions, e.g. region_stack1 and region_stack2.
