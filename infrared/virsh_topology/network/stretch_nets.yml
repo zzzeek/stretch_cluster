@@ -72,7 +72,6 @@ nodes:
         interfaces:
             - network: "s1provisioning"
             - network: "s1external"
-            - network: "stretch"
         external_network:
             network: "s1external"
 
@@ -80,7 +79,6 @@ nodes:
         interfaces:
             - network: "s2provisioning"
             - network: "s2external"
-            - network: "stretch"
         external_network:
             network: "s2external"
 

@@ -264,13 +264,11 @@ deploy_undercloud() {
 deploy_overcloud() {
     if [[ $STACK == "stack1" ]]; then
         PROVISIONING_IP_PREFIX=192.168.24
-        UNDERCLOUD_EXTERNAL_NETWORK_CIDR=10.0.0.1/24
         ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
     fi
 
     if [[ $STACK == "stack2" ]]; then
         PROVISIONING_IP_PREFIX=192.168.25
-        UNDERCLOUD_EXTERNAL_NETWORK_CIDR=10.0.1.1/24
         ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
     fi
 
@@ -279,8 +277,7 @@ deploy_overcloud() {
             -i ${ANSIBLE_HOSTS} \
             --tags "${DEPLOY_OVERCLOUD_TAGS}" \
             -e release_name=${RELEASE} \
-            -e undercloud_external_network_cidr=${UNDERCLOUD_EXTERNAL_NETWORK_CIDR} \
-	    -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
+	        -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
             -e rh_stack_name="${STACK}" \
             -e working_dir=/home/stack \
             playbooks/deploy_overcloud.yml

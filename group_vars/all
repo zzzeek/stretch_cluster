@@ -1,17 +1,29 @@
 # name of the vlan (or network device) on the target
 # controller nodes that will be used for galera inter-cluster
-# commnication.   Typically the tenantnetvlan but can be whatever.
-# script will get the IP numbers on the controllers for this device
-# and use it to set up the galera gcomm:// handle.
-stretch_network_vlan_name: vlan50
+# communication.
+# TODO: I think we want to use the "default" IP addr of the controller,
+# need to deploy a galera and see what it comes up with
+stretch_network_vlan_name: vlan10
 
 # ip address to set up as the vip where services
 # will access the new galera over haproxy.
 # this is on the tenant network above the two ranges
 # we create for overcloud1 and overcloud2
 
-stack1_stretch_galera_vip: 172.16.0.180
-stack2_stretch_galera_vip: 172.16.0.181
+stack1_stretch_galera_vip: 10.0.10.4
+stack2_stretch_galera_vip: 10.1.10.4
+
+stack1_external_network_cidr=10.0.10.0/24
+stack1_internalapi_network_cidr=10.0.20.0/24
+stack1_storage_network_cidr=10.0.30.0/24
+stack1_storagemgmt_network_cidr=10.0.40.0/24
+stack1_tenant_network_cidr=10.0.50.0/24
+
+stack2_external_network_cidr=10.1.10.0/24
+stack2_internalapi_network_cidr=10.1.20.0/24
+stack2_storage_network_cidr=10.1.30.0/24
+stack2_storagemgmt_network_cidr=10.1.40.0/24
+stack2_tenant_network_cidr=10.1.50.0/24
 
 
 galera_master_inventoryname: stack1-overcloud-controller-0
