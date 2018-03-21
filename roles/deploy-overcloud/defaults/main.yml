@@ -17,6 +17,19 @@ compute_scale: 1
 
 control_scale: 3
 
+stack1_external_network_cidr: 10.0.10.0/24
+stack1_internalapi_network_cidr: 10.0.20.0/24
+stack1_storage_network_cidr: 10.0.30.0/24
+stack1_storagemgmt_network_cidr: 10.0.40.0/24
+stack1_tenant_network_cidr: 10.0.50.0/24
+
+stack2_external_network_cidr: 10.1.10.0/24
+stack2_internalapi_network_cidr: 10.1.20.0/24
+stack2_storage_network_cidr: 10.1.30.0/24
+stack2_storagemgmt_network_cidr: 10.1.40.0/24
+stack2_tenant_network_cidr: 10.1.50.0/24
+
+
 network_environment_args:
   # mostly from https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/network_isolation.html
   # as well as https://github.com/openstack/tripleo-quickstart-extras/blob/master/roles/overcloud-prep-config/defaults/main.yml#L15
