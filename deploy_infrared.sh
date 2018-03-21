@@ -2,7 +2,7 @@
 
 DIRNAME=`dirname $0`
 SCRIPT_HOME=`realpath $DIRNAME`
-
+DISK_POOL=/home/infrared_images
 
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 CHECKOUTS=${SCRIPT_HOME}/checkouts
@@ -163,6 +163,7 @@ build_vms() {
     NODES=${NODES:0:-1}
 
     infrared_cmd virsh -vv \
+        --disk-pool="${DISK_POOL}" \
         --topology-nodes="${NODES}" \
         --topology-network=stretch_nets \
         --topology-extend=yes \
