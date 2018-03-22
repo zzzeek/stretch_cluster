@@ -3,3 +3,29 @@
     src: "network-environment.yaml.j2"
     dest: "{{ working_dir }}/network-environment.yaml"
     mode: 0644
+
+- name: generate custom roles
+  shell: |
+      source {{ working_dir }}/stackrc
+      openstack overcloud roles generate -o {{ working_dir }}/roles_data.yaml Controller Compute
+
+- name: set controller default route interface, step 1
+  replace:
+    path: "{{ working_dir }}/roles_data.yaml"
+    regexp: '^(  default_route_networks:.*)'
+    replace: '#\1'
+  when: default_route_networks_controller is defined
+
+- name: set controller default route interface, step 2
+  lineinfile:
+    path: "{{ working_dir }}/roles_data.yaml"
+    line: "  default_route_networks: ['{{ default_route_networks_controller }}']"
+    insertafter: '^- name: Controller'
+  when: default_route_networks_controller is defined
+
+- name: set compute default route interface
+  lineinfile:
+    path: "{{ working_dir }}/roles_data.yaml"
+    line: "  default_route_networks: ['{{ default_route_networks_compute }}']"
+    insertafter: '^- name: Compute'
+  when: default_route_networks_compute is defined
