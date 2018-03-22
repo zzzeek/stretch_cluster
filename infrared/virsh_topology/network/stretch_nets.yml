@@ -71,28 +71,24 @@ nodes:
     s1controller:
         interfaces:
             - network: "s1provisioning"
-            - network: "s1external"
         external_network:
             network: "s1provisioning"
 
     s2controller:
         interfaces:
             - network: "s2provisioning"
-            - network: "s2external"
         external_network:
             network: "s2provisioning"
 
     s1compute:
         interfaces:
             - network: "s1provisioning"
-            - network: "s1external"
         external_network:
             network: "s1provisioning"
 
     s2compute:
         interfaces:
             - network: "s2provisioning"
-            - network: "s2external"
         external_network:
             network: "s2provisioning"
 

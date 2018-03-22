@@ -9,10 +9,10 @@ overcloud_dns_servers:
 # background:
 # https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/custom_roles.html
 
-default_route_networks_controller: ControlPlane
+# default_route_networks_controller: ControlPlane
 
 # compute is not normally defined but we are setting it here.
-default_route_networks_compute: ControlPlane
+# default_route_networks_compute: ControlPlane
 
 vbmc_username: vbmc
 vbmc_password: vbmc
