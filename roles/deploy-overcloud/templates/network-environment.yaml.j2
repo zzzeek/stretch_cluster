@@ -1,48 +1,46 @@
 resource_registry:
-  OS::TripleO::Compute::Net::SoftwareConfig: {{ working_dir }}/two-nics-vlans/compute.yaml
-  OS::TripleO::Controller::Net::SoftwareConfig: {{ working_dir }}/two-nics-vlans/controller.yaml
+  OS::TripleO::Compute::Net::SoftwareConfig: two-nics-vlans/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig: two-nics-vlans/controller.yaml
 
-network_environment_args:
+parameter_defaults:
   # mostly from https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/network_isolation.html
   # as well as https://github.com/openstack/tripleo-quickstart-extras/blob/master/roles/overcloud-prep-config/defaults/main.yml#L15
 
-  ExternalNetCidr: "{{ external_network_cidr }}"
-  ExternalAllocationPools: >
-    [{'start': '{{ external_network_cidr|nthhost(10) }}',
-    'end': '{{ external_network_cidr|nthhost(250) }}'}]
+  ExternalNetCidr: '{{ external_network_cidr }}'
+  ExternalAllocationPools:
+    -   start: {{ external_network_cidr|nthhost(10) }}
+        end: {{ external_network_cidr|nthhost(250) }}
 
-  InternalApiNetCidr: "{{ internalapi_network_cidr }}"
-  StorageNetCidr: "{{ storage_network_cidr }}"
-  StorageMgmtNetCidr: "{{ storagemgmt_network_cidr }}"
-  TenantNetCidr: "{{ tenant_network_cidr }}"
+  InternalApiNetCidr: '{{ internalapi_network_cidr }}'
+  StorageNetCidr: '{{ storage_network_cidr }}'
+  StorageMgmtNetCidr: '{{ storagemgmt_network_cidr }}'
+  TenantNetCidr: '{{ tenant_network_cidr }}'
 
-  InternalApiAllocationPools: >
-    [{
-      'start': '{{ internalapi_network_cidr|nthhost(10) }}',
-      'end': '{{ internalapi_network_cidr|nthhost(200) }}',
-    }]
-  StorageAllocationPools: >
-    [{
-      'start': '{{ storage_network_cidr|nthhost(10) }}',
-      'end': '{{ storage_network_cidr|nthhost(200) }}',
-    }]
-  StorageMgmtAllocationPools: >
-    [{
-      'start': '{{ storagemgmt_network_cidr|nthhost(10) }}',
-      'end': '{{ storagemgmt_network_cidr|nthhost(200) }}',
-    }]
-  TenantAllocationPools: >
-    [{
-      'start': '{{ tenant_network_cidr|nthhost(10) }}',
-      'end': '{{ tenant_network_cidr|nthhost(200) }}',
-    }]
+  InternalApiAllocationPools:
+    -   start: {{ internalapi_network_cidr|nthhost(10) }}
+        end: {{ internalapi_network_cidr|nthhost(200) }}
+
+  StorageAllocationPools:
+    -   start: {{ storage_network_cidr|nthhost(10) }}
+        end: {{ storage_network_cidr|nthhost(200) }}
+
+  StorageMgmtAllocationPools:
+    -   start: {{ storagemgmt_network_cidr|nthhost(10) }}
+        end: {{ storagemgmt_network_cidr|nthhost(200) }}
+
+  TenantAllocationPools:
+    -   start: {{ tenant_network_cidr|nthhost(10) }}
+        end: {{ tenant_network_cidr|nthhost(200) }}
 
   NeutronExternalNetworkBridge: ""
-  ExternalInterfaceDefaultRoute: "{{ external_network_cidr|nthhost(1) }}"
-  ControlPlaneSubnetCidr: "{{ undercloud_network_cidr|ipaddr('prefix') }}"
-  ControlPlaneDefaultRoute: "{{ undercloud_management_ip }}"
-  EC2MetadataIp: "{{ undercloud_management_ip }}"
-  DnsServers: "{{ overcloud_dns_servers }}"
+  ExternalInterfaceDefaultRoute: {{ external_network_cidr|nthhost(1) }}
+  ControlPlaneSubnetCidr: '{{ undercloud_network_cidr|ipaddr('prefix') }}'
+  ControlPlaneDefaultRoute: {{ undercloud_management_ip }}
+  EC2MetadataIp: {{ undercloud_management_ip }}
+  DnsServers:
+  {% for dns in overcloud_dns_servers %}
+    - {{ dns }}
+  {% endfor %}
 
 
 

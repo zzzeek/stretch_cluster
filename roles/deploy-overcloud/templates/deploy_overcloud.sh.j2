@@ -1,11 +1,19 @@
 #!/bin/bash
 
 
+# NOTE NOTE NOTE!
+# if deploy fails w/ INTERNAL ERROR or json issues (see /var/log/heat/heat-
+# engine.log), need to delete mistral workflow:
+# https://bugs.launchpad.net/tripleo/+bug/1622720
+# mistral environment-delete overcloud
+# swift delete --all
+
+
 openstack overcloud deploy \
     --templates /usr/share/openstack-tripleo-heat-templates \
     --libvirt-type qemu \
     --timeout 90  \
-    --roles-file {{ working_dir }}/roles_data.yaml \
+    --stack overcloud \
     -e /usr/share/openstack-tripleo-heat-templates/environments/docker.yaml  \
     -e /usr/share/openstack-tripleo-heat-templates/environments/docker-ha.yaml  \
     -e {{ working_dir }}/docker_registry.yaml  \
@@ -13,8 +21,8 @@ openstack overcloud deploy \
     -e {{ working_dir }}/network-environment.yaml  \
     -e /usr/share/openstack-tripleo-heat-templates/environments/low-memory-usage.yaml     \
     -e /usr/share/openstack-tripleo-heat-templates/environments/disable-telemetry.yaml   \
-    --validation-warnings-fatal   --compute-scale {{ compute_scale }} --control-scale {{ control_scale }}  --ntp-server pool.ntp.org \
+    --validation-warnings-fatal   --compute-scale {{ compute_scale }} --control-scale {{ control_scale }}  \
+    --ntp-server pool.ntp.org \
     ${DEPLOY_ENV_YAML:+-e $DEPLOY_ENV_YAML} "$@" && status_code=0 || status_code=$?
-
 
 
