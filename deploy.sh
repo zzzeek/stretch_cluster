@@ -167,6 +167,7 @@ build_vms() {
         --topology-nodes="${NODES}" \
         --topology-network=stretch_nets \
         --topology-extend=yes \
+        --image-url https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
 
 
