@@ -4,6 +4,12 @@
     dest: "{{ working_dir }}/network-environment.yaml"
     mode: 0644
 
+- name: generate custom roles
+  shell: |
+      source {{ working_dir }}/stackrc
+      openstack overcloud roles generate -o {{ working_dir }}/roles_data.yaml Controller Compute
+
+
 - name: create two-nics-vlans dir
   file:
     path: "{{ working_dir }}/two-nics-vlans"
