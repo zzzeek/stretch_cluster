@@ -14,4 +14,4 @@
     src: "two-nics-vlans/{{ item }}.j2"
     dest: "{{ working_dir }}/two-nics-vlans/{{ item }}"
     mode: 0644
-  with-items: ["controller.yaml", "compute.yaml"]
+  with_items: ["controller.yaml", "compute.yaml"]
