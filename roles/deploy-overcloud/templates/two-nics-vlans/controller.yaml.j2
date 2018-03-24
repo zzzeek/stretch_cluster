@@ -100,13 +100,6 @@ resources:
                                     - get_param: ControlPlaneSubnetCidr
                           routes:
                             -
-                              ip_netmask: 0.0.0.0/0
-                              next_hop:
-                                  get_param: ControlPlaneDefaultRoute
-
-                              # set this interface as default route
-                              default: true
-                            -
                               ip_netmask: 169.254.169.254/32
                               next_hop:
                                   get_param: EC2MetadataIp
@@ -129,7 +122,6 @@ resources:
                                   next_hop:
                                       get_param: ExternalInterfaceDefaultRoute
 
-                                  default: false
                             -
                               type: vlan
                               vlan_id:
