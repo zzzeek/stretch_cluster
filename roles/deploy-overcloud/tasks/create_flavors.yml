@@ -98,11 +98,22 @@
 - name: tag our nodes with the proper profile
   shell: |
       source {{ working_dir }}/stackrc;
-      ironic node-update {{ item[0].stdout }} add properties/capabilities='profile:{{ item[1].cmd.split() | last }},boot_option:local'
+      ironic node-update {{ item[0].stdout }} add properties/capabilities='node:{{ node_name }},profile:{{ item[1].cmd.split() | last }},boot_option:local'
   vars:
     item_name: "{{ item[0].item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
+    # with node_name we are trying to keep the original VM names linked to the
+    # overcloud names, so we don't have to rewrite the inventory:
+    # https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/10/html/advanced_overcloud_customization/sect-controlling_node_placement
+    # NOTE:  the names that "infrared virsh" creates MUST START AT ZERO for this to work
+    # correctly, e.g. s1controller-0, s1controller-1, s1controller-2, s1compute-0
+    node_name: "{{ item[0].item.name | regex_replace('(?:s1|s2)(.+?-\\d)', '\\1') }}"
   tags: skip_ansible_lint
   when: "item[0].item.name is defined and item[1].cmd is defined and item_name in item[1].cmd"
   with_together:
       - "{{ node_list.results }}"
       - "{{ tagged_flavors | default([]) }}"
+
+- name: copy scheduler hints file
+  file:
+    src: scheduler_hints_env.yaml
+    dest: "{{ working_dir }}/scheduler_hints_env.yaml"
