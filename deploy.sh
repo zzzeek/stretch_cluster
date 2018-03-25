@@ -103,6 +103,13 @@ cleanup_networks() {
 
     set -e
 
+    rm -f ${INFRARED_WORKSPACE}/stack?_hosts_* \
+       ${COMBINED_HOSTS} \
+       ${INFRARED_WORKSPACE}/hosts \
+       ${INFRARED_WORKSPACE}/hosts-prov \
+       ${INFRARED_WORKSPACE}/hosts-install \
+       ${INFRARED_WORKSPACE}/ansible.ssh.config
+
 }
 
 cleanup_vms() {
