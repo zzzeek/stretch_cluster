@@ -114,6 +114,6 @@
       - "{{ tagged_flavors | default([]) }}"
 
 - name: copy scheduler hints file
-  file:
+  copy:
     src: scheduler_hints_env.yaml
     dest: "{{ working_dir }}/scheduler_hints_env.yaml"
