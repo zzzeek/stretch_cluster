@@ -68,9 +68,6 @@ Breaking down the build further, we can run individual steps::
 Not Done Yet
 ============
 
-* the "deploy stretch" is not working for the infrared version of the script
-  at the moment.
-
 * We aren't using Pacemaker to control the new Galera cluster or the clustercheck
   engine, we are just launching the Docker container from Ansible here.
 
