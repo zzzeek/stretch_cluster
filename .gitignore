@@ -2,4 +2,5 @@ checkouts/*
 downloaded_overcloud_images/
 extras-requirements.txt
 hosts
+*.retry
 
