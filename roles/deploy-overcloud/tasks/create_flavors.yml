@@ -113,7 +113,7 @@
       - "{{ node_list.results }}"
       - "{{ tagged_flavors | default([]) }}"
 
-- name: copy scheduler hints file
-  copy:
-    src: scheduler_hints_env.yaml
-    dest: "{{ working_dir }}/scheduler_hints_env.yaml"
+- name: copy naming file
+  template:
+    src: naming_things.yaml.j2
+    dest: "{{ working_dir }}/naming_things.yaml"

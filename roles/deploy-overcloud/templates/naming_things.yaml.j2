@@ -1,0 +1,18 @@
+# see https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/10/html/advanced_overcloud_customization/sect-controlling_node_placement
+
+parameter_defaults:
+  ControllerSchedulerHints:
+    'capabilities:node': 'controller-%index%'
+  NovaComputeSchedulerHints:
+    'capabilities:node': 'compute-%index%'
+
+  # When we have two overclouds, we need to SSH around and we will see these
+  # names in our command prompts and you are really going to want to see which
+  # stack this is, e.g. "stack1-overcloud-controller-0" and not "overcloud-
+  # controller-0", in those names.
+  HostnameMap:
+    overcloud-controller-0: "{{ rh_stack_name }}-overcloud-controller-0"
+    overcloud-controller-1: "{{ rh_stack_name }}-overcloud-controller-1"
+    overcloud-controller-2: "{{ rh_stack_name }}-overcloud-controller-2"
+    overcloud-compute-0: "{{ rh_stack_name }}-overcloud-compute-0"
+    overcloud-novacompute-0: "{{ rh_stack_name }}-overcloud-compute-0"
