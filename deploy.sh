@@ -15,9 +15,9 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 COMBINED_HOSTS=${SCRIPT_HOME}/hosts
 
 SETUP_CMDS="cleanup_infrared setup_infrared download_images"
-BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud build_hosts"
+BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
-: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud deploy_stretch"}
+: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud build_combined_hosts deploy_stretch"}
 
 : ${DEPLOY_STRETCH_TAGS:="run_galera,run_clustercheck,setup_pacemaker,setup_haproxy,setup_keystone_db,setup_openstack_services"}
 : ${DEPLOY_OVERCLOUD_TAGS:="setup_vlan,create_instackenv,install_vbmc,introspect_nodes,create_flavors,build_heat_config,prepare_containers,deploy_overcloud"}
@@ -182,7 +182,7 @@ build_vms() {
 
 }
 
-build_hosts() {
+build_install_hosts() {
     # build out hostfiles for next steps.   different steps need a different
     # view of hosts.
 
@@ -192,8 +192,14 @@ build_hosts() {
     # build stack2-only hosts file
     cat ${INFRARED_WORKSPACE}/hosts-prov  | grep -e "^\[\\|s2\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack2_hosts_install
 
+}
+
+build_combined_hosts() {
    cat /dev/null > ${COMBINED_HOSTS}
-   grep ${INFRARED_WORKSPACE}/hosts -e ".*ansible" >> ${COMBINED_HOSTS}
+
+   grep ${INFRARED_WORKSPACE}/hosts-prov -e "\(localhost\|hypervisor\).*ansible" >> ${COMBINED_HOSTS}
+   grep ${INFRARED_WORKSPACE}/hosts-prov -e "\(s1\|s2\)undercloud.*ansible" | sed 's/ansible_user=[[:alpha:]-]\+/ansible_user=stack/' >> ${COMBINED_HOSTS}
+   grep ${INFRARED_WORKSPACE}/hosts-prov -e "\(s1\|s2\)\(controller\|compute\).*ansible" | sed 's/ansible_user=[[:alpha:]-]\+/ansible_user=heat-admin/' >> ${COMBINED_HOSTS}
 
    cat << EOF >> ${COMBINED_HOSTS}
 
@@ -213,17 +219,17 @@ s1controller-1
 s1controller-2
 
 [stack2]
-s2-controller-0
-s2-controller-1
-s2-controller-2
+s2controller-0
+s2controller-1
+s2controller-2
 
 [galera_nodes]
-s1-controller-0
-s2-controller-0
+s1controller-0
+s2controller-0
 
 [pacemaker_control_nodes]
-s1-controller-0
-s2-controller-0
+s1controller-0
+s2controller-0
 
 EOF
 }
@@ -332,7 +338,7 @@ fi
 if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
     build_networks
     build_vms
-    build_hosts
+    build_install_hosts
     upload_images
 fi
 
@@ -342,7 +348,6 @@ for stack_arg in $STACKS ; do
 
     if [[ "${CMDS}" == *"deploy_undercloud"* ]]; then
      deploy_undercloud
-     build_hosts
     fi
 done
 
@@ -355,4 +360,10 @@ for stack_arg in $STACKS ; do
 
 done
 
+if [[ "${CMDS}" == *"build_hosts"* ]]; then
+    build_combined_hosts
+fi
 
+if [[ "${CMDS}" == *"deploy_stretch"* ]]; then
+    deploy_stretch_cluster
+fi

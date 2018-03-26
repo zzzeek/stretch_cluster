@@ -8,8 +8,8 @@ stretch_network_vlan_name: vlan10
 stack1_stretch_galera_vip: 10.0.10.4
 stack2_stretch_galera_vip: 10.1.10.4
 
-galera_master_inventoryname: stack1-overcloud-controller-0
-galera_follower_inventoryname: stack2-overcloud-controller-0
+galera_master_inventoryname: s1controller-0
+galera_follower_inventoryname: s2controller-0
 
 
 
