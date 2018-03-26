@@ -19,7 +19,7 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud build_combined_hosts deploy_stretch"}
 
-: ${DEPLOY_STRETCH_TAGS:="run_galera,run_clustercheck,setup_pacemaker,setup_haproxy,setup_keystone_db,setup_openstack_services"}
+: ${DEPLOY_STRETCH_TAGS:="setup_routes,run_galera,run_clustercheck,setup_pacemaker,setup_haproxy,setup_keystone_db,setup_openstack_services"}
 : ${DEPLOY_OVERCLOUD_TAGS:="setup_vlan,create_instackenv,install_vbmc,introspect_nodes,create_flavors,build_heat_config,prepare_containers,deploy_overcloud"}
 
 
@@ -214,11 +214,13 @@ s1controller-0
 s2controller-0
 
 [stack1]
+s1undercloud-0
 s1controller-0
 s1controller-1
 s1controller-2
 
 [stack2]
+s2undercloud-0
 s2controller-0
 s2controller-1
 s2controller-2

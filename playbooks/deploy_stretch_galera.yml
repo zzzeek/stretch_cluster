@@ -7,8 +7,16 @@
   roles:
      - { role: gather-info, tags: ['always'] }
 
+- name: setup undercloud routes
+  hosts:
+    - undercloud
+  gather_facts: no
+  roles:
+    - { role: add-undercloud-routes, tags: ['setup_routes'] }
+
 - name: deploy galera
   hosts: galera_nodes
+  gather_facts: no
   roles:
      - { role: run-galera-containers, tags: ['run_galera'] }
      - { role: run-clustercheck, tags: ['run_clustercheck'] }
@@ -17,6 +25,7 @@
   hosts:
     - stack1
     - stack2
+  gather_facts: no
   roles:
      - { role: setup-pacemaker, tags: ['setup_pacemaker'] }
      - { role: setup-haproxy, tags: ['setup_haproxy'] }
@@ -24,6 +33,7 @@
 - name: setup keystone data
   hosts:
     - galera_nodes
+  gather_facts: no
   roles:
     - { role: setup-keystone-db, tags: ['setup_keystone_db'] }
 
@@ -32,6 +42,7 @@
   hosts:
     - stack1
     - stack2
+  gather_facts: no
   roles:
     - { role: setup-openstack-services, tags: ['setup_openstack_services'] }
 

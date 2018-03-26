@@ -1,0 +1,21 @@
+
+
+- name: Get stretch interface ip
+  shell: /sbin/ip -4 addr show | grep 172.16.0 | awk '{print $2}' | cut -d/ -f1
+  register: stretch_ip_number_cmd
+
+- name: set command facts
+  set_fact:
+    stretch_ip_number: '{{ stretch_ip_number_cmd.stdout }}'
+
+- name: setup route on stack1
+  shell: /sbin/ip route add {{ stack2_external_network_cidr }} via {{ hostvars[stack2_undercloud_inventoryname]['stretch_ip_number'] }}
+  when: "'stack1' in group_names"
+  become: yes
+
+- name: setup route on stack2
+  shell: /sbin/ip route add {{ stack1_external_network_cidr }} via {{ hostvars[stack1_undercloud_inventoryname]['stretch_ip_number'] }}
+  when: "'stack2' in group_names"
+  become: yes
+
+
