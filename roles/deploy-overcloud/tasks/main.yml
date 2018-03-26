@@ -1,3 +1,7 @@
+- name: config
+  include_vars: "{{ playbook_dir }}/../config.yml"
+  tags: always
+
 - name: set release number, hypervisor management address
   set_fact:
     release_numeric_version: "{{ release_numeric_versions[release_name] }}"

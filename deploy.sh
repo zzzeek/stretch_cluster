@@ -12,7 +12,7 @@ INFRARED_WORKSPACE_NAME=stack
 INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
 ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
-COMBINED_HOSTS=${SCRIPT_HOME}/hosts
+COMBINED_HOSTS=${INFRARED_WORKSPACE}/combined_hosts
 
 SETUP_CMDS="cleanup_infrared setup_infrared download_images"
 BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
@@ -219,8 +219,18 @@ s1controller-0
 s1controller-1
 s1controller-2
 
+[stack1_controller]
+s1controller-0
+s1controller-1
+s1controller-2
+
 [stack2]
 s2undercloud-0
+s2controller-0
+s2controller-1
+s2controller-2
+
+[stack2_controller]
 s2controller-0
 s2controller-1
 s2controller-2

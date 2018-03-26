@@ -1,3 +1,7 @@
+- name: config
+  include_vars: "{{ playbook_dir }}/../config.yml"
+  tags: always
+
 - name: setup stack1-local variables
   set_fact:
     stack_name: 'stack1'

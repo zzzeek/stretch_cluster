@@ -23,8 +23,8 @@
 
 - name: point openstack at galera
   hosts:
-    - stack1
-    - stack2
+    - stack1_controller
+    - stack2_controller
   gather_facts: no
   roles:
      - { role: setup-pacemaker, tags: ['setup_pacemaker'] }
@@ -40,8 +40,8 @@
 
 - name: point keystone services to the new galera DB
   hosts:
-    - stack1
-    - stack2
+    - stack1_controller
+    - stack2_controller
   gather_facts: no
   roles:
     - { role: setup-openstack-services, tags: ['setup_openstack_services'] }

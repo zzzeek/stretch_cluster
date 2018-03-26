@@ -8,14 +8,17 @@
   set_fact:
     stretch_ip_number: '{{ stretch_ip_number_cmd.stdout }}'
 
+# TODO: how to make these permanent?
 - name: setup route on stack1
-  shell: /sbin/ip route add {{ stack2_external_network_cidr }} via {{ hostvars[stack2_undercloud_inventoryname]['stretch_ip_number'] }}
+  shell: /sbin/ip route add {{ stack1_external_network_cidr }} via {{ hostvars[stack1_undercloud_inventoryname]['stretch_ip_number'] }}
   when: "'stack1' in group_names"
   become: yes
+  ignore_errors: yes
 
 - name: setup route on stack2
   shell: /sbin/ip route add {{ stack1_external_network_cidr }} via {{ hostvars[stack1_undercloud_inventoryname]['stretch_ip_number'] }}
   when: "'stack2' in group_names"
   become: yes
+  ignore_errors: yes
 
 
