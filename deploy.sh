@@ -273,6 +273,7 @@ deploy_undercloud() {
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
+        -e rr_release_name=${RELEASE} -e rr_master_release=NOTHING \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.local_ip=${PROVISIONING_IP_PREFIX}.1/24 \
         --config-options DEFAULT.network_gateway=${PROVISIONING_IP_PREFIX}.1 \
