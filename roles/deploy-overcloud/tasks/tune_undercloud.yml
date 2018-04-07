@@ -1,0 +1,31 @@
+- name: adjust max number of concurrent builds to prevent undercloud overload
+  ini_file:
+      path: /etc/nova/nova.conf
+      section: DEFAULT
+      option: max_concurrent_builds
+      value: 2
+  become: yes
+
+- name: adjust nova rpc response timeout
+  ini_file:
+      path: /etc/nova/nova.conf
+      section: DEFAULT
+      option: rpc_response_timeout
+      value: 600
+  become: yes
+
+- name: adjust ironic rpc response timeout
+  ini_file:
+      path: /etc/ironic/ironic.conf
+      section: DEFAULT
+      option: rpc_response_timeout
+      value: 600
+  become: yes
+
+- name: restart nova services
+  command: "systemctl restart openstack-nova-*"
+  become: yes
+
+- name: restart ironic services
+  command: "systemctl restart openstack-ironic-*"
+  become: yes

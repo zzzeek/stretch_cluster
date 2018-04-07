@@ -1,3 +1,4 @@
+
 - name: transfer overcloud script
   template:
     src: deploy_overcloud.sh.j2

@@ -32,6 +32,10 @@
   import_tasks: setup_vlan.yml
   tags: setup_vlan
 
+- name: tune undercloud
+  import_tasks: tune_undercloud.yml
+  tags: tune_undercloud
+
 - name: Configure vbmc
   include_role:
     name: vbmc
