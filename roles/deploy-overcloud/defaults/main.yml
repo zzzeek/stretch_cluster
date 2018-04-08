@@ -20,7 +20,7 @@ vbmc_password: vbmc
 # should be called "working_undercloud_dir"
 working_dir: "/home/stack/"
 
-release_numeric_versions: {"queens": 13, "pike": 12}
+release_numeric_versions: {"queens": 13, "pike": 12, "master": 13}
 
 undercloud_management_ip: "{{ undercloud_network_cidr|nthhost(1) }}"
 

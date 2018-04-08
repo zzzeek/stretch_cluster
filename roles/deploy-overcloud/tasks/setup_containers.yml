@@ -1,9 +1,10 @@
+
 - name: create container configs
   shell: >
       source {{ working_dir }}/stackrc;
       openstack overcloud container image prepare 
-      --namespace docker.io/tripleo{{ release_name }}
-      --tag current-tripleo
+      --namespace docker.io/tripleo{{ container_namespace }}
+      --tag {{ container_tag }}
       --tag-from-label rdo_version
       --push-destination {{ undercloud_management_ip }}:8787
       --output-env-file {{ working_dir }}/docker_registry.yaml

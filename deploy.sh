@@ -25,7 +25,9 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
 
 RELEASE=queens
-RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE}/delorean/current-tripleo-rdo/"
+RELEASE_OR_MASTER=master
+BUILD=current-tripleo-rdo-internal
+RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER}/delorean/${BUILD}/"
 IMAGE_URL="file:///tmp/"
 
 set -e
@@ -129,7 +131,7 @@ cleanup_vms() {
 
     for name in ${VM_NAMES} ; do
         sudo virsh destroy $name;
-        sudo virsh undefine $name;
+        sudo virsh undefine $name --remove-all-storage;
     done
 
     set -e
@@ -169,7 +171,7 @@ build_vms() {
     # trim trailing comma
     NODES=${NODES:0:-1}
 
-    # problem?
+    # problem?  make sure to use public-images with undercloud
     #    --image-url https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 \
 
     infrared_cmd virsh -vv \
@@ -177,8 +179,8 @@ build_vms() {
         --topology-nodes="${NODES}" \
         --topology-network=stretch_nets \
         --topology-extend=yes \
-        --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
-
+        --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2 \
+        --image-url https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 \
 
 }
 
@@ -271,9 +273,14 @@ deploy_undercloud() {
         WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
     fi
 
+    # infrared only knows "queens", "rocky", or whatever, it doesn't know
+    # "master".  various bits make it fetch "master" bits after that.
+        # -e rr_release_name=${RELEASE} -e rr_master_release=NOTHING \
+
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
-        -e rr_release_name=${RELEASE} -e rr_master_release=NOTHING \
+        --build ${BUILD} \
+        -e rr_use_public_repos=true \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.local_ip=${PROVISIONING_IP_PREFIX}.1/24 \
         --config-options DEFAULT.network_gateway=${PROVISIONING_IP_PREFIX}.1 \
@@ -306,7 +313,9 @@ deploy_overcloud() {
             -i ${ANSIBLE_HOSTS} \
             --tags "${DEPLOY_OVERCLOUD_TAGS}" \
             -e release_name=${RELEASE} \
-	        -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
+            -e container_namespace=${RELEASE_OR_MASTER} \
+            -e container_tag=${BUILD} \
+            -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
             -e rh_stack_name="${STACK}" \
             -e working_dir=/home/stack \
             playbooks/deploy_overcloud.yml
