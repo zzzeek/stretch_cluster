@@ -1,0 +1,8 @@
+# generate a patched galera resource agent script that can employ ssh
+# to other clusters, deploy it to overcloud nodes where it will be
+# copied into the docker container
+
+- name: copy patched RA to overcloud host
+  copy:
+    src: "galera_ra.sh"
+    dest: "/usr/lib/ocf/resource.d/heartbeat/galera_stretch"

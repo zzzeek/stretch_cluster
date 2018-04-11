@@ -328,6 +328,7 @@ deploy_stretch_cluster() {
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${COMBINED_HOSTS} \
         --tags "${DEPLOY_STRETCH_TAGS}" \
+        -e deploy_via_pacemaker=true \
         playbooks/deploy_stretch_galera.yml
     popd
 

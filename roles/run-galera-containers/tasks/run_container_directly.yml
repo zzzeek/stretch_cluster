@@ -1,0 +1,18 @@
+# TODO: this is an interim means of doing this until we get pacemaker
+# to run the galera nodes here.    running the docker container straight here
+# opens us up to data dir corruption if the container gets ungracefully
+# stopped and restarted
+- name: start galera!
+  docker_container:
+    name: stretch_galera
+    image: "{{ galera_image }}"
+    command: >
+        /usr/bin/mysqld_safe --defaults-file=/etc/my.cnf --pid-file=/var/lib/mysql/mysqld.pid
+        --socket=/var/lib/mysql/mysql.sock --datadir=/var/lib/mysql
+        --port 3307
+        --log-error=/var/log/mysqld.log --user=mysql --open-files-limit=16384
+        --wsrep-cluster-address={{ gcomm_address }}
+        {{ galera_parameters }}
+    volumes: "{{ galera_volumes }}"
+    network_mode: host
+  become: true

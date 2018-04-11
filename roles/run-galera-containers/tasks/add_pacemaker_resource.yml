@@ -1,0 +1,2 @@
+# add pacemaker resources for our new stretch cluster.  kolla config
+# will copy in new resource agent to the container

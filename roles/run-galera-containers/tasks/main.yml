@@ -31,6 +31,7 @@
         - /etc/pacemaker/authkey:/etc/pacemaker/authkey
         - /var/lib/kolla/config_files/mysql.json:/var/lib/kolla/config_files/config.json:ro
         - /var/lib/config-data/puppet-generated/mysql/:/var/lib/kolla/config_files/src:ro
+        - /root/.ssh:/root/.ssh
 
 - name: create mysql setup
   docker_container:
@@ -78,25 +79,20 @@
 - name: ensure restart happens
   meta: flush_handlers
 
-    
-# TODO: this is an interim means of doing this until we get pacemaker
-# to run the galera nodes here.    running the docker container straight here
-# opens us up to data dir corruption if the container gets ungracefully
-# stopped and restarted
-- name: start galera!
-  docker_container:
-    name: stretch_galera
-    image: "{{ galera_image }}"
-    command: >
-        /usr/bin/mysqld_safe --defaults-file=/etc/my.cnf --pid-file=/var/lib/mysql/mysqld.pid
-        --socket=/var/lib/mysql/mysql.sock --datadir=/var/lib/mysql
-        --port 3307
-        --log-error=/var/log/mysqld.log --user=mysql --open-files-limit=16384
-        --wsrep-cluster-address={{ gcomm_address }}
-        {{ galera_parameters }}
-    volumes: "{{ galera_volumes }}"
-    network_mode: host
-  become: true
+
+- name: run galera via docker
+  include_tasks: run_container_directly.yml
+  when:
+    deploy_via_pacemaker|bool == false
+
+
+- name: run galera via pacemaker
+  block:
+    - include_tasks: create_patched_resource_agent.yml
+    - include_tasks: make_kolla_config.yml
+    - include_tasks: add_pacemaker_resource.yml
+  when:
+    deploy_via_pacemaker|bool == true
 
 - name: wait for it to run
   shell: docker exec stretch_galera mysql -u root -s --skip-column-names -e "show status like 'wsrep_local_state'"

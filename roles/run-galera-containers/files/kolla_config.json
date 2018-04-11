@@ -1,0 +1,28 @@
+ {
+	"config_files": [
+		{
+			"dest": "/usr/lib/ocf/resource.d/heartbeat/galera",
+			"source": "/usr/lib/ocf/resource.d/heartbeat/galera_stretch"
+		},
+		{
+			"dest": "/etc/libqb/force-filesystem-sockets",
+			"source": "/dev/null", "perm": "0644", "owner": "root"
+		},
+		{
+			"dest": "/",
+			"source": "/var/lib/kolla/config_files/src/*",
+			"preserve_properties": true, "merge": true
+		},
+		{
+			"dest": "/",
+			"source": "/var/lib/kolla/config_files/src-tls/*",
+			"preserve_properties": true, "optional": true, "merge": true
+		}
+	],
+	"command": "/usr/sbin/pacemaker_remoted",
+	"permissions": [
+		{"owner": "mysql:mysql", "path": "/var/log/mysql", "recurse": true},
+		{"owner": "mysql:mysql", "path": "/etc/pki/tls/certs/mysql.crt", "optional": true, "perm": "0600"},
+		{"owner": "mysql:mysql", "path": "/etc/pki/tls/private/mysql.key", "optional": true, "perm": "0600"}
+	]
+}

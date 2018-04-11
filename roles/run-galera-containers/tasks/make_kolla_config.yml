@@ -1,0 +1,8 @@
+# leverage the kolla config file so that we can copy extra files
+# to the stretch_galera docker node, including ssh keys for cross-cloud
+# communication as well as a modified resource agent
+
+- name: copy kolla config
+  copy:
+    src: kolla_config.json
+    dest: /var/lib/kolla/config_files/mysql_stretch.json
