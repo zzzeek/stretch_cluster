@@ -5,7 +5,7 @@
 - name: start galera!
   docker_container:
     name: stretch_galera
-    image: "{{ galera_image }}"
+    image: stretch_galera
     command: >
         /usr/bin/mysqld_safe --defaults-file=/etc/my.cnf --pid-file=/var/lib/mysql/mysqld.pid
         --socket=/var/lib/mysql/mysql.sock --datadir=/var/lib/mysql

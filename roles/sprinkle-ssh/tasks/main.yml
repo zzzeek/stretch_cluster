@@ -26,7 +26,6 @@
       set_fact:
         id_rsa_pub: "{{ idrsapub.stdout }}"
         id_rsa: "{{ idrsa.stdout }}"
-      become: true
 
   run_once: true
 
