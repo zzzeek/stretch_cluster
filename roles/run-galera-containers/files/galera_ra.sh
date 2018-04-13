@@ -70,7 +70,7 @@
 
 set -x
 
-SSH_CMD= ssh -oStrictHostKeyChecking=no
+SSH_CMD="ssh -oStrictHostKeyChecking=no"
 
 NODENAME=$(ocf_attribute_target)
 
