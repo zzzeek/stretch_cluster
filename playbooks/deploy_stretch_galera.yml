@@ -9,10 +9,10 @@
 
 - name: sprinkle common ssh keys on all the overcloud nodes
   hosts:
-    - stack1
-    - stack2
+    - stack1_controller
+    - stack2_controller
   roles:
-    - { role: sprinkle_ssh, tags: ['ssh_keys']}
+    - { role: sprinkle-ssh, tags: ['ssh_keys']}
 
 - name: setup undercloud routes
   hosts:

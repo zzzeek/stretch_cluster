@@ -70,6 +70,8 @@
 
 set -x
 
+SSH_CMD= ssh -oStrictHostKeyChecking=no
+
 NODENAME=$(ocf_attribute_target)
 
 # It is common for some galera instances to store
@@ -461,7 +463,7 @@ remote_crm_master()
     if [ -z "$remote_host" ]; then
         $CRM_MASTER -N $node $@
     else
-        ssh $user@$remote_host $CRM_MASTER -N $pcmk_node $@
+        $SSH_CMD $user@$remote_host $CRM_MASTER -N $pcmk_node $@
     fi
 }
 
@@ -479,7 +481,7 @@ remote_crm_attribute()
     if [ -z "$remote_host" ]; then
         ${HA_SBIN_DIR}/crm_attribute -N $node $@
     else
-        ssh $user@$remote_host ${HA_SBIN_DIR}/crm_attribute -N $pcmk_node $@
+        $SSH_CMD $user@$remote_host ${HA_SBIN_DIR}/crm_attribute -N $pcmk_node $@
     fi
 }
 

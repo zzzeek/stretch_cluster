@@ -7,19 +7,25 @@
 - name: find and optionally generate the key for just one host
   block:
     - name: look for key
-      stat: path=/root/.ssh/id_rsa
+      stat: path=/tmp/id_rsa_overcloud
       register: ssh_keyfile
-      become: true
 
     - name: generate key
-      shell: ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ''
+      shell: ssh-keygen -t rsa -f /tmp/id_rsa_overcloud -N ''
       when: not ssh_keyfile.stat.exists
-      become: true
 
-    - name: read the key
+    - name: read the public key
+      shell: cat /tmp/id_rsa_overcloud.pub
+      register: idrsapub
+
+    - name: read the private key
+      shell: cat /tmp/id_rsa_overcloud
+      register: idrsa
+
+    - name: store keys
       set_fact:
-        id_rsa_pub: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
-        id_rsa: "{{ lookup('file', '/root/.ssh/id_rsa') }}"
+        id_rsa_pub: "{{ idrsapub.stdout }}"
+        id_rsa: "{{ idrsa.stdout }}"
       become: true
 
   run_once: true
@@ -45,5 +51,11 @@
 
 - name: add authorized key
   lineinfile:
+    create: yes
+    owner: root
+    group: root
+    mode: 0600
     path: /root/.ssh/authorized_keys
     line: "{{ id_rsa_pub }}"
+  become: true
+
