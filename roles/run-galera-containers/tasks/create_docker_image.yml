@@ -1,0 +1,20 @@
+- name: create dockerfile dir
+  file:
+    path: /tmp/stretch_galera_dockerbuild
+    state: directory
+
+- name: copy dockerfile
+  template:
+    src: Dockerfile
+    dest: /tmp/stretch_galera_dockerbuild/Dockerfile
+
+- name: copy resource agent
+  copy:
+    src: galera_ra.sh
+    dest: /tmp/stretch_galera_dockerbuild/galera_ra.sh
+
+# can't use ansible docker_image because it doesn't support
+# --network
+- name: create docker image
+  shell:  docker build --network=host /tmp/stretch_galera_dockerbuild --tag {{ stretch_galera_imagename }}
+

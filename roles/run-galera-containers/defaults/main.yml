@@ -1,2 +1,3 @@
 deploy_via_pacemaker: false
+stretch_galera_imagename: stretch_galera
 
