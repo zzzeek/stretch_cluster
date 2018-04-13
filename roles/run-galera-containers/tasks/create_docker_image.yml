@@ -17,4 +17,5 @@
 # --network
 - name: create docker image
   shell:  docker build --network=host /tmp/stretch_galera_dockerbuild --tag {{ stretch_galera_imagename }}
+  become: true
 

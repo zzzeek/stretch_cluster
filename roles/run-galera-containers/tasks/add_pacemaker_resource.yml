@@ -1,86 +1,121 @@
-- name: create cib for galera-bundle
-  shell: >
-    /usr/sbin/pcs
-    -f /var/lib/pacemaker/cib/stretch-galera-create-bundle
-    resource bundle create stretch-galera-bundle
-    container docker image={{ stretch_galera_imagename }}
-    replicas=1 masters=1
-    options="--user=root
-    --log-driver=journald
-    -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS"
-    run-command="/bin/bash /usr/local/bin/kolla_start"
-    network=host
-    storage-map
-      id=mysql-cfg-files
+- name: determine if galera-bundle exists
+  shell: /usr/sbin/pcs resource show stretch-galera-bundle
+  ignore_errors: yes
+  register: galera_bundle_exists
+  become: true
+
+- name: create galera-bundle
+  when: galera_bundle_exists.rc != 0
+
+  block:
+  - name: backup cib for galera-bundle
+    shell: /usr/sbin/pcs cluster cib > /var/lib/pacemaker/cib/stretch-galera-create-bundle.orig
+    become: true
+
+  - name: copy file
+    shell: cp /var/lib/pacemaker/cib/stretch-galera-create-bundle.orig /var/lib/pacemaker/cib/stretch-galera-create-bundle
+    become: true
+
+  - name: create cib for galera-bundle
+    shell: >
+      /usr/sbin/pcs
+      -f /var/lib/pacemaker/cib/stretch-galera-create-bundle
+      resource bundle create stretch-galera-bundle
+      container docker image={{ stretch_galera_imagename }}:latest
+      replicas=1 masters=1
+      options="--user=root
+      --log-driver=journald
+      -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS"
+      run-command="/bin/bash /usr/local/bin/kolla_start"
+      network=host
+      storage-map
+      id=stretch-galera-cfg-files
       source-dir=/var/lib/kolla/config_files/mysql.json
       target-dir=/var/lib/kolla/config_files/config.json
       options=ro
-    storage-map
-      id=mysql-cfg-data
+      storage-map
+      id=stretch-galera-cfg-data
       source-dir=/var/lib/config-data/puppet-generated/mysql/
       target-dir=/var/lib/kolla/config_files/src
       options=ro
-    storage-map
-      id=mysql-hosts
+      storage-map
+      id=stretch-galera-hosts
       source-dir=/etc/hosts
       target-dir=/etc/hosts
       options=ro
-    storage-map
-      id=mysql-localtime
+      storage-map
+      id=stretch-galera-localtime
       source-dir=/etc/localtime
       target-dir=/etc/localtime
       options=ro
-    storage-map
-      id=mysql-lib
+      storage-map
+      id=stretch-galera-mysql-lib
       source-dir=/var/lib/mysql-stretch
       target-dir=/var/lib/mysql
       options=rw
-    storage-map
-      id=mysql-log
+      storage-map
+      id=stretch-galera-mysql-log
       source-dir=/var/log/mysql-stretch
       target-dir=/var/log/
       options=rw
-    storage-map
-      id=mysql-dev-log
+      storage-map
+      id=stretch-galera-mysql-dev-log
       source-dir=/dev/log
       target-dir=/dev/log
       options=rw
-    storage-map
-      id=root-ssh
+      storage-map
+      id=stretch-galera-root-ssh
       source-dir=/root/.ssh
       target-dir=/root/.ssh
       options=ro
-    network control-port=3123 --disabled
+      network control-port=3123 --disabled
+    become: true
+
+  - name: exec cib for galera-bundle
+    shell: >
+      /usr/sbin/pcs cluster cib-push /var/lib/pacemaker/cib/stretch-galera-create-bundle
+      diff-against=/var/lib/pacemaker/cib/stretch-galera-create-bundle.orig
+    become: true
+
+- name: determine if stretch-galera exists
+  shell: /usr/sbin/pcs resource show stretch-galera
+  ignore_errors: yes
+  register: galera_exists
   become: true
 
-- name: exec cib for galera-bundle
-  shell: >
-    /usr/sbin/pcs cluster cib-push /var/lib/pacemaker/cib/stretch-galera-create-bundle
-    diff-against=/var/lib/pacemaker/cib/stretch-galera-create-bundle.orig
-  become: true
+- name: create stretch-galera
+  when: galera_exists.rc != 0
+  block:
+  - name: backup cib for galera
+    shell: /usr/sbin/pcs cluster cib > /var/lib/pacemaker/cib/stretch-galera-create-resource.orig
+    become: true
 
-- name: create cib for galera
-  shell: >
-    /usr/sbin/pcs
-    -f /var/lib/pacemaker/cib/stretch-galera-create-resource
-    resource create galera ocf:heartbeat:galera
-    log='/var/log/mysql/mysqld.log'
-    additional_parameters='--open-files-limit=16384 --port=3307'
-    enable_creation=true
-    wsrep_cluster_address='{{ gcomm_address }}'
-    cluster_host_map='{{ cluster_host_map }}'
-    meta master-max=3 ordered=true
-    container-attribute-target=host op promote timeout=300s
-    on-fail=block
-    bundle stretch-galera-bundle
-  become: true
+  - name: copy file
+    shell: cp /var/lib/pacemaker/cib/stretch-galera-create-resource.orig /var/lib/pacemaker/cib/stretch-galera-create-resource
+    become: true
 
-- name: exec cib for galera
-  shell: >
-    /usr/sbin/pcs cluster cib-push /var/lib/pacemaker/cib/stretch-galera-create-resource
-    diff-against=/var/lib/pacemaker/cib/stretch-galera-create-resource.orig
-  become: true
+  - name: create cib for galera
+    shell: >
+      /usr/sbin/pcs
+      -f /var/lib/pacemaker/cib/stretch-galera-create-resource
+      resource create stretch-galera ocf:heartbeat:galera
+      log='/var/log/mysql/mysqld.log'
+      additional_parameters='--open-files-limit=16384 --port=3307'
+      enable_creation=true
+      wsrep_cluster_address='{{ gcomm_address }}'
+      cluster_host_map='{{ cluster_host_map }}'
+      meta master-max=3 ordered=true
+      container-attribute-target=host op promote timeout=300s
+      on-fail=block
+      bundle stretch-galera-bundle
+    become: true
+
+  - name: exec cib for galera
+    shell: >
+      /usr/sbin/pcs cluster cib-push /var/lib/pacemaker/cib/stretch-galera-create-resource
+      diff-against=/var/lib/pacemaker/cib/stretch-galera-create-resource.orig
+    become: true
 
 - name: set container name fact
-  set-fact:
+  set_fact:
     container_name: stretch-galera-bundle-docker-0

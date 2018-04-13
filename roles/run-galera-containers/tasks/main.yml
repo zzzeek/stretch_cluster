@@ -87,8 +87,7 @@
 
 
 - name: run galera via pacemaker
-  block:
-    - include_tasks: add_pacemaker_resource.yml
+  include_tasks: add_pacemaker_resource.yml
   when:
     deploy_via_pacemaker|bool == true
 
