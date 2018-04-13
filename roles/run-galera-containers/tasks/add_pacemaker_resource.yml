@@ -1,2 +1,86 @@
-# add pacemaker resources for our new stretch cluster.  kolla config
-# will copy in new resource agent to the container
+- name: create cib for galera-bundle
+  shell: >
+    /usr/sbin/pcs
+    -f /var/lib/pacemaker/cib/stretch-galera-create-bundle
+    resource bundle create stretch-galera-bundle
+    container docker image={{ stretch_galera_imagename }}
+    replicas=1 masters=1
+    options="--user=root
+    --log-driver=journald
+    -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS"
+    run-command="/bin/bash /usr/local/bin/kolla_start"
+    network=host
+    storage-map
+      id=mysql-cfg-files
+      source-dir=/var/lib/kolla/config_files/mysql.json
+      target-dir=/var/lib/kolla/config_files/config.json
+      options=ro
+    storage-map
+      id=mysql-cfg-data
+      source-dir=/var/lib/config-data/puppet-generated/mysql/
+      target-dir=/var/lib/kolla/config_files/src
+      options=ro
+    storage-map
+      id=mysql-hosts
+      source-dir=/etc/hosts
+      target-dir=/etc/hosts
+      options=ro
+    storage-map
+      id=mysql-localtime
+      source-dir=/etc/localtime
+      target-dir=/etc/localtime
+      options=ro
+    storage-map
+      id=mysql-lib
+      source-dir=/var/lib/mysql-stretch
+      target-dir=/var/lib/mysql
+      options=rw
+    storage-map
+      id=mysql-log
+      source-dir=/var/log/mysql-stretch
+      target-dir=/var/log/
+      options=rw
+    storage-map
+      id=mysql-dev-log
+      source-dir=/dev/log
+      target-dir=/dev/log
+      options=rw
+    storage-map
+      id=root-ssh
+      source-dir=/root/.ssh
+      target-dir=/root/.ssh
+      options=ro
+    network control-port=3123 --disabled
+  become: true
+
+- name: exec cib for galera-bundle
+  shell: >
+    /usr/sbin/pcs cluster cib-push /var/lib/pacemaker/cib/stretch-galera-create-bundle
+    diff-against=/var/lib/pacemaker/cib/stretch-galera-create-bundle.orig
+  become: true
+
+- name: create cib for galera
+  shell: >
+    /usr/sbin/pcs
+    -f /var/lib/pacemaker/cib/stretch-galera-create-resource
+    resource create galera ocf:heartbeat:galera
+    log='/var/log/mysql/mysqld.log'
+    additional_parameters='--open-files-limit=16384 --port=3307'
+    enable_creation=true
+    wsrep_cluster_address='{{ gcomm_address }}'
+    cluster_host_map='{{ cluster_host_map }}'
+    meta master-max=3 ordered=true
+    container-attribute-target=host op promote timeout=300s
+    on-fail=block
+    bundle stretch-galera-bundle
+  become: true
+
+- name: exec cib for galera
+  shell: >
+    /usr/sbin/pcs cluster cib-push /var/lib/pacemaker/cib/stretch-galera-create-resource
+    diff-against=/var/lib/pacemaker/cib/stretch-galera-create-resource.orig
+  become: true
+
+- name: set container name fact
+  set-fact:
+    container_name: stretch-galera-bundle-docker-0
