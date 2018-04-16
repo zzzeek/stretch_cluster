@@ -13,6 +13,11 @@
     src: galera_ra.sh
     dest: /tmp/stretch_galera_dockerbuild/galera_ra.sh
 
+- name: copy setup script
+  template:
+    src: setup_stretch_database.sh
+    dest: /tmp/stretch_galera_dockerbuild/setup_stretch_database.sh
+
 # can't use ansible docker_image because it doesn't support
 # --network
 - name: create docker image

@@ -45,7 +45,7 @@
     name: stretch_galera_cmd
     cleanup: true
     image: "{{ stretch_galera_imagename }}"
-    command: /bin/mysql_install_db --datadir=/var/lib/mysql --user=mysql
+    command: /setup_stretch_database.sh
     volumes: "{{ galera_volumes }}"
     network_mode: host
     detach: false
@@ -63,7 +63,7 @@
   set_fact:
       galera_parameters: >
           --bind-address={{ master_ip }}
-          {{ deploy_via_pacemaker|bool==false | ternary("--wsrep-new-cluster", "") }}
+          {{ (deploy_via_pacemaker|bool==false) | ternary("--wsrep-new-cluster", "") }}
           --wsrep-provider-options=gmcast.listen_addr=tcp://{{ master_ip }}:4567;pc.weight=2
           --wsrep-sst-receive-address={{ master_ip }}
       cluster_host_map: "stack1-overcloud-controller-0:{{ master_ip }};stack2-overcloud-controller-0:root@{{ follower_ip }}"
