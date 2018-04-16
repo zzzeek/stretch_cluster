@@ -50,7 +50,6 @@
     network_mode: host
     detach: false
   become: true
-  when: created_data_directory.changed
 
 # TODO: simple single master / single follower setup to start with.  we
 # later would want this to be a little more open ended

@@ -73,9 +73,10 @@
     - name: get mysql root password from kolla config
       shell: cat /var/lib/config-data/puppet-generated/mysql/root/.my.cnf  | grep "password" | head -1 | sed -e 's/password="\(.*\)"/\1/'
       register: cat_kolla_pw_cmd
+      become: true
 
     - name: set mysql root password fact
       set_fact:
-        mysql_root_password: "{{ cat_kolla_pwd_cmd.stdout }}"
+        mysql_root_password: "{{ cat_kolla_pw_cmd.stdout }}"
 
 
