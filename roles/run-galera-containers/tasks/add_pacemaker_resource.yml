@@ -1,3 +1,6 @@
+- name: set stretch-galera-role for node
+  shell: /usr/sbin/pcs node attribute {{ pacemaker_node_name }} stretch-galera-role=true
+
 - name: determine if galera-bundle exists
   shell: /usr/sbin/pcs resource show stretch-galera-bundle
   ignore_errors: yes
@@ -66,8 +69,11 @@
       network control-port=3123 --disabled
     become: true
 
-  - name: constraint
-    shell: /usr/sbin/pcs -f /var/lib/pacemaker/cib/stretch-galera-create-bundle constraint location stretch-galera-bundle prefers {{ real_hostname }}
+  - name: add rule to only run on stretch-galera-role node
+    shell: >
+      /usr/sbin/pcs
+      -f /var/lib/pacemaker/cib/stretch-galera-create-bundle
+      constraint rule add stretch-gaera-role eq true
     become: true
 
   - name: exec cib for galera-bundle
@@ -103,7 +109,7 @@
       enable_creation=true
       wsrep_cluster_address='{{ gcomm_address }}'
       cluster_host_map='{{ cluster_host_map }}'
-      meta master-max=3 ordered=true
+      meta master-max=1 ordered=true
       container-attribute-target=host op promote timeout=300s
       on-fail=block
       bundle stretch-galera-bundle
