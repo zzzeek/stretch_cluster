@@ -77,7 +77,7 @@
       source-dir=/root/.ssh
       target-dir=/root/.ssh
       options=ro
-      network control-port=3123 --disabled
+      network control-port={{ pacemaker_network_control_port }} --disabled
     become: true
 
   - name: add rule to only run on stretch-galera-role node
@@ -116,7 +116,7 @@
       -f /var/lib/pacemaker/cib/stretch-galera-create-resource
       resource create stretch-galera ocf:heartbeat:galera
       log='/var/log/mysql/mysqld.log'
-      additional_parameters='--open-files-limit=16384 --port=3307'
+      additional_parameters='--open-files-limit=16384 --port=3307 {{galera_parameters}}'
       enable_creation=true
       wsrep_cluster_address='{{ gcomm_address }}'
       cluster_host_map='{{ cluster_host_map }}'
