@@ -58,6 +58,16 @@
       target-dir=/var/lib/mysql
       options=rw
       storage-map
+      id=stretch-galera-mariadb-log
+      source-dir=/var/log/mariadb-stretch
+      target-dir=/var/log/mariadb
+      options=rw
+      storage-map
+      id=stretch-galera-mysql-log
+      source-dir=/var/log/containers/mysql-stretch
+      target-dir=/var/log/mysql
+      options=rw
+      storage-map
       id=stretch-galera-mysql-dev-log
       source-dir=/dev/log
       target-dir=/dev/log
