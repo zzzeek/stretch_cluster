@@ -34,7 +34,7 @@
     - stack2_controller
   gather_facts: no
   roles:
-     - { role: setup-pacemaker, tags: ['setup_pacemaker'] }
+     - { role: create-vip, tags: ['create_vip'] }
      - { role: setup-haproxy, tags: ['setup_haproxy'] }
 
 - name: setup keystone data
