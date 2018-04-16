@@ -27,6 +27,14 @@
       set_fact:
          transport_ip_number: '{{ transport_ip_number_cmd.stdout }}'
 
+    - name: get /etc/hostname
+      shell: cat /etc/hostname
+      register: cat_hostname_cmd
+
+    - name: set /etc/hostname fact
+      set_fact:
+        real_hostname: '{{ cat_hostname_cmd.stdout }}'
+
     - name: set master / follower ip numbers
       set_fact:
           master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"

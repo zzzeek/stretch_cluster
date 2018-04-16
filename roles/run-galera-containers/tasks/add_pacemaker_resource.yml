@@ -54,11 +54,6 @@
       target-dir=/var/lib/mysql
       options=rw
       storage-map
-      id=stretch-galera-mysql-log
-      source-dir=/var/log/mysql-stretch
-      target-dir=/var/log/
-      options=rw
-      storage-map
       id=stretch-galera-mysql-dev-log
       source-dir=/dev/log
       target-dir=/dev/log
@@ -69,6 +64,10 @@
       target-dir=/root/.ssh
       options=ro
       network control-port=3123 --disabled
+    become: true
+
+  - name: constraint
+    shell: /usr/sbin/pcs -f /var/lib/pacemaker/cib/stretch-galera-create-bundle constraint location stretch-galera-bundle prefers {{ real_hostname }}
     become: true
 
   - name: exec cib for galera-bundle
