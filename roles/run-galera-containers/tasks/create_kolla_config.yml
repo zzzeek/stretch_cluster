@@ -19,3 +19,12 @@
     - {"section": "mysqld", "key": "port", "value": "{{ galera_listen_port }}"}
     - {"section": "client", "key": "port", "value": "{{ galera_listen_port }}"}
     - {"section": "mysqld", "key": "bind-address", "value": "{{ galera_bind_address }}"}
+
+# NOTE: the file seems to use root, maybe we should not assume that
+- name: set clustercheck password
+  lineinfile:
+    path: /var/lib/config-data/puppet-generated/mysql-stretch/etc/sysconfig/clustercheck
+    regexp: "^MYSQL_PASSWORD=.*"
+    line: "MYSQL_PASSWORD='{{ stretch_galera_root_password }}'"
+  become: true
+

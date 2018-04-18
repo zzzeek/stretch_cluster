@@ -75,8 +75,8 @@
       register: cat_kolla_pw_cmd
       become: true
 
-    - name: set mysql root password fact
+    - name: set original mysql root password fact
       set_fact:
-        mysql_root_password: "{{ cat_kolla_pw_cmd.stdout }}"
+        original_mysql_root_password: "{{ cat_kolla_pw_cmd.stdout }}"
 
 

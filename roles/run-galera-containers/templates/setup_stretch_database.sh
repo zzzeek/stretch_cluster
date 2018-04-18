@@ -11,5 +11,5 @@ fi
 sleep 7
 
 # these connect on unix socket so port doesn't matter
-/usr/bin/mysql -u root -e "UPDATE mysql.user SET password=PASSWORD('{{ mysql_root_password }}') where user='root'; flush privileges;"
-/usr/bin/mysqladmin -u root --password={{ mysql_root_password }}  shutdown
+/usr/bin/mysql -u root -e "UPDATE mysql.user SET password=PASSWORD('{{ stretch_galera_root_password }}') where user='root'; flush privileges;"
+/usr/bin/mysqladmin -u root --password={{ stretch_galera_root_password }}  shutdown

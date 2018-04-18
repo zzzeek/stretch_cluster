@@ -61,7 +61,7 @@
 - name: set master parameters
   set_fact:
       galera_bind_address: "{{ master_ip }}"
-      galera_parameters: >
+      galera_parameters: >-
           --bind-address={{ master_ip }}
           {{ (deploy_via_pacemaker|bool==false) | ternary("--wsrep-new-cluster", "") }}
           --wsrep-provider-options=gmcast.listen_addr=tcp://{{ master_ip }}:4567;pc.weight=2
@@ -74,7 +74,7 @@
 - name: set follower parameters
   set_fact:
       galera_bind_address: "{{ follower_ip }}"
-      galera_parameters: >
+      galera_parameters: >-
         --bind-address={{ follower_ip }}
         --wsrep-provider-options=gmcast.listen_addr=tcp://{{ follower_ip }}:4567;pc.weight=1
         --wsrep-sst-receive-address={{ follower_ip }}
@@ -118,7 +118,7 @@
   shell: docker exec stretch_galera mysql -u root -s --skip-column-names -e "show status like 'wsrep_local_state'"
   register: result
   until: result.stdout.find("4") != -1
-  retries: 5
+  retries: 20
   delay: 5
   become: true
   any_errors_fatal: true
@@ -128,6 +128,6 @@
 # stretch_galera
 
 - name: set up a root user that can get there from the network
-  shell: docker exec {{ container_name }} mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root' WITH GRANT OPTION"
+  shell: docker exec {{ container_name }} mysql -u root --password="{{ stretch_galera_root_password }}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root' WITH GRANT OPTION"
   become: true
   run_once: true
