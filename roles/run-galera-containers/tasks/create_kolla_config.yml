@@ -13,8 +13,9 @@
     section: "{{ item['section'] }}"
     option: "{{ item['key'] }}"
     value: "{{ item['value'] }}"
-    with-items:
-      - {"section": "mysqld", "key": "port", "value": "{{ galera_listen_port }}"}
-      - {"section": "client", "key": "port", "value": "{{ galera_listen_port }}"}
-      - {"section": "mysqld", "key": "bind-address", "value": "{{ galera_bind_address }}"}
     backup: yes
+  become: true
+  with_items:
+    - {"section": "mysqld", "key": "port", "value": "{{ galera_listen_port }}"}
+    - {"section": "client", "key": "port", "value": "{{ galera_listen_port }}"}
+    - {"section": "mysqld", "key": "bind-address", "value": "{{ galera_bind_address }}"}
