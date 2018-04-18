@@ -232,8 +232,17 @@ pcmk1:node.1.galera;pcmk2:node.2.galera;pcmk3:node.3.galera
 where the galera resource started on node pcmk1 would be named
 node.1.galera in the wsrep_cluster_address
 
-to note a pacemaker node in a remote cluster, add "username@sshhost/" to the
-node name:
+</longdesc>
+<shortdesc lang="en">Pacemaker to Galera name mapping</shortdesc>
+<content type="string" default=""/>
+</parameter>
+
+<parameter name="remote_node_map" unique="0" required="0">
+<longdesc lang="en">
+A mapping of pacemaker node names to remote hosts.
+
+Allows pacemaker nodes in remote pacemaker clusters to be part of this
+Galera cluster:
 
 root@pacemakerhost/pcmk1:node.1.galera;root@pacemakerhost/pcmk2:node.2.galera
 
@@ -448,22 +457,33 @@ set_master_score()
     fi
 }
 
+get_remote_node()
+{
+    local node=$1
+    if [ -z "$OCF_RESKEY_remote_node_map" ]; then
+        echo $node
+    else
+        local retval=$(echo "$OCF_RESKEY_remote_node_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '$1=="'"$node"'" {print $2;exit}')
+        if [ -z "$retval" ]; then
+            echo $node
+        else
+            echo $retval
+        fi
+    fi
+}
+
 remote_crm_master()
 {
 
     local node=$1
     shift
 
-    local user
-    local remote_host
-    local pcmk_node
+    local remote_ssh=$(get_remote_node $node)
 
-    read -r user remote_host pcmk_node <<<$(echo $node | awk -F '@|/' '{print $1 " " $2 " " $3}')
-
-    if [ -z "$remote_host" ]; then
+    if [ -z "$remote_ssh" ]; then
         $CRM_MASTER -N $node $@
     else
-        $SSH_CMD $user@$remote_host $CRM_MASTER -N $pcmk_node $@
+        $SSH_CMD $remote_ssh $CRM_MASTER -N $node $@
     fi
 }
 
@@ -472,16 +492,12 @@ remote_crm_attribute()
     local node=$1
     shift
 
-    local user
-    local remote_host
-    local pcmk_node
+    local remote_ssh=$(get_remote_node $node)
 
-    read -r user remote_host pcmk_node <<<$(echo $node | awk -F '@|/' '{print $1 " " $2 " " $3}')
-
-    if [ -z "$remote_host" ]; then
+    if [ -z "$remote_ssh" ]; then
         ${HA_SBIN_DIR}/crm_attribute -N $node $@
     else
-        $SSH_CMD $user@$remote_host ${HA_SBIN_DIR}/crm_attribute -N $pcmk_node $@
+        $SSH_CMD $remote_ssh ${HA_SBIN_DIR}/crm_attribute -N $node $@
     fi
 }
 
