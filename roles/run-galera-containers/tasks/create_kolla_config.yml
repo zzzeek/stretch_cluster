@@ -1,0 +1,20 @@
+# we need to set *one* config attribute, the port.  has to be in my.cnf because
+# the resource agent doesnt take this in as a config setting.
+# therefore, we need to lift and move the *entire* kolla config to a new one :(
+
+- name: create all new kolla config
+  shell: cp -R /var/lib/config-data/puppet-generated/mysql/ /var/lib/config-data/puppet-generated/mysql-stretch/
+  become: true
+
+
+- name: change galera.cnf
+  ini_file:
+    path: /var/lib/config-data/puppet-generated/mysql-stretch/etc/my.cnf.d/galera.cnf
+    section: "{{ item['section'] }}"
+    option: "{{ item['key'] }}"
+    value: "{{ item['value'] }}"
+    with-items:
+      - {"section": "mysqld", "key": "port", "value": "{{ galera_listen_port }}"}
+      - {"section": "client", "key": "port", "value": "{{ galera_listen_port }}"}
+      - {"section": "mysqld", "key": "bind-address", "value": "{{ galera_bind_address }}"}
+    backup: yes

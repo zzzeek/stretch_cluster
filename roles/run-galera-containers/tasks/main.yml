@@ -60,6 +60,7 @@
 
 - name: set master parameters
   set_fact:
+      galera_bind_address: "{{ master_ip }}"
       galera_parameters: >
           --bind-address={{ master_ip }}
           {{ (deploy_via_pacemaker|bool==false) | ternary("--wsrep-new-cluster", "") }}
@@ -72,6 +73,7 @@
 
 - name: set follower parameters
   set_fact:
+      galera_bind_address: "{{ follower_ip }}"
       galera_parameters: >
         --bind-address={{ follower_ip }}
         --wsrep-provider-options=gmcast.listen_addr=tcp://{{ follower_ip }}:4567;pc.weight=1
@@ -84,7 +86,7 @@
   lineinfile:
     path: /etc/sysconfig/iptables
     insertafter: "-A INPUT .* 3306 .* -j ACCEPT"
-    line: '-A INPUT -p tcp -m multiport --dports 3307 -m state --state NEW -m comment --comment "100 mysql_stretch_haproxy ipv4" -j ACCEPT'
+    line: '-A INPUT -p tcp -m multiport --dports {{ galera_listen_port }} -m state --state NEW -m comment --comment "100 mysql_stretch_haproxy ipv4" -j ACCEPT'
   notify: reload iptables
   become: true
 
@@ -106,7 +108,9 @@
 
 
 - name: run galera via pacemaker
-  include_tasks: add_pacemaker_resource.yml
+  block:
+    - include_tasks: create_kolla_config.yml
+    - include_tasks: add_pacemaker_resource.yml
   when:
     deploy_via_pacemaker|bool == true
 
@@ -118,6 +122,7 @@
   delay: 5
   become: true
   any_errors_fatal: true
+  run_once: true
 
 # stretch-galera-bundle
 # stretch_galera
@@ -125,4 +130,4 @@
 - name: set up a root user that can get there from the network
   shell: docker exec {{ container_name }} mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root' WITH GRANT OPTION"
   become: true
-
+  run_once: true

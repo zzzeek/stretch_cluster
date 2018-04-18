@@ -49,7 +49,7 @@
       options=ro
       storage-map
       id=stretch-galera-cfg-data
-      source-dir=/var/lib/config-data/puppet-generated/mysql/
+      source-dir=/var/lib/config-data/puppet-generated/mysql-stretch/
       target-dir=/var/lib/kolla/config_files/src
       options=ro
       storage-map
@@ -126,7 +126,7 @@
       -f /var/lib/pacemaker/cib/stretch-galera-create-resource
       resource create stretch-galera ocf:heartbeat:galera
       log='/var/log/mysql/mysqld.log'
-      additional_parameters='--open-files-limit=16384 --port=3307 {{galera_parameters}}'
+      additional_parameters='--open-files-limit=16384 {{ galera_parameters }}'
       enable_creation=true
       wsrep_cluster_address='{{ gcomm_address }}'
       cluster_host_map='{{ cluster_host_map }}'
@@ -146,3 +146,7 @@
 - name: set container name fact
   set_fact:
     container_name: stretch-galera-bundle-docker-0
+
+- name: resource enable
+  shell: /usr/sbin/pcs resource enable stretch-galera-bundle
+  become: true
