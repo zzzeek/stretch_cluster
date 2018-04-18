@@ -1,3 +1,13 @@
+
+- name: copy resource agent to controller
+  copy:
+    src: galera_ra.sh
+    dest: /usr/lib/ocf/resource.d/heartbeat/galera
+    mode: 0755
+    owner: root
+    group: root
+  become: true
+
 - name: set stretch-galera-role for node
   shell: /usr/sbin/pcs node attribute {{ pacemaker_node_name }} stretch-galera-role=true
   become: true
