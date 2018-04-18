@@ -430,8 +430,28 @@ master_exists()
         return 1
     fi
     # determine if a master instance is already up and is healthy
+    ocf_log info "master_exists, running crm_mon on local node"
     crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
-    return $?
+
+    local master_exists_local=$?
+
+    ocf_log info "master_exists, got $master_exists_local for local node answer"
+
+    # if not, and we have remote nodes, check those also
+    if [ $master_exists_local -ne 0 ] && [ -n "$OCF_RESKEY_remote_node_map" ]; then
+        ocf_log info "master_exists didn't get a local answer, trying remote nodes"
+        for remote_ssh in $(echo "$OCF_RESKEY_remote_node_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '{print $2;}' | sort | uniq); do
+            ocf_log info "master_exists running crm_mon via $SSH_CMD $remote_ssh" 
+            $SSH_CMD $remote_ssh crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                ocf_log info "master_exists got a zero return code from remote $remote_ssh"
+                return $?
+            fi
+        done
+    fi
+
+    ocf_log info "master_exists fallthrough, returning $master_exists_local, rc code is $?"
+    return $master_exists_local
 }
 
 clear_master_score()
