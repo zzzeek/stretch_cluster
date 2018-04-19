@@ -7,7 +7,7 @@ then
 fi
 
 
-/usr/bin/mysqld_safe --port 3307 --skip-grant-tables --wsrep-provider=none &
+/usr/bin/mysqld_safe --port {{ galera_listen_port }} --skip-grant-tables --wsrep-provider=none &
 sleep 7
 
 # these connect on unix socket so port doesn't matter

@@ -1,3 +1,6 @@
+- name: copy existing kolla config and modify
+  include_tasks: create_kolla_config.yml
+
 - name: create host mysql dir
   file:
     path: /var/lib/mysql-stretch
@@ -23,19 +26,77 @@
     group: "{{ mysql_gid }}"
   become: true
 
-- name: set container volumes fact
+- name: set up volumes
   set_fact:
       galera_volumes:
-        - /var/log/containers/mysql-stretch:/var/log/mysql
-        - /var/log/mariadb-stretch:/var/log/mariadb
-        - /etc/hosts:/etc/hosts:ro
-        - /var/lib/mysql-stretch:/var/lib/mysql:rw
-        - /etc/localtime:/etc/localtime:ro
-        - /dev/log:/dev/log:rw
-        - /etc/pacemaker/authkey:/etc/pacemaker/authkey
-        - /var/lib/kolla/config_files/mysql.json:/var/lib/kolla/config_files/config.json:ro
-        - /var/lib/config-data/puppet-generated/mysql/:/var/lib/kolla/config_files/src:ro
-        - /root/.ssh:/root/.ssh
+        - {
+            "id": "stretch-galera-mysql-log",
+            "source": "/var/log/containers/mysql-stretch",
+            "target": "/var/log/mysql",
+            "ro": false
+          }
+        - {
+            "id": "stretch-galera-mariadb-log",
+            "source": "/var/log/mariadb-stretch",
+            "target": "/var/log/mariadb",
+            "ro": false
+          }
+        - {
+            "id": "stretch-galera-mysql-lib",
+            "source": "/var/lib/mysql-stretch",
+            "target": "/var/lib/mysql",
+            "ro": true
+          }
+        - {
+            "id": "stretch-galera-cfg-files",
+            "source": "/var/lib/kolla/config_files/mysql.json",
+            "target": "/var/lib/kolla/config_files/config.json",
+            "ro": true
+          }
+        - {
+            "id": "stretch-galera-cfg-data",
+            "source": "var/lib/config-data/puppet-generated/mysql-stretch/",
+            "target": "/var/lib/kolla/config_files/src",
+            "ro": true
+          }
+        - {
+            "id": "stretch-galera-hosts",
+            "source": "/etc/hosts",
+            "target": "/etc/hosts",
+            "ro": true
+          }
+        - {
+            "id": "stretch-galera-localtime",
+            "source": "/etc/localtime",
+            "target": "/etc/localtime",
+            "ro": true
+          }
+        - {
+            "id": "stretch-galera-mysql-dev-log",
+            "source": "/dev/log",
+            "target": "/dev/log",
+            "ro": false
+          }
+        - {
+            "id": "stretch-galera-root-ssh",
+            "source": "/root/.ssh",
+            "target": "/root/.ssh",
+            "ro": true
+          }
+
+- name: set container volumes fact
+  set_fact:
+      galera_docker_volumes: >
+        {{
+          galera_volumes |
+          map(
+            'format',
+            '%s:%s:%s',
+            item['source'],
+            item['target'],
+            (item['ro'] | ternary('ro', 'rw'))
+          )
+        }}
 
 - name: use the docker container to create mysql setup
   docker_container:
