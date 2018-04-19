@@ -334,13 +334,11 @@ is_no_grastate()
 
 clear_last_commit()
 {
-    ocf_log info "running local crm_attribute -N $NODENAME -l reboot --name ${INSTANCE_ATTR_NAME}-last-committed -D"
     ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-last-committed" -D
 }
 
 set_last_commit()
 {
-    ocf_log info "running local crm_attribute -N $NODENAME -l reboot --name ${INSTANCE_ATTR_NAME}-last-committed -v $1"
     ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-last-committed" -v $1
 }
 
@@ -430,27 +428,25 @@ master_exists()
         return 1
     fi
     # determine if a master instance is already up and is healthy
-    ocf_log info "master_exists, running crm_mon on local node"
     crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
 
     local master_exists_local=$?
 
-    ocf_log info "master_exists, got $master_exists_local for local node answer"
+    if [ $master_exists_local -eq 0 ]; then
+        ocf_log info "Detected that a master exists for the local cluster"
+    fi
 
     # if not, and we have remote nodes, check those also
     if [ $master_exists_local -ne 0 ] && [ -n "$OCF_RESKEY_remote_node_map" ]; then
-        ocf_log info "master_exists didn't get a local answer, trying remote nodes"
         for remote_ssh in $(echo "$OCF_RESKEY_remote_node_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '{print $2;}' | sort | uniq); do
-            ocf_log info "master_exists running crm_mon via $SSH_CMD $remote_ssh" 
             $SSH_CMD $remote_ssh crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
             if [ $? -eq 0 ]; then
-                ocf_log info "master_exists got a zero return code from remote $remote_ssh"
+                ocf_log info "Detected that a master exists for the remote cluster $remote_ssh"
                 return $?
             fi
         done
     fi
 
-    ocf_log info "master_exists fallthrough, returning $master_exists_local, rc code is $?"
     return $master_exists_local
 }
 
@@ -502,10 +498,8 @@ remote_crm_master()
     local remote_ssh=$(get_remote_node $node)
 
     if [ -z "$remote_ssh" ]; then
-        ocf_log info "Running local crm_master -N ${node} $@"
         $CRM_MASTER -N $node $@
     else
-        ocf_log info "Running remote $SSH_CMD $remote_ssh crm_master -r ${INSTANCE_ATTR_NAME} -N ${node} $@"
         $SSH_CMD $remote_ssh $CRM_MASTER -r ${INSTANCE_ATTR_NAME} -N $node $@
     fi
 }
@@ -518,10 +512,8 @@ remote_crm_attribute()
     local remote_ssh=$(get_remote_node $node)
 
     if [ -z "$remote_ssh" ]; then
-        ocf_log info "Running local crm_attribute -N ${node} $@"
         ${HA_SBIN_DIR}/crm_attribute -N $node $@
     else
-        ocf_log info "Running remote $SSH_CMD $remote_ssh crm_attribute -N ${node} $@"
         $SSH_CMD $remote_ssh ${HA_SBIN_DIR}/crm_attribute -N $node $@
     fi
 }
@@ -593,8 +585,6 @@ detect_first_master()
     local best_node
     local safe_to_bootstrap
 
-    ocf_log info "detect_first_master"
-
     all_nodes=$(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' ')
     best_node_gcomm=$(echo "$all_nodes" | sed 's/^.* \(.*\)$/\1/')
     best_node=$(galera_to_pcmk_name $best_node_gcomm)
@@ -634,10 +624,8 @@ detect_first_master()
             break
         fi
 
-        ocf_log info "getting last commit for node: $node"
         last_commit=$(get_last_commit $node)
 
-        ocf_log info "Got last commit for node ${node} value is ${last_commit}"
         if [ -z "$last_commit" ]; then
             ocf_log info "Waiting on node <${node}> to report database status before Master instances can start."
             missing_nodes=1
@@ -668,7 +656,6 @@ detect_first_master()
 
 detect_safe_to_bootstrap()
 {
-    ocf_log info "detect_safe_to_bootstrap"
     local safe_to_bootstrap=""
 
     if [ -f ${OCF_RESKEY_datadir}/grastate.dat ]; then
@@ -678,17 +665,14 @@ detect_safe_to_bootstrap()
 
     ocf_log info "got safe to bootstrap result: $safe_to_bootstrap"
     if [ "$safe_to_bootstrap" = "1" ] || [ "$safe_to_bootstrap" = "0" ]; then
-        ocf_log info "setting safe to bootstrap to $safe_to_bootstrap"
         set_safe_to_bootstrap $safe_to_bootstrap
     else
-        ocf_log info "clearing safe to bootstrap"
         clear_safe_to_bootstrap
     fi
 }
 
 detect_last_commit()
 {
-    ocf_log info "detect_last_commit"
     local last_commit
     local recover_args="--defaults-file=$OCF_RESKEY_config \
                         --pid-file=$OCF_RESKEY_pid \
@@ -711,7 +695,6 @@ detect_last_commit()
 
     ocf_log info "attempting to detect last commit version by reading ${OCF_RESKEY_datadir}/grastate.dat"
     last_commit="$(cat ${OCF_RESKEY_datadir}/grastate.dat | sed -n 's/^seqno.\s*\(.*\)\s*$/\1/p')"
-    ocf_log info "Got last commit from grastate.dat: $last_commit"
     if [ -z "$last_commit" ] || [ "$last_commit" = "-1" ]; then
         local tmp=$(mktemp)
         chown $OCF_RESKEY_user:$OCF_RESKEY_group $tmp
@@ -727,7 +710,6 @@ detect_last_commit()
         ${OCF_RESKEY_binary} $recover_args --wsrep-recover --log-error=$tmp 2>/dev/null
 
         last_commit="$(cat $tmp | sed -n $recovered_position_regex | tail -1)"
-        ocf_log info "Got last commit from wsrep-recover: $last_commit"
         if [ -z "$last_commit" ]; then
             # Galera uses InnoDB's 2pc transactions internally. If
             # server was stopped in the middle of a replication, the
@@ -771,8 +753,6 @@ detect_last_commit()
 # For galera, promote is really start
 galera_promote()
 {
-    ocf_log info "galera_promote" 
-
     local rc
     local extra_opts
     local bootstrap
@@ -863,8 +843,6 @@ galera_promote()
 
 galera_demote()
 {
-    ocf_log info "galera_demote"
-
     mysql_common_stop
     rc=$?
     if [ $rc -ne $OCF_SUCCESS ] && [ $rc -ne $OCF_NOT_RUNNING ]; then
@@ -894,8 +872,6 @@ galera_demote()
 
 galera_start()
 {
-    ocf_log info "galera_start"
-
     local rc
     local galera_node
 
@@ -940,8 +916,6 @@ galera_start()
 
 galera_monitor()
 {
-    ocf_log info "galera_monitor"
-
     local rc
     local galera_node
     local status_loglevel="err"
