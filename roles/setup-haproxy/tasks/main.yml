@@ -29,8 +29,8 @@
         stick-table type ip size 1000
         timeout client 90m
         timeout server 90m
-        server {{ local_server }} {{ local_galera_ip }}:3307 check inter 1s on-marked-down shutdown-sessions port 9200
-        server {{ remote_server }} {{ remote_galera_ip }}:3307 backup check inter 1s on-marked-down shutdown-sessions port 9200
+        server {{ local_server }} {{ local_galera_ip }}:{{ galera_listen_port }} check inter 1s on-marked-down shutdown-sessions port 9200
+        server {{ remote_server }} {{ remote_galera_ip }}:{{ galera_listen_port }} backup check inter 1s on-marked-down shutdown-sessions port 9200
   become: true
 
 - name: restart haproxy via pcs

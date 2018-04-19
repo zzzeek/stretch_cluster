@@ -1,111 +1,16 @@
 - name: create image
   include_tasks: create_docker_image.yml
 
-- name: create host mysql dir
-  file:
-    path: /var/lib/mysql-stretch
-    state: directory
-    owner: "{{ mysql_uid }}"
-    group: "{{ mysql_gid }}"
-  register: created_data_directory
-  become: true
+- name: setup mysql directories and parameters
+  include_tasks: init_mysql.yml
 
-- name: create host mysql log dir
-  file:
-    path: /var/log/containers/mysql-stretch
-    state: directory
-    owner: "{{ mysql_uid }}"
-    group: "{{ mysql_gid }}"
-  become: true
-
-- name: create host mariadb log dir
-  file:
-    path: /var/log/mariadb-stretch
-    state: directory
-    owner: "{{ mysql_uid }}"
-    group: "{{ mysql_gid }}"
-  become: true
-
-- name: set container volumes fact
-  set_fact:
-      galera_volumes:
-        - /var/log/containers/mysql-stretch:/var/log/mysql
-        - /var/log/mariadb-stretch:/var/log/mariadb
-        - /etc/hosts:/etc/hosts:ro
-        - /var/lib/mysql-stretch:/var/lib/mysql:rw
-        - /etc/localtime:/etc/localtime:ro
-        - /dev/log:/dev/log:rw
-        - /etc/pacemaker/authkey:/etc/pacemaker/authkey
-        - /var/lib/kolla/config_files/mysql.json:/var/lib/kolla/config_files/config.json:ro
-        - /var/lib/config-data/puppet-generated/mysql/:/var/lib/kolla/config_files/src:ro
-        - /root/.ssh:/root/.ssh
-
-- name: create mysql setup
-  docker_container:
-    name: stretch_galera_cmd
-    cleanup: true
-    image: "{{ stretch_galera_imagename }}"
-    command: /setup_stretch_database.sh
-    volumes: "{{ galera_volumes }}"
-    network_mode: host
-    detach: false
-  become: true
-
-# TODO: simple single master / single follower setup to start with.  we
-# later would want this to be a little more open ended
-
-- name: create gcomm address
-  set_fact:
-      gcomm_address: "gcomm://{{ master_ip }},{{ follower_ip }}"
-
-- name: set master parameters
-  set_fact:
-      galera_bind_address: "{{ master_ip }}"
-      galera_parameters: >-
-          --bind-address={{ master_ip }}
-          {{ (deploy_via_pacemaker|bool==false) | ternary("--wsrep-new-cluster", "") }}
-          --wsrep-provider-options=gmcast.listen_addr=tcp://{{ master_ip }}:4567;pc.weight=2
-          --wsrep-sst-receive-address={{ master_ip }}
-      cluster_host_map: "stack1-overcloud-controller-0:{{ master_ip }};stack2-overcloud-controller-0:{{ follower_ip }}"
-      remote_node_map: "stack2-overcloud-controller-0:root@{{ follower_ip }}"
-
-  when: inventory_hostname == "{{ galera_master_inventoryname }}"
-
-- name: set follower parameters
-  set_fact:
-      galera_bind_address: "{{ follower_ip }}"
-      galera_parameters: >-
-        --bind-address={{ follower_ip }}
-        --wsrep-provider-options=gmcast.listen_addr=tcp://{{ follower_ip }}:4567;pc.weight=1
-        --wsrep-sst-receive-address={{ follower_ip }}
-      cluster_host_map: "stack1-overcloud-controller-0:{{ master_ip }};stack2-overcloud-controller-0:{{ follower_ip }}"
-      remote_node_map: "stack1-overcloud-controller-0:root@{{ master_ip }}"
-  when: inventory_hostname != "{{ galera_master_inventoryname }}"
-
-- name: open up iptables rule
-  lineinfile:
-    path: /etc/sysconfig/iptables
-    insertafter: "-A INPUT .* 3306 .* -j ACCEPT"
-    line: '-A INPUT -p tcp -m multiport --dports {{ galera_listen_port }} -m state --state NEW -m comment --comment "100 mysql_stretch_haproxy ipv4" -j ACCEPT'
-  notify: reload iptables
-  become: true
-
-- name: open up iptables rule
-  lineinfile:
-    path: /etc/sysconfig/iptables
-    insertafter: "-A INPUT .* 3306 .* -j ACCEPT"
-    line: '-A INPUT -p tcp -m multiport --dports {{ pacemaker_network_control_port }} -m state --state NEW -m comment --comment "100 mysql stretch-galera-bundle ipv4" -j ACCEPT'
-  notify: reload iptables
-  become: true
-
-- name: ensure restart happens
-  meta: flush_handlers
+- name: run iptables config
+  include_tasks: setup_iptables.yml
 
 - name: run galera via docker
   include_tasks: run_container_directly.yml
   when:
     deploy_via_pacemaker|bool == false
-
 
 - name: run galera via pacemaker
   block:
@@ -124,10 +29,7 @@
   any_errors_fatal: true
   run_once: true
 
-# stretch-galera-bundle
-# stretch_galera
-
 - name: set up a root user that can get there from the network
-  shell: docker exec {{ container_name }} mysql -u root --password="{{ stretch_galera_root_password }}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root' WITH GRANT OPTION"
+  shell: docker exec {{ container_name }} mysql -u root --password="{{ stretch_galera_root_password }}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '{{ stretch_galera_root_password }}' WITH GRANT OPTION"
   become: true
   run_once: true

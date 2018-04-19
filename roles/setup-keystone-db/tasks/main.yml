@@ -1,38 +1,38 @@
 
+- name: ping
+  shell: mysql {{ mysql_net_login }} -e "SELECT 1"
+
 - name: get keystone grants
-  shell: docker exec  galera-bundle-docker-0   mysql -u root -s -N -e "show grants for keystone" | sed 's/$/;/' >  keystone_{{ stack_name }}_grants.sql
+  shell: mysql {{ mysql_net_login }} -s -N -e "show grants for keystone" | sed 's/$/;/' >  keystone_{{ stack_name }}_grants.sql
   become: true
 
 # note that by omitting --databases, we get a dump that's local to "keystone" and doesn't include
 # CREATE DATABASE or USE
 - name: get keystone data
-  shell: docker exec  galera-bundle-docker-0   mysqldump -u root --single-transaction keystone >  keystone_{{ stack_name }}_database.sql
+  shell: mysqldump {{ mysql_net_login }} --single-transaction keystone >  keystone_{{ stack_name }}_database.sql
   become: true
 
-- name: ping
-  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} -e "SELECT 1"
-
 - name: create placeholder keystone database in stretch galera
-  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
+  shell: mysql {{ mysql_net_login }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
 
 - name: copy keystone db to placeholder db
-  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
+  shell: mysql {{ mysql_net_login }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
 
 
 - name: setup master keystone db
   block:
     - name: create main keystone DB
-      shell: mysql -u root -proot -P 3307 -h {{ master_ip }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
+      shell: mysql {{ mysql_net_login }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
 
     - name: copy stack1 keystone to main keystone db
-      shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone < keystone_stack1_database.sql
+      shell: mysql {{ mysql_net_login }} keystone < keystone_stack1_database.sql
 
     - name: setup grants in main keystone db
-      shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone < keystone_stack1_grants.sql
+      shell: mysql {{ mysql_net_login }} keystone < keystone_stack1_grants.sql
 
     - name: rebuild keystone regions and endpoints
       shell: |
-        mysql -u root -proot -P 3307 -h {{ master_ip }} keystone << "EOF"
+        mysql {{ mysql_net_login }} keystone << "EOF"
 
         GRANT USAGE ON *.* TO 'keystone'@'%' IDENTIFIED BY 'stretch_keystone';
         GRANT ALL PRIVILEGES ON `keystone`.* TO 'keystone'@'%';
@@ -60,8 +60,4 @@
 
   when: "'master_overcloud' in group_names"
 
-
-
-#- name: set grants on placeholder db
-#  shell: mysql -u root -proot -P 3307 -h {{ master_ip }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_grants.sql
 

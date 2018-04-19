@@ -79,4 +79,6 @@
       set_fact:
         original_mysql_root_password: "{{ cat_kolla_pw_cmd.stdout }}"
 
-
+- name: set network login opts for MySQL once galera is running
+  set_fact:
+    mysql_net_login: "-u root --password '{{ stretch_galera_root_password }}' -P {{ galera_listen_port }} -h {{ master_ip }}"

@@ -1,11 +1,9 @@
-# we need to set *one* config attribute, the port.  has to be in my.cnf because
-# the resource agent doesnt take this in as a config setting.
-# therefore, we need to lift and move the *entire* kolla config to a new one :(
+# in order to change parameters compared to the original mysql, copy
+# the whole kolla config to a new one that can be modified.
 
 - name: create all new kolla config
   shell: cp -R /var/lib/config-data/puppet-generated/mysql/ /var/lib/config-data/puppet-generated/mysql-stretch/
   become: true
-
 
 - name: change galera.cnf
   ini_file:
