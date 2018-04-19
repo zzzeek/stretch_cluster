@@ -14,7 +14,7 @@
         --log-error=/var/log/mysql/mysqld.log --user=mysql --open-files-limit=16384
         --wsrep-cluster-address={{ gcomm_address }}
         {{ galera_parameters }}
-    volumes: "{{ galera_volumes }}"
+    volumes: "{{ galera_docker_volumes }}"
     network_mode: host
   become: true
 
