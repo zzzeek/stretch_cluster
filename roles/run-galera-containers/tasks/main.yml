@@ -20,7 +20,7 @@
     deploy_via_pacemaker|bool == true
 
 - name: wait for it to run
-  shell: docker exec {{ container_name }} mysql -u root --password="{{ stretch_galera_root_password }}" -s --skip-column-names -e "show status like 'wsrep_local_state'"
+  shell: docker exec {{ galera_container_name }} mysql -u root --password="{{ galera_root_password }}" -s --skip-column-names -e "show status like 'wsrep_local_state'"
   register: result
   until: result.stdout.find("4") != -1
   retries: 20
@@ -30,6 +30,6 @@
   run_once: true
 
 - name: set up a root user that can get there from the network
-  shell: docker exec {{ container_name }} mysql -u root --password="{{ stretch_galera_root_password }}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '{{ stretch_galera_root_password }}' WITH GRANT OPTION"
+  shell: docker exec {{ galera_container_name }} mysql -u root --password="{{ galera_root_password }}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '{{ galera_root_password }}' WITH GRANT OPTION"
   become: true
   run_once: true

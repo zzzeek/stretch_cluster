@@ -1,7 +1,6 @@
-- name: config
+- name: pull config variables into environment
   include_vars: "{{ playbook_dir }}/../config.yml"
   tags: always
-
 
 - name: get galera-node specific information
   when: "'galera_nodes' in group_names"
@@ -62,24 +61,24 @@
       master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
       follower_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
       galera_listen_port: "{{ galera_listen_port }}"
-      stretch_galera_root_password: "{{ stretch_galera_root_password }}"
+      galera_root_password: "{{ galera_root_password }}"
 
 - name: set stack1-specific facts
   set_fact:
     stack_name: "stack1"
-    stretch_galera_vip: "{{ stack1_stretch_galera_vip }}"
+    galera_vip: "{{ stack1_galera_vip }}"
     local_galera_ip: "{{ master_ip }}"
-    mysql_controller_login: "-u root --password='{{ stretch_galera_root_password }}' -P {{ galera_listen_port }} -h {{ master_ip }}"
+    galera_local_login: "-u root --password='{{ galera_root_password }}' -P {{ galera_listen_port }} -h {{ master_ip }}"
   when: "'stack1' in group_names"
 
 - name: set stack2-specific facts
   set_fact:
     stack_name: 'stack2'
-    stretch_galera_vip: "{{ stack2_stretch_galera_vip }}"
+    galera_vip: "{{ stack2_galera_vip }}"
     local_galera_ip: "{{ follower_ip }}"
-    mysql_controller_login: "-u root --password='{{ stretch_galera_root_password }}' -P {{ galera_listen_port }} -h {{ follower_ip }}"
+    galera_local_login: "-u root --password='{{ galera_root_password }}' -P {{ galera_listen_port }} -h {{ follower_ip }}"
   when: "'stack2' in group_names"
 
 - name: set MySQL vip login flags fact
   set_fact:
-      mysql_vip_login: "-u root --password='{{ stretch_galera_root_password }}' -h {{ stretch_galera_vip }}"
+      galera_vip_login: "-u root --password='{{ galera_root_password }}' -h {{ galera_vip }}"

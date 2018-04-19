@@ -23,6 +23,6 @@
   lineinfile:
     path: /var/lib/config-data/puppet-generated/mysql-stretch/etc/sysconfig/clustercheck
     regexp: "^MYSQL_PASSWORD=.*"
-    line: "MYSQL_PASSWORD='{{ stretch_galera_root_password }}'"
+    line: "MYSQL_PASSWORD='{{ galera_root_password }}'"
   become: true
 

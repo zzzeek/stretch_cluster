@@ -1,13 +1,13 @@
 
 - name: does pacemaker vip exist?
-  shell: pcs resource show ip-{{ stretch_galera_vip }}
+  shell: pcs resource show ip-{{ galera_vip }}
   ignore_errors: true
   register: pcs_vip_exists
   become: true
   when:  "'pacemaker_control_nodes' in group_names"
 
 - name: setup pacemaker vip
-  shell: pcs resource create ip-{{ stretch_galera_vip }} IPaddr2 ip={{ stretch_galera_vip }}
+  shell: pcs resource create ip-{{ galera_vip }} IPaddr2 ip={{ galera_vip }}
   when: 
     - "'pacemaker_control_nodes' in group_names"
     - pcs_vip_exists.failed | bool 

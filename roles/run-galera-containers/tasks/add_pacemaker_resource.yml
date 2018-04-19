@@ -145,7 +145,7 @@
 
 - name: set container name fact
   set_fact:
-    container_name: stretch-galera-bundle-docker-0
+    galera_container_name: stretch-galera-bundle-docker-0
 
 - name: resource enable
   shell: /usr/sbin/pcs resource enable stretch-galera-bundle

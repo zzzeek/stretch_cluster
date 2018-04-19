@@ -20,4 +20,4 @@
 
 - name: set container name fact
   set_fact:
-    container_name: stretch_galera
+    galera_container_name: stretch_galera

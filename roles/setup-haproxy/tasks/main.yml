@@ -22,7 +22,7 @@
     insertbefore: "listen mysql"
     content: |
       listen mysql-stretch
-        bind {{ stretch_galera_vip }}:3306 transparent
+        bind {{ galera_vip }}:3306 transparent
         option tcpka
         option httpchk
         stick on dst

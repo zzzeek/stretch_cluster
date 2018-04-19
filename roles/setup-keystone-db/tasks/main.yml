@@ -10,25 +10,25 @@
   become: true
 
 - name: create placeholder keystone database in stretch galera
-  shell: mysql {{ mysql_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
+  shell: mysql {{ galera_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
 
 - name: copy keystone db to placeholder db
-  shell: mysql {{ mysql_vip_login }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
+  shell: mysql {{ galera_vip_login }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
 
 - name: setup master keystone db from the two copied databases
   block:
     - name: create main keystone DB
-      shell: mysql {{ mysql_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
+      shell: mysql {{ galera_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
 
     - name: copy stack1 keystone to main keystone db
-      shell: mysql {{ mysql_vip_login }} keystone < keystone_stack1_database.sql
+      shell: mysql {{ galera_vip_login }} keystone < keystone_stack1_database.sql
 
     - name: setup grants in main keystone db
-      shell: mysql {{ mysql_vip_login }} keystone < keystone_stack1_grants.sql
+      shell: mysql {{ galera_vip_login }} keystone < keystone_stack1_grants.sql
 
     - name: rebuild keystone regions and endpoints
       shell: |
-        mysql {{ mysql_vip_login }} keystone << "EOF"
+        mysql {{ galera_vip_login }} keystone << "EOF"
 
         GRANT USAGE ON *.* TO 'keystone'@'%' IDENTIFIED BY 'stretch_keystone';
         GRANT ALL PRIVILEGES ON `keystone`.* TO 'keystone'@'%';
