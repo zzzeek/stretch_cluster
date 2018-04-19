@@ -30,6 +30,24 @@
     shell: cp /var/lib/pacemaker/cib/stretch-galera-create-bundle.orig /var/lib/pacemaker/cib/stretch-galera-create-bundle
     become: true
 
+  - name: render volume entries pcs
+    set_fact:
+      volume_string: >-
+        storage-map
+        id={{ item['id'] }}
+        source-dir={{ item['source'] }}
+        target-dir={{ item['target'] }}
+        options={{ item['flags'] }}
+    with_items: "{{ galera_volumes }}"
+    register: volume_string_result
+
+  - name: set pcs volumes fact
+    set_fact:
+        galera_pcs_volumes: >-
+          {{ volume_string_result.results |
+             map(attribute='ansible_facts.volume_string') | join(' ')
+          }}
+
   - name: create cib for galera-bundle
     shell: >
       /usr/sbin/pcs
@@ -42,51 +60,7 @@
       -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS"
       run-command="/bin/bash /usr/local/bin/kolla_start"
       network=host
-      storage-map
-      id=stretch-galera-cfg-files
-      source-dir=/var/lib/kolla/config_files/mysql.json
-      target-dir=/var/lib/kolla/config_files/config.json
-      options=ro
-      storage-map
-      id=stretch-galera-cfg-data
-      source-dir=/var/lib/config-data/puppet-generated/mysql-stretch/
-      target-dir=/var/lib/kolla/config_files/src
-      options=ro
-      storage-map
-      id=stretch-galera-hosts
-      source-dir=/etc/hosts
-      target-dir=/etc/hosts
-      options=ro
-      storage-map
-      id=stretch-galera-localtime
-      source-dir=/etc/localtime
-      target-dir=/etc/localtime
-      options=ro
-      storage-map
-      id=stretch-galera-mysql-lib
-      source-dir=/var/lib/mysql-stretch
-      target-dir=/var/lib/mysql
-      options=rw
-      storage-map
-      id=stretch-galera-mariadb-log
-      source-dir=/var/log/mariadb-stretch
-      target-dir=/var/log/mariadb
-      options=rw
-      storage-map
-      id=stretch-galera-mysql-log
-      source-dir=/var/log/containers/mysql-stretch
-      target-dir=/var/log/mysql
-      options=rw
-      storage-map
-      id=stretch-galera-mysql-dev-log
-      source-dir=/dev/log
-      target-dir=/dev/log
-      options=rw
-      storage-map
-      id=stretch-galera-root-ssh
-      source-dir=/root/.ssh
-      target-dir=/root/.ssh
-      options=ro
+      {{ galera_pcs_volumes }}
       network control-port={{ pacemaker_network_control_port }} --disabled
     become: true
 
