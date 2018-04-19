@@ -4,6 +4,7 @@
   hosts:
     - stack1
     - stack2
+  gather_facts: no
   roles:
      - { role: gather-info, tags: ['always'] }
 
@@ -11,6 +12,7 @@
   hosts:
     - stack1_controller
     - stack2_controller
+  gather_facts: no
   roles:
     - { role: sprinkle-ssh, tags: ['ssh_keys']}
 

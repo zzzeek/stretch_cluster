@@ -20,7 +20,7 @@
     deploy_via_pacemaker|bool == true
 
 - name: wait for it to run
-  shell: docker exec stretch_galera mysql -u root -s --skip-column-names -e "show status like 'wsrep_local_state'"
+  shell: docker exec {{ container_name }} mysql -u root --password="{{ stretch_galera_root_password }}" -s --skip-column-names -e "show status like 'wsrep_local_state'"
   register: result
   until: result.stdout.find("4") != -1
   retries: 20

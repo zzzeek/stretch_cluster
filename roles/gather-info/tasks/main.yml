@@ -26,19 +26,6 @@
       set_fact:
          transport_ip_number: '{{ transport_ip_number_cmd.stdout }}'
 
-    - name: get pacemaker node name
-      shell: /usr/sbin/crm_node -n
-      register: get_nodename_cmd
-
-    - name: set pacemaker node name fact
-      set_fact:
-        pacemaker_node_name: '{{ get_nodename_cmd.stdout }}'
-
-    - name: set master / follower ip numbers
-      set_fact:
-          master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
-          follower_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
-
     - name: get docker image name for galera from already running DB
       shell: docker inspect galera-bundle-docker-0
       register: docker_inspect_cmd
@@ -70,15 +57,26 @@
         mysql_uid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['uid'] }}"
         mysql_gid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['gid'] }}"
 
-    - name: get mysql root password from kolla config
-      shell: cat /var/lib/config-data/puppet-generated/mysql/root/.my.cnf  | grep "password" | head -1 | sed -e 's/password="\(.*\)"/\1/'
-      register: cat_kolla_pw_cmd
-      become: true
 
-    - name: set original mysql root password fact
-      set_fact:
-        original_mysql_root_password: "{{ cat_kolla_pw_cmd.stdout }}"
+- name: get pacemaker nodes
+  block:
+  - name: get pacemaker node name
+    shell: /usr/sbin/crm_node -n
+    register: get_nodename_cmd
 
-- name: set network login opts for MySQL once galera is running
+  - name: set pacemaker node name fact
+    set_fact:
+      pacemaker_node_name: '{{ get_nodename_cmd.stdout }}'
+  when: "'stack1_controller' in group_names or 'stack2_controller' in group_names"
+
+- name: set facts for configuring / accessing Galera / MySQL
   set_fact:
-    mysql_net_login: "-u root --password '{{ stretch_galera_root_password }}' -P {{ galera_listen_port }} -h {{ master_ip }}"
+      master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
+      follower_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
+      galera_listen_port: "{{ galera_listen_port }}"
+      stretch_galera_root_password: "{{ stretch_galera_root_password }}"
+
+- name: set MySQL login flags fact
+  set_fact:
+      mysql_net_login: "-u root --password '{{ stretch_galera_root_password }}' -P {{ galera_listen_port }} -h {{ master_ip }}"
+
