@@ -1,6 +1,0 @@
-galera_listen_port: 3307
-
-# we were taking this from the original container,
-# however when the two clusters join, one blows away the other ! :)
-# so these have to be made the same
-stretch_galera_root_password: galeraroot

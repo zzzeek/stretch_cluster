@@ -1,38 +1,34 @@
 
-- name: ping
-  shell: mysql {{ mysql_net_login }} -e "SELECT 1"
-
-- name: get keystone grants
-  shell: mysql {{ mysql_net_login }} -s -N -e "show grants for keystone" | sed 's/$/;/' >  keystone_{{ stack_name }}_grants.sql
+- name: get keystone grants from existing galera cluster
+  shell: docker exec  galera-bundle-docker-0   mysql -u root -s -N -e "show grants for keystone" | sed 's/$/;/' >  keystone_{{ stack_name }}_grants.sql
   become: true
 
 # note that by omitting --databases, we get a dump that's local to "keystone" and doesn't include
 # CREATE DATABASE or USE
-- name: get keystone data
-  shell: mysqldump {{ mysql_net_login }} --single-transaction keystone >  keystone_{{ stack_name }}_database.sql
+- name: get keystone data from existing galera cluster
+  shell: docker exec  galera-bundle-docker-0   mysqldump -u root --single-transaction keystone >  keystone_{{ stack_name }}_database.sql
   become: true
 
 - name: create placeholder keystone database in stretch galera
-  shell: mysql {{ mysql_net_login }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
+  shell: mysql {{ mysql_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
 
 - name: copy keystone db to placeholder db
-  shell: mysql {{ mysql_net_login }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
+  shell: mysql {{ mysql_vip_login }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
 
-
-- name: setup master keystone db
+- name: setup master keystone db from the two copied databases
   block:
     - name: create main keystone DB
-      shell: mysql {{ mysql_net_login }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
+      shell: mysql {{ mysql_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
 
     - name: copy stack1 keystone to main keystone db
-      shell: mysql {{ mysql_net_login }} keystone < keystone_stack1_database.sql
+      shell: mysql {{ mysql_vip_login }} keystone < keystone_stack1_database.sql
 
     - name: setup grants in main keystone db
-      shell: mysql {{ mysql_net_login }} keystone < keystone_stack1_grants.sql
+      shell: mysql {{ mysql_vip_login }} keystone < keystone_stack1_grants.sql
 
     - name: rebuild keystone regions and endpoints
       shell: |
-        mysql {{ mysql_net_login }} keystone << "EOF"
+        mysql {{ mysql_vip_login }} keystone << "EOF"
 
         GRANT USAGE ON *.* TO 'keystone'@'%' IDENTIFIED BY 'stretch_keystone';
         GRANT ALL PRIVILEGES ON `keystone`.* TO 'keystone'@'%';
@@ -58,6 +54,6 @@
         JOIN keystone_stack2.service AS k2s ON k2e.service_id=k2s.id
         JOIN keystone.service as k_s ON k_s.type=k2s.type AND k_s.extra=k2s.extra;
 
-  when: "'master_overcloud' in group_names"
+  run_once: true
 
 

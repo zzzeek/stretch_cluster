@@ -22,4 +22,10 @@ stack2_storage_network_cidr: 10.1.30.0/24
 stack2_storagemgmt_network_cidr: 10.1.40.0/24
 stack2_tenant_network_cidr: 10.1.50.0/24
 
+galera_listen_port: 3307
+
+# we were taking this from the original container,
+# however when the two clusters join, one blows away the other ! :)
+# so these have to be made the same
+stretch_galera_root_password: galeraroot
 

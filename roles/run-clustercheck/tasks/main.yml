@@ -12,7 +12,7 @@
   become: true
 
 - name: create clustercheck user on stretch_galera
-  shell: mysql {{ mysql_net_login }} -e "GRANT PROCESS ON *.* TO   'clustercheck'@'localhost' IDENTIFIED BY 'ccheck'"
+  shell: mysql {{ mysql_controller_login }} -e "GRANT PROCESS ON *.* TO   'clustercheck'@'localhost' IDENTIFIED BY 'ccheck'"
   become: true
 
 - name: edit xinetd
