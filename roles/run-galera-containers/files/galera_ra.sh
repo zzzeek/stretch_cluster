@@ -456,7 +456,6 @@ clear_master_score()
     if [ -z "$node" ]; then
         $CRM_MASTER -D
     else
-        # $CRM_MASTER -D -N $node
         remote_crm_master $node -D
     fi
 }
@@ -468,8 +467,6 @@ set_master_score()
     if [ -z "$node" ]; then
         $CRM_MASTER -v 100
     else
-        # CRM_MASTER="${HA_SBIN_DIR}/crm_master -l reboot "
-        # $CRM_MASTER -N $node -v 100
         remote_crm_master $node -v 100
     fi
 }
@@ -548,12 +545,7 @@ galera_to_pcmk_name()
     if [ -z "$OCF_RESKEY_cluster_host_map" ]; then
         echo $galera
     else
-        local retval=$(echo "$OCF_RESKEY_cluster_host_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '$2=="'"$galera"'" {print $1;exit}')
-        if [ -z "$retval" ]; then
-            echo $galera
-        else
-            echo $retval
-        fi
+        echo "$OCF_RESKEY_cluster_host_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '$2=="'"$galera"'" {print $1;exit}'
     fi
 }
 
@@ -563,12 +555,7 @@ pcmk_to_galera_name()
     if [ -z "$OCF_RESKEY_cluster_host_map" ]; then
         echo $pcmk
     else
-        local retval=$(echo "$OCF_RESKEY_cluster_host_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '$1=="'"$pcmk"'" {print $2;exit}')
-        if [ -z "$retval" ]; then
-            echo $pcmk
-        else
-            echo $retval
-        fi
+        echo "$OCF_RESKEY_cluster_host_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '$1=="'"$pcmk"'" {print $2;exit}'
     fi
 }
 
@@ -663,7 +650,6 @@ detect_safe_to_bootstrap()
         safe_to_bootstrap=$(sed -n 's/^safe_to_bootstrap:\s*\(.*\)$/\1/p' < ${OCF_RESKEY_datadir}/grastate.dat)
     fi
 
-    ocf_log info "got safe to bootstrap result: $safe_to_bootstrap"
     if [ "$safe_to_bootstrap" = "1" ] || [ "$safe_to_bootstrap" = "0" ]; then
         set_safe_to_bootstrap $safe_to_bootstrap
     else
@@ -929,9 +915,7 @@ galera_monitor()
     rc=$?
 
     if [ $rc -eq $OCF_NOT_RUNNING ]; then
-        ocf_log info "rc eq ocf_not_running"
         last_commit=$(get_last_commit $node)
-        ocf_log info "galera monitor got last commit: $last_commit"
         if [ -n "$last_commit" ]; then
             # if last commit is set, this instance is considered started in slave mode
             rc=$OCF_SUCCESS
