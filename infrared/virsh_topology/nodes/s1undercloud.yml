@@ -7,7 +7,7 @@ swap: "0"
 deploy_os: true
 os:
     type: "linux"
-    variant: "centos"
+    variant: "rhel7"
 disks:
     disk1:
         import_url: null
