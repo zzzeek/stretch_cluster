@@ -35,7 +35,7 @@
   when: "'stack2' in group_names"
 
 - name: create all new kolla config
-  shell: cp -R /var/lib/config-data/puppet-generated/mysql/ /var/lib/config-data/puppet-generated/mysql-stretch/
+  shell: cp -R /var/lib/config-data/puppet-generated/mysql /var/lib/config-data/puppet-generated/mysql-stretch
   become: true
 
 - name: change galera.cnf
@@ -50,8 +50,9 @@
     - {"section": "mysqld", "key": "port", "value": "{{ galera_listen_port }}"}
     - {"section": "client", "key": "port", "value": "{{ galera_listen_port }}"}
     - {"section": "mysqld", "key": "bind-address", "value": "{{ transport_ip_number }}"}
-    - {"section": "mysqld", "key": "wsrep-provider-options", "value": "gmcast.listen_addr=tcp://{{ transport_ip_number }}:4567;pc.weight={{ pc_weight }}"}
-    - {"section": "mysqld", "key": "wsrep-sst-receive-address", "value": "{{ transport_ip_number }}"}
+    - {"section": "mysqld", "key": "wsrep_provider_options", "value": "gmcast.listen_addr=tcp://{{ transport_ip_number }}:4567;pc.weight={{ pc_weight }}"}
+    - {"section": "mysqld", "key": "wsrep_sst_receive_address", "value": "{{ transport_ip_number }}"}
+    - {"section": "mysqld", "key": "wsrep_cluster_address", "value": "{{ gcomm_address }}"}
 
 
 # NOTE: the file seems to use root, maybe we should not assume that
