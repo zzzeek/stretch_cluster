@@ -1,5 +1,36 @@
-# in order to change parameters compared to the original mysql, copy
-# the whole kolla config to a new one that can be modified.
+- name: create gcomm address
+  set_fact:
+      gcomm_address: "{{ gcomm_address | default('gcomm://') }}{{ hostvars[item]['transport_ip'] }},"
+      cluster_host_map: >-
+        {{ cluster_host_map | default('') }}
+        {{ hostvars[item]['pacemaker_node_name'] }}:{{ hostvars[item]['transport_ip'] }};
+  with_items: groups['galera_nodes']
+
+- name: create stack1 remote_node_map from stack2 nodes
+  set_fact:
+    remote_node_map: >-
+      {{ remote_node_map | default('') }}
+      {{ hostvars[item]['pacemaker_node_name'] }}:root@{{ hostvars[item]['transport_ip'] }};
+  with_items: "{{ groups['galera_nodes'] | intersection(groups['stack2']) }}"
+  when: "'stack1' in group_names"
+
+- name: create stack2 remote_node_map from stack1 nodes
+  set_fact:
+    remote_node_map: >-
+      {{ remote_node_map | default('') }}
+      {{ hostvars[item]['pacemaker_node_name'] }}:root@{{ hostvars[item]['transport_ip'] }};
+  with_items: "{{ groups['galera_nodes'] | intersection(groups['stack1']) }}"
+  when: "'stack2' in group_names"
+
+- name: set master overcloud weight
+  set_fact:
+    pc_weight: "2"
+  when: "'stack1' in group_names"
+
+- name: set follower overcloud weight
+  set_fact:
+    pc_weight: "1"
+  when: "'stack2' in group_names"
 
 - name: create all new kolla config
   shell: cp -R /var/lib/config-data/puppet-generated/mysql/ /var/lib/config-data/puppet-generated/mysql-stretch/
@@ -16,7 +47,10 @@
   with_items:
     - {"section": "mysqld", "key": "port", "value": "{{ galera_listen_port }}"}
     - {"section": "client", "key": "port", "value": "{{ galera_listen_port }}"}
-    - {"section": "mysqld", "key": "bind-address", "value": "{{ galera_bind_address }}"}
+    - {"section": "mysqld", "key": "bind-address", "value": "{{ transport_ip_number }}"}
+    - {"section": "mysqld": "key": "wsrep-provider-options", "value": "gmcast.listen_addr=tcp://{{ transport_ip_number }}:4567;pc.weight={{ pc_weight }}"}
+    - {"section": "mysqld": "key": "wsrep-sst-receive-address", "value": "{{ transport_ip_number }}"}
+
 
 # NOTE: the file seems to use root, maybe we should not assume that
 - name: set clustercheck password

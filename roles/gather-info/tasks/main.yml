@@ -58,8 +58,6 @@
 
 - name: set facts for configuring / accessing Galera / MySQL
   set_fact:
-      master_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
-      follower_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
       galera_listen_port: "{{ galera_listen_port }}"
       galera_root_password: "{{ galera_root_password }}"
 
@@ -67,18 +65,16 @@
   set_fact:
     stack_name: "stack1"
     galera_vip: "{{ stack1_galera_vip }}"
-    local_galera_ip: "{{ master_ip }}"
-    galera_local_login: "-u root --password='{{ galera_root_password }}' -P {{ galera_listen_port }} -h {{ master_ip }}"
   when: "'stack1' in group_names"
 
 - name: set stack2-specific facts
   set_fact:
     stack_name: 'stack2'
     galera_vip: "{{ stack2_galera_vip }}"
-    local_galera_ip: "{{ follower_ip }}"
-    galera_local_login: "-u root --password='{{ galera_root_password }}' -P {{ galera_listen_port }} -h {{ follower_ip }}"
   when: "'stack2' in group_names"
 
 - name: set MySQL vip login flags fact
   set_fact:
+      galera_local_login: "-u root --password='{{ galera_root_password }}' -P {{ galera_listen_port }} -h {{ transport_ip_number }}"
       galera_vip_login: "-u root --password='{{ galera_root_password }}' -h {{ galera_vip }}"
+  when: "'galera_nodes' in group_names"

@@ -211,9 +211,11 @@ s2undercloud-0
 
 [master_overcloud]
 s1controller-0
+s1controller-1
 
 [follower_overcloud]
 s2controller-0
+s2controller-1
 
 [stack1]
 s1undercloud-0
@@ -239,7 +241,9 @@ s2controller-2
 
 [galera_nodes]
 s1controller-0
+s1controller-1
 s2controller-0
+s2controller-1
 
 [pacemaker_control_nodes]
 s1controller-0

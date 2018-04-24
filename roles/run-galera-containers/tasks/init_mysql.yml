@@ -1,33 +1,3 @@
-- name: create gcomm address
-  set_fact:
-      gcomm_address: "gcomm://{{ master_ip }},{{ follower_ip }}"
-
-- name: set master parameters
-  set_fact:
-      galera_bind_address: "{{ master_ip }}"
-      galera_parameters: >-
-          --bind-address={{ master_ip }}
-          {{ (deploy_via_pacemaker|bool==false) | ternary("--wsrep-new-cluster", "") }}
-          --wsrep-provider-options=gmcast.listen_addr=tcp://{{ master_ip }}:4567;pc.weight=2
-          --wsrep-sst-receive-address={{ master_ip }}
-      cluster_host_map: "stack1-overcloud-controller-0:{{ master_ip }};stack2-overcloud-controller-0:{{ follower_ip }}"
-      remote_node_map: "stack2-overcloud-controller-0:root@{{ follower_ip }}"
-  when: inventory_hostname == "{{ galera_master_inventoryname }}"
-
-- name: set follower parameters
-  set_fact:
-      galera_bind_address: "{{ follower_ip }}"
-      galera_parameters: >-
-        --bind-address={{ follower_ip }}
-        --wsrep-provider-options=gmcast.listen_addr=tcp://{{ follower_ip }}:4567;pc.weight=1
-        --wsrep-sst-receive-address={{ follower_ip }}
-      cluster_host_map: "stack1-overcloud-controller-0:{{ master_ip }};stack2-overcloud-controller-0:{{ follower_ip }}"
-      remote_node_map: "stack1-overcloud-controller-0:root@{{ master_ip }}"
-  when: inventory_hostname != "{{ galera_master_inventoryname }}"
-
-- name: copy existing kolla config and modify
-  include_tasks: create_kolla_config.yml
-
 - name: create host mysql dir
   file:
     path: /var/lib/mysql-stretch
@@ -133,5 +103,20 @@
     network_mode: host
     detach: false
   become: true
+
+
+- name: copy resource agent to controller
+  copy:
+    src: galera_ra.sh
+    dest: /usr/lib/ocf/resource.d/heartbeat/galera
+    mode: 0755
+    owner: root
+    group: root
+  become: true
+
+- name: set stretch-galera-role for pacemaker node
+  shell: /usr/sbin/pcs node attribute {{ pacemaker_node_name }} stretch-galera-role=true
+  become: true
+
 
 

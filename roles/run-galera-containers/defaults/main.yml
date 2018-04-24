@@ -1,3 +1,2 @@
-deploy_via_pacemaker: true
 stretch_galera_imagename: stretch_galera
 pacemaker_network_control_port: 3150
