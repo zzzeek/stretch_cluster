@@ -15,7 +15,7 @@
   include_tasks: add_pacemaker_resource.yml
   when: >-
     inventory_hostname == groups['stack1_controller'][0] or
-    inventory_name == groups['stack2_controller'][0]
+    inventory_hostname == groups['stack2_controller'][0]
 
 
 - name: wait for it to run
