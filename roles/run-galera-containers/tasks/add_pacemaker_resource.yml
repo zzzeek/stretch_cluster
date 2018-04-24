@@ -92,7 +92,7 @@
       wsrep_cluster_address='{{ gcomm_address }}'
       cluster_host_map='{{ cluster_host_map }}'
       remote_node_map='{{ remote_node_map }}'
-      meta master-max=1 ordered=true
+      meta master-max=2 ordered=true
       container-attribute-target=host op promote timeout=300s
       on-fail=block
       bundle stretch-galera-bundle
