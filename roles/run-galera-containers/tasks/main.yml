@@ -1,8 +1,9 @@
-- name: create image
-  include_tasks: create_docker_image.yml
 
 - name: setup kolla config and config variables
   include_tasks: create_kolla_config.yml
+
+- name: create image
+  include_tasks: create_docker_image.yml
 
 - name: setup mysql directories and parameters
   include_tasks: init_mysql.yml
@@ -13,8 +14,8 @@
 - name: run galera via pacemaker
   include_tasks: add_pacemaker_resource.yml
   when: >-
-    {{ inventory_hostname ==  groups['stack1_controller'][0] or
-    inventory_name == groups['stack2_controller'][0] }}
+    inventory_hostname == groups['stack1_controller'][0] or
+    inventory_name == groups['stack2_controller'][0]
 
 
 - name: wait for it to run

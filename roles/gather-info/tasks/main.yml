@@ -12,10 +12,15 @@
 
     - name: set transport IP fact
       set_fact:
-         transport_ip_number: '{{ transport_ip_number_cmd.stdout }}'
+         transport_ip_number: '{{ transport_ip_number_cmd.stdout_lines[0] }}'
+
+    - name: get docker container name
+      shell: "docker ps | grep galera-bundle-docker | awk -F' ' '{print $NF}'"
+      register: docker_ps_cmd
+      become: true
 
     - name: get docker image name for galera from already running DB
-      shell: docker inspect galera-bundle-docker-0
+      shell: docker inspect {{ docker_ps_cmd.stdout }}
       register: docker_inspect_cmd
       become: true
 

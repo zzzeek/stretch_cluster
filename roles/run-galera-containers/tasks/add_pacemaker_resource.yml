@@ -40,7 +40,7 @@
       -f /var/lib/pacemaker/cib/stretch-galera-create-bundle
       resource bundle create stretch-galera-bundle
       container docker image={{ stretch_galera_imagename }}:latest
-      replicas=1 masters=1
+      replicas=2 masters=2
       options="--user=root
       --log-driver=journald
       -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS"
