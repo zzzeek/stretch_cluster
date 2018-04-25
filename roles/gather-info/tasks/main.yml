@@ -15,7 +15,7 @@
          transport_ip_number: '{{ transport_ip_number_cmd.stdout_lines[0] }}'
 
     - name: get docker container name
-      shell: "docker ps | grep galera-bundle-docker | awk -F' ' '{print $NF}'"
+      shell: "docker ps | grep galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '^galera'"
       register: docker_ps_cmd
       become: true
 
