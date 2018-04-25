@@ -1,20 +1,3 @@
-- name: get local/remote names, stack1
-  set_fact:
-    local_server: "{{ galera_master_inventoryname }}"
-    local_galera_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
-    remote_server: "{{ galera_follower_inventoryname }}"
-    remote_galera_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
-  when: "'stack1' in group_names"
-
-- name: get local/remote names, stack2
-  set_fact:
-    local_server: "{{ galera_follower_inventoryname }}"
-    local_galera_ip: "{{ hostvars[galera_follower_inventoryname]['transport_ip_number'] }}"
-    remote_server: "{{ galera_master_inventoryname }}"
-    remote_galera_ip: "{{ hostvars[galera_master_inventoryname]['transport_ip_number'] }}"
-  when: "'stack2' in group_names"
-
-
 - name: add haproxy cfg
   blockinfile:
     path: /var/lib/config-data/puppet-generated/haproxy/etc/haproxy/haproxy.cfg
@@ -29,8 +12,12 @@
         stick-table type ip size 1000
         timeout client 90m
         timeout server 90m
-        server {{ local_server }} {{ local_galera_ip }}:{{ galera_listen_port }} check inter 1s on-marked-down shutdown-sessions port 9200
-        server {{ remote_server }} {{ remote_galera_ip }}:{{ galera_listen_port }} backup check inter 1s on-marked-down shutdown-sessions port 9200
+
+        {% for item in groups['galera_nodes'] %}
+        server {{ hostvars[item]['pacemaker_node_name'] }} {{ hostvars[item]['transport_ip_number'] }}:{{ galera_listen_port }} {{ (item in groups[stack_name]) | ternary('', 'backup')}} check inter 1s on-marked-down shutdown-sessions port 9200
+        {% endfor %}
+
+
   become: true
 
 - name: restart haproxy via pcs
