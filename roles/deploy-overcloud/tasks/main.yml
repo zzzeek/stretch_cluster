@@ -73,7 +73,7 @@
 
 - name: create modified galera container
   import_tasks: modify_galera_image.yml
-  tags: prepare_containers
+  tags: prepare_containers,make_galera_image
 
 - name: deploy overcloud
   import_tasks: deploy_overcloud.yml

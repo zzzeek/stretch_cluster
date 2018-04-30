@@ -1,4 +1,6 @@
 stretch_network_vlan_name: vlan10
+stretch_galera_imagename: stretch_galera
+
 
 stack1_galera_vip: 10.0.10.4
 stack2_galera_vip: 10.1.10.4

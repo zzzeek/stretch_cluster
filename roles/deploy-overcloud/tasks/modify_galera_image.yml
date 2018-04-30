@@ -1,3 +1,16 @@
+- name: get existing docker image name
+  shell: "cat docker_registry.yaml | grep DockerMysqlImage | awk -F' ' '{print $2}'"
+  register: docker_image_cmd
+
+#- name: pull image from regsitry into local undercloud images
+# shell: docker pull {{ docker_image_cmd.stdout_lines[0] }}
+#  become: yes
+
+- name: set galera image name
+  set_fact:
+    galera_image: "{{ docker_image_cmd.stdout_lines[0] }}"
+
+
 - name: create dockerfile dir
   file:
     path: /tmp/stretch_galera_dockerbuild
@@ -5,7 +18,7 @@
 
 - name: copy dockerfile
   template:
-    src: Dockerfile
+    src: enhanced_galera_dockerfile.j2
     dest: /tmp/stretch_galera_dockerbuild/Dockerfile
 
 - name: copy resource agent
@@ -13,16 +26,32 @@
     src: galera_ra.sh
     dest: /tmp/stretch_galera_dockerbuild/galera_ra.sh
 
-- name: copy setup script
-  template:
-    src: setup_stretch_database.sh
-    dest: /tmp/stretch_galera_dockerbuild/setup_stretch_database.sh
-
 # can't use ansible docker_image because it doesn't support
 # --network
 - name: create docker image
-  shell:  docker build --network=host /tmp/stretch_galera_dockerbuild --tag {{ stretch_galera_imagename }}
+  shell:  'docker build --network=host /tmp/stretch_galera_dockerbuild --tag {{ stretch_galera_imagename }}'
   become: true
 
-#- name: send image to docker registry
+- name: get image name for new image
+  shell: "docker images stretch_galera --format '{{ '{{' }} .ID {{ '}}' }}'"
+  become: true
+  register: new_image_id_cmd
+
+- name: get repo name for existing image name
+  shell: "docker images {{ galera_image }} --format '{{ '{{' }} .Repository {{ '}}' }}'"
+  become: true
+  register: existing_image_repo_cmd
+
+- name: tag new image with original mariadb docker repo name
+  shell: docker tag {{ new_image_id_cmd.stdout_lines[0] }} {{ existing_image_repo_cmd.stdout_lines[0] }}
+
+- name: send image back to docker registry
+  shell: docker push {{ existing_image_repo_cmd.stdout_lines[0] }}
+  become: true
+
+- name: update repo file with new tag
+  lineinfile:
+    regexp: "  DockerMysqlImage:.*"
+    line: "  DockerMysqlImage {{ existing_image_repo_cmd.stdout_lines[0] }}:latest"
+    path: docker_registry.yaml
 
