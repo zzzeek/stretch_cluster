@@ -80,6 +80,12 @@
             "target": "/root/.ssh",
             "flags": "ro"
           }
+        - {
+            "id": "stretch-galera-setup-script",
+            "source": "/tmp/stretch_galera_dockerbuild/",
+            "target": "/setup",
+            "flags": "ro"
+          }
 
 # assemble dictionary items into a list of strings. trivial in Python,
 # impossible in jinja.  See three-year-old workaround:
@@ -93,12 +99,22 @@
   set_fact:
       galera_docker_volumes: "{{ volume_string_result.results | map(attribute='ansible_facts.volume_string') | list }}"
 
+- name: create setup mount
+  file:
+    path: /tmp/stretch_galera_dockerbuild
+    state: directory
+
+- name: copy setup script
+  template:
+    src: setup_stretch_database.sh
+    dest: /tmp/stretch_galera_dockerbuild/setup_stretch_database.sh
+
 - name: use the docker container to create mysql setup
   docker_container:
     name: stretch_galera_cmd
     cleanup: true
     image: "{{ stretch_galera_imagename }}"
-    command: /setup_stretch_database.sh
+    command: /setup/setup_stretch_database.sh
     volumes: "{{ galera_docker_volumes }}"
     network_mode: host
     detach: false

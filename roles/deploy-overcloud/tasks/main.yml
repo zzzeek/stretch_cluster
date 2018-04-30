@@ -71,6 +71,10 @@
   import_tasks: setup_containers.yml
   tags: prepare_containers
 
+- name: create modified galera container
+  import_tasks: modify_galera_image.yml
+  tags: prepare_containers
+
 - name: deploy overcloud
   import_tasks: deploy_overcloud.yml
   tags: deploy_overcloud
