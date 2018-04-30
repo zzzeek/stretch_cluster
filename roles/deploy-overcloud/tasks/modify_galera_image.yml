@@ -52,6 +52,6 @@
 - name: update repo file with new tag
   lineinfile:
     regexp: "  DockerMysqlImage:.*"
-    line: "  DockerMysqlImage {{ existing_image_repo_cmd.stdout_lines[0] }}:latest"
+    line: "  DockerMysqlImage: {{ existing_image_repo_cmd.stdout_lines[0] }}:latest"
     path: docker_registry.yaml
 
