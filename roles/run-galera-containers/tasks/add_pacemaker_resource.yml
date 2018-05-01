@@ -39,7 +39,7 @@
       /usr/sbin/pcs
       -f /var/lib/pacemaker/cib/stretch-galera-create-bundle
       resource bundle create stretch-galera-bundle
-      container docker image={{ stretch_galera_imagename }}:latest
+      container docker image={{ galera_image }}
       replicas=2 masters=2
       options="--user=root
       --log-driver=journald

@@ -108,27 +108,28 @@
   template:
     src: setup_stretch_database.sh
     dest: /tmp/stretch_galera_dockerbuild/setup_stretch_database.sh
+    mode: 0755
 
 - name: use the docker container to create mysql setup
   docker_container:
     name: stretch_galera_cmd
     cleanup: true
-    image: "{{ stretch_galera_imagename }}"
+    image: "{{ galera_image }}"
     command: /setup/setup_stretch_database.sh
     volumes: "{{ galera_docker_volumes }}"
     network_mode: host
     detach: false
   become: true
 
-
 - name: copy resource agent to controller
   copy:
-    src: galera_ra.sh
+    src: "{{ playbook_dir }}/../roles/deploy-overcloud/files/galera_ra.sh"
     dest: /usr/lib/ocf/resource.d/heartbeat/galera
     mode: 0755
     owner: root
     group: root
   become: true
+
 
 - name: set stretch-galera-role for pacemaker node
   shell: /usr/sbin/pcs node attribute {{ pacemaker_node_name }} stretch-galera-role=true
