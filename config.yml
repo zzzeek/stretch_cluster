@@ -2,18 +2,18 @@ stretch_network_vlan_name: vlan10
 stretch_galera_imagename: stretch_galera
 
 
-stack1_galera_vip: 10.0.10.4
-stack2_galera_vip: 10.1.10.4
+stack1_stretch_galera_vip: 10.0.10.4
+stack2_stretch_galera_vip: 10.1.10.4
 
-galera_master_inventoryname: s1controller-0
-galera_follower_inventoryname: s2controller-0
+stretch_galera_master_inventoryname: s1controller-0
+stretch_galera_follower_inventoryname: s2controller-0
 
-galera_listen_port: 3307
+stretch_galera_listen_port: 3307
 
 # we were taking this from the original container,
 # however when the two clusters join, one blows away the other ! :)
 # so these have to be made the same
-galera_root_password: galeraroot
+stretch_galera_root_password: galeraroot
 
 stack1_undercloud_inventoryname: s1undercloud-0
 stack2_undercloud_inventoryname: s2undercloud-0

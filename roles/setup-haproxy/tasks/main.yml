@@ -5,7 +5,7 @@
     insertbefore: "listen mysql"
     content: |
       listen mysql-stretch
-        bind {{ galera_vip }}:3306 transparent
+        bind {{ stretch_galera_vip }}:3306 transparent
         option tcpka
         option httpchk
         stick on dst
@@ -14,7 +14,7 @@
         timeout server 90m
 
         {% for item in groups['galera_nodes'] %}
-        server {{ hostvars[item]['pacemaker_node_name'] }} {{ hostvars[item]['transport_ip_number'] }}:{{ galera_listen_port }} {{ (item in groups[stack_name]) | ternary('', 'backup')}} check inter 1s on-marked-down shutdown-sessions port 9200
+        server {{ hostvars[item]['pacemaker_node_name'] }} {{ hostvars[item]['transport_ip_number'] }}:{{ stretch_galera_listen_port }} {{ (item in groups[stack_name]) | ternary('', 'backup')}} check inter 1s on-marked-down shutdown-sessions port 9200
         {% endfor %}
 
 

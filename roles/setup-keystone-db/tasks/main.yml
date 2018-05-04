@@ -1,34 +1,34 @@
 
 - name: get keystone grants from existing galera cluster
-  shell: docker exec  galera-bundle-docker-0   mysql -u root -s -N -e "show grants for keystone" | sed 's/$/;/' >  keystone_{{ stack_name }}_grants.sql
+  shell: docker exec  {{ galera_docker_container_name }} mysql -u root -s -N -e "show grants for keystone" | sed 's/$/;/' >  keystone_{{ stack_name }}_grants.sql
   become: true
 
 # note that by omitting --databases, we get a dump that's local to "keystone" and doesn't include
 # CREATE DATABASE or USE
 - name: get keystone data from existing galera cluster
-  shell: docker exec  galera-bundle-docker-0   mysqldump -u root --single-transaction keystone >  keystone_{{ stack_name }}_database.sql
+  shell: docker exec  {{ galera_docker_container_name }} mysqldump -u root --single-transaction keystone >  keystone_{{ stack_name }}_database.sql
   become: true
 
 - name: create placeholder keystone database in stretch galera
-  shell: mysql {{ galera_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
+  shell: mysql {{ stretch_galera_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone_{{ stack_name }} CHARSET utf8mb4"
 
 - name: copy keystone db to placeholder db
-  shell: mysql {{ galera_vip_login }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
+  shell: mysql {{ stretch_galera_vip_login }} keystone_{{ stack_name }} < keystone_{{ stack_name }}_database.sql
 
 - name: setup master keystone db from the two copied databases
   block:
     - name: create main keystone DB
-      shell: mysql {{ galera_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
+      shell: mysql {{ stretch_galera_vip_login }} -e "CREATE DATABASE IF NOT EXISTS keystone CHARSET utf8mb4"
 
     - name: copy stack1 keystone to main keystone db
-      shell: mysql {{ galera_vip_login }} keystone < keystone_stack1_database.sql
+      shell: mysql {{ stretch_galera_vip_login }} keystone < keystone_stack1_database.sql
 
     - name: setup grants in main keystone db
-      shell: mysql {{ galera_vip_login }} keystone < keystone_stack1_grants.sql
+      shell: mysql {{ stretch_galera_vip_login }} keystone < keystone_stack1_grants.sql
 
     - name: rebuild keystone regions and endpoints
       shell: |
-        mysql {{ galera_vip_login }} keystone << "EOF"
+        mysql {{ stretch_galera_vip_login }} keystone << "EOF"
 
         GRANT USAGE ON *.* TO 'keystone'@'%' IDENTIFIED BY 'stretch_keystone';
         GRANT ALL PRIVILEGES ON `keystone`.* TO 'keystone'@'%';

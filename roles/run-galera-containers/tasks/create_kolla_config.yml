@@ -47,8 +47,8 @@
     backup: yes
   become: true
   with_items:
-    - {"section": "mysqld", "key": "port", "value": "{{ galera_listen_port }}"}
-    - {"section": "client", "key": "port", "value": "{{ galera_listen_port }}"}
+    - {"section": "mysqld", "key": "port", "value": "{{ stretch_galera_listen_port }}"}
+    - {"section": "client", "key": "port", "value": "{{ stretch_galera_listen_port }}"}
     - {"section": "mysqld", "key": "bind-address", "value": "{{ transport_ip_number }}"}
     - {"section": "mysqld", "key": "wsrep_provider_options", "value": "gmcast.listen_addr=tcp://{{ transport_ip_number }}:4567;pc.weight={{ pc_weight }}"}
     - {"section": "mysqld", "key": "wsrep_sst_receive_address", "value": "{{ transport_ip_number }}"}
@@ -60,6 +60,6 @@
   lineinfile:
     path: /var/lib/config-data/puppet-generated/mysql-stretch/etc/sysconfig/clustercheck
     regexp: "^MYSQL_PASSWORD=.*"
-    line: "MYSQL_PASSWORD='{{ galera_root_password }}'"
+    line: "MYSQL_PASSWORD='{{ stretch_galera_root_password }}'"
   become: true
 

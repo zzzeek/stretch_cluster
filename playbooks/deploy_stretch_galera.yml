@@ -41,7 +41,7 @@
 
 - name: setup keystone data
   hosts:
-    - galera_nodes
+    - pacemaker_control_nodes
   gather_facts: no
   roles:
     - { role: setup-keystone-db, tags: ['setup_keystone_db'] }
