@@ -13,7 +13,7 @@
   when:  "'pacemaker_control_nodes' in group_names"
 
 - name: get docker container name
-  shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}'"
+  shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '.' "
   register: docker_ps_cmd
   become: true
   retries: 5
