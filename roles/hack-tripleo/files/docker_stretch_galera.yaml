@@ -1,0 +1,8 @@
+# Add it *after* -e docker-ha.yaml:
+# ...deploy..-e docker.yaml -e docker-ha.yaml -e docker_stretch_galera.yaml
+resource_registry:
+  # HA Containers managed by pacemaker
+  OS::TripleO::Services::StretchClustercheck: ../docker/services/pacemaker/stretch_clustercheck.yaml
+  OS::TripleO::Services::StretchMySQL: ../docker/services/pacemaker/database/stretch_mysql.yaml
+~
+~

@@ -10,19 +10,20 @@
 
 
 openstack overcloud deploy \
-    --templates /usr/share/openstack-tripleo-heat-templates \
+    --templates {{ tripleo_heat_templates }} \
     --libvirt-type qemu \
     --timeout 90  \
     --stack overcloud \
     --control-flavor controller --compute-flavor compute \
-    -e /usr/share/openstack-tripleo-heat-templates/environments/config-debug.yaml  \
-    -e /usr/share/openstack-tripleo-heat-templates/environments/docker.yaml  \
-    -e /usr/share/openstack-tripleo-heat-templates/environments/docker-ha.yaml  \
+    -e {{ tripleo_heat_templates }}/environments/config-debug.yaml  \
+    -e {{ tripleo_heat_templates }}/environments/docker.yaml  \
+    -e {{ tripleo_heat_templates }}/environments/docker-ha.yaml  \
+    -e {{ tripleo_heat_templates }}/environments/docker-stretch-galera.yaml  \
     -e {{ working_dir }}/docker_registry.yaml  \
-    -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml \
+    -e {{ tripleo_heat_templates }}/environments/network-isolation.yaml \
     -e {{ working_dir }}/network-environment.yaml  \
-    -e /usr/share/openstack-tripleo-heat-templates/environments/low-memory-usage.yaml     \
-    -e /usr/share/openstack-tripleo-heat-templates/environments/disable-telemetry.yaml   \
+    -e {{ tripleo_heat_templates }}/environments/low-memory-usage.yaml     \
+    -e {{ tripleo_heat_templates }}/environments/disable-telemetry.yaml   \
     -e {{ working_dir }}/naming_things.yaml  \
     --validation-warnings-fatal   --compute-scale {{ compute_scale }} --control-scale {{ control_scale }}  \
     --ntp-server pool.ntp.org \

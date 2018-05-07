@@ -1,0 +1,71 @@
+- name: set tripleo_heat_templates fact
+  set_fact:
+    tripleo_heat_templates: {{ working_dir }}/tripleo-patch/tripleo-heat-templates
+  tags: always
+
+- name: make patched tripleo area
+  file:
+    path: {{ working_dir }}/tripleo-patch
+    state: directory
+
+- name: copy puppet-tripleo to local working dir
+  shell: cp -Ru /usr/share/openstack-puppet/modules/tripleo {{ working_dir }}/tripleo-patch/puppet-tripleo
+
+- name: copy t-h-t files
+  shell: cp -Ru /usr/share/openstack-tripleo-heat-templates {{ working_dir }}/tripleo-patch/tripleo-heat-templates
+
+- name: deploy new t-h-t, tripleo-puppet files
+  copy:
+    src: {{ item['src'] }}
+    dest: {{ item['dest'] }}
+  with-items:
+    - {
+        src: "stretch_clustercheck.pp",
+        dest: "{{ working_dir }}/tripleo-patch/puppet-tripleo/manifests/profile/pacemaker/stretch_clustercheck.pp"
+    }
+    - {
+        src: "stretch_mysql_bundle.pp",
+        dest: "{{ working_dir }}/tripleo-patch/puppet-tripleo/manifests/profile/pacemaker/database/stretch_mysql_bundle.pp"
+    }
+    - {
+        src: "stretch_clustercheck.yaml",
+        dest: "{{ tripleo-heat-templates }}/docker/services/pacemaker/stretch_clustercheck.yaml"
+    }
+    - {
+        src: "stretch_mysql.yaml",
+        dest: "{{ tripleo-heat-templates }}/docker/services/pacemaker/stretch_mysql.yaml"
+    }
+    - {
+        src: "docker_stretch_galera.yaml",
+        dest: "{{ tripleo-heat-templates }}/environments/docker_stretch_galera.yaml"
+    }
+
+- name: add StretchMySQL role
+  lineinfile:
+    path: "{{ tripleo-heat-templates }}/roles_data.yaml"
+    insertafter: "   - OS::TripleO::Services::MySQL"
+    line: "   - OS::TripleO::Services::StretchMySQL"
+
+- name: add StretchClustercheck role
+  lineinfile:
+    path: "{{ tripleo-heat-templates }}/roles_data.yaml"
+    insertafter: "   - OS::TripleO::Services::Clustercheck"
+    line: "   - OS::TripleO::Services::StretchClustercheck"
+
+- name: add network to service map
+  lineinfile:
+    path: "{{ tripleo-heat-templates }}/network/service_net_map.j2.yaml"
+    insertafter: "      Mysqlnetwork"
+    line: "      StretchMysqlNetwork: external"
+
+
+# add new stretch mapping to a new file:
+# <tht>/environments/docker-stretch-galera.yaml
+# OS::TripleO::Services::StretchMySQL: ../docker/services/pacemaker/database/mysql_stretch.yaml
+# OS::TripleO::Services::StretchClustercheck: ../docker/services/pacemaker/database/clustercheck_stretch.yaml
+
+# add StretchMysqlNetwork for external network to network/service_net_map.j2.yaml
+
+
+# run upload-puppet-modules -d <my dir>
+
