@@ -39,7 +39,7 @@
     }
     - {
         src: "stretch_mysql.yaml",
-        dest: "{{ tripleo_heat_templates }}/docker/services/pacemaker/stretch_mysql.yaml"
+        dest: "{{ tripleo_heat_templates }}/docker/services/pacemaker/database/stretch_mysql.yaml"
     }
     - {
         src: "docker_stretch_galera.yaml",
