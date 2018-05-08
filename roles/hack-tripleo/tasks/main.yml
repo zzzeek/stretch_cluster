@@ -43,7 +43,7 @@
     }
     - {
         src: "docker_stretch_galera.yaml",
-        dest: "{{ tripleo_heat_templates }}/environments/docker_stretch_galera.yaml"
+        dest: "{{ tripleo_heat_templates }}/environments/docker-stretch-galera.yaml"
     }
 
 - name: add StretchMySQL role
