@@ -50,18 +50,18 @@
   lineinfile:
     path: "{{ tripleo_heat_templates }}/roles_data.yaml"
     insertafter: "   - OS::TripleO::Services::MySQL"
-    line: "   - OS::TripleO::Services::StretchMySQL"
+    line: "    - OS::TripleO::Services::StretchMySQL"
 
 - name: add StretchClustercheck role
   lineinfile:
     path: "{{ tripleo_heat_templates }}/roles_data.yaml"
-    insertafter: "   - OS::TripleO::Services::Clustercheck"
-    line: "   - OS::TripleO::Services::StretchClustercheck"
+    insertafter: "    - OS::TripleO::Services::Clustercheck"
+    line: "    - OS::TripleO::Services::StretchClustercheck"
 
 - name: add network to service map
   lineinfile:
     path: "{{ tripleo_heat_templates }}/network/service_net_map.j2.yaml"
-    insertafter: "      Mysqlnetwork"
+    insertafter: "      MysqlNetwork"
     line: "      StretchMysqlNetwork: external"
 
 
