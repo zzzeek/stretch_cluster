@@ -4,8 +4,10 @@
     src: deploy_overcloud.sh.j2
     dest: "{{ working_dir }}/deploy_overcloud.sh"
     mode: 0755
+  tags: create_deploy_script
 
 - name: deploy!
   shell: |
       source {{ working_dir }}/stackrc;
       {{ working_dir }}/deploy_overcloud.sh &> overcloud_deploy.log
+  tags: run_deploy_overcloud
