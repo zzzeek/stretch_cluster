@@ -49,7 +49,7 @@
 - name: add StretchMySQL role
   lineinfile:
     path: "{{ tripleo_heat_templates }}/roles_data.yaml"
-    insertafter: "   - OS::TripleO::Services::MySQL"
+    insertafter: "   - OS::TripleO::Services::MySQL$"
     line: "    - OS::TripleO::Services::StretchMySQL"
 
 - name: add StretchClustercheck role
