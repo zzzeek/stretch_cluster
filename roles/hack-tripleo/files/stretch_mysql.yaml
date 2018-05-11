@@ -98,7 +98,7 @@ outputs:
                   - 'pcmklatest'
             tripleo::profile::pacemaker::database::stretch_mysql_bundle::control_port: 3123
             tripleo.stretch_mysql.firewall_rules:
-              '104 mysql galera-bundle':
+              '204 mysql galera-bundle':
                 dport:
                   - 873
                   - 3123
