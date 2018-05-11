@@ -107,7 +107,7 @@ outputs:
                   - 4567
                   - 4568
                   - 9200
-            stretchmysql_bind_host:
+            stretch_mysql_bind_host:
               str_replace:
                 template:
                   "%{hiera('$NETWORK')}"
@@ -353,7 +353,7 @@ outputs:
           block:
             - name: Check cluster resource status
               pacemaker_resource:
-                resource: galera
+                resource: stretch-galera
                 state: master
                 check_mode: true
               ignore_errors: true
@@ -362,7 +362,7 @@ outputs:
               block:
                 - name: Disable the galera cluster resource
                   pacemaker_resource:
-                    resource: galera
+                    resource: stretch-galera
                     state: disable
                     wait_for_resource: true
                   register: output
@@ -370,7 +370,7 @@ outputs:
                   until: output.rc == 0
                 - name: Delete the stopped galera cluster resource.
                   pacemaker_resource:
-                    resource: galera
+                    resource: stretch-galera
                     state: delete
                     wait_for_resource: true
                   register: output
@@ -398,7 +398,7 @@ outputs:
               block:
                 - name: Disable the galera cluster resource
                   pacemaker_resource:
-                    resource: galera
+                    resource: stretch-galera
                     state: disable
                     wait_for_resource: true
                   register: output
@@ -410,7 +410,7 @@ outputs:
                   command: pcs resource update galera log=/var/log/mysql/mysqld.log
                 - name: Enable the galera cluster resource
                   pacemaker_resource:
-                    resource: galera
+                    resource: stretch-galera
                     state: enable
                     wait_for_resource: true
                   register: output

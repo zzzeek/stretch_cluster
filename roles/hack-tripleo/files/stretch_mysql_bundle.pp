@@ -99,7 +99,7 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   $ca_file                        = undef,
   $certificate_specs              = hiera('tripleo::profile::base::database::mysql::certificate_specs', {}),
   $enable_internal_tls            = hiera('enable_internal_tls', false),
-  $gmcast_listen_addr             = hiera('stretchmysql_bind_host'),
+  $gmcast_listen_addr             = hiera('stretch_mysql_bind_host'),
   $innodb_flush_log_at_trx_commit = hiera('innodb_flush_log_at_trx_commit', '1'),
   $sst_tls_cipher                 = '!SSLv2:kEEH:kRSA:kEDH:kPSK:+3DES:!aNULL:!eNULL:!MD5:!EXP:!RC4:!SEED:!IDEA:!DES',
   $sst_tls_options                = undef,
@@ -114,8 +114,8 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   }
 
   # FQDN are lowercase in /etc/hosts, so are pacemaker node names
-  $galera_node_names_lookup = downcase(hiera('stretchmysql_short_node_names', $::hostname))
-  $galera_fqdns_names_lookup = downcase(hiera('stretchmysql_node_names', $::hostname))
+  $galera_node_names_lookup = downcase(hiera('stretch_mysql_short_node_names', [$::hostname]))
+  $galera_fqdns_names_lookup = downcase(hiera('stretch_mysql_node_names', [$::hostname]))
 
   if is_array($galera_node_names_lookup) {
     $galera_nodes = join($galera_fqdns_names_lookup, ',')
