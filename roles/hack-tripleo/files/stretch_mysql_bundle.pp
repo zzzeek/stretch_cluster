@@ -265,12 +265,12 @@ MYSQL_HOST=localhost\n",
       $mysql_short_node_names.each |String $node_name| {
         # lint:ignore:puppet-lint-2.0.1 does not work with multiline strings
         # and blocks (remove this when we move to 2.2.0 where this works)
-        pacemaker::property { "galera-role-${node_name}":
-          property => 'galera-role',
+        pacemaker::property { "stretch-galera-role-${node_name}":
+          property => 'stretch-galera-role',
           value    => true,
           tries    => $pcs_tries,
           node     => $node_name,
-          before   => Pacemaker::Resource::Bundle['galera-bundle'],
+          before   => Pacemaker::Resource::Bundle['stretch-galera-bundle'],
         }
         # lint:endignore
       }
@@ -349,14 +349,14 @@ MYSQL_HOST=localhost\n",
         $storage_maps_tls = {}
       }
 
-      pacemaker::resource::bundle { 'galera-bundle':
+      pacemaker::resource::bundle { 'stretch-galera-bundle':
         image             => $mysql_docker_image,
         replicas          => $galera_nodes_count,
         masters           => $galera_nodes_count,
         location_rule     => {
           resource_discovery => 'exclusive',
           score              => 0,
-          expression         => ['galera-role eq true'],
+          expression         => ['stretch-galera-role eq true'],
         },
         container_options => 'network=host',
         options           => '--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS',
@@ -365,7 +365,7 @@ MYSQL_HOST=localhost\n",
         storage_maps      => merge($storage_maps, $storage_maps_tls),
       }
 
-      pacemaker::resource::ocf { 'galera':
+      pacemaker::resource::ocf { 'stretch-galera':
         ocf_agent_name  => 'heartbeat:galera',
         master_params   => '',
         meta_params     => "master-max=${galera_nodes_count} ordered=true container-attribute-target=host",
@@ -375,9 +375,9 @@ MYSQL_HOST=localhost\n",
         location_rule   => {
           resource_discovery => 'exclusive',
           score              => 0,
-          expression         => ['galera-role eq true'],
+          expression         => ['stretch-galera-role eq true'],
         },
-        bundle          => 'galera-bundle',
+        bundle          => 'stretch-galera-bundle',
         require         => [Class['::mysql::server'],
                             Pacemaker::Resource::Bundle['galera-bundle']],
         before          => Exec['galera-ready'],
