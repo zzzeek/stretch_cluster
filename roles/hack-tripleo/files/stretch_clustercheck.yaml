@@ -61,7 +61,7 @@ outputs:
   role_data:
     description: Containerized service clustercheck using composable services.
     value:
-      service_name: clustercheck
+      service_name: stretch_clustercheck
       config_settings: {get_attr: [MysqlPuppetBase, role_data, config_settings]}
       logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
       logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}

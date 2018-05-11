@@ -85,7 +85,7 @@ outputs:
   role_data:
     description: Containerized service MySQL using composable services.
     value:
-      service_name: {get_attr: [MysqlPuppetBase, role_data, service_name]}
+      service_name: stretch_mysql
       config_settings:
         map_merge:
           - {get_attr: [MysqlPuppetBase, role_data, config_settings]}
@@ -97,7 +97,7 @@ outputs:
                       expression: $.data.rightSplit(separator => ":", maxSplits => 1)[0]
                   - 'pcmklatest'
             tripleo::profile::pacemaker::database::stretch_mysql_bundle::control_port: 3123
-            tripleo.mysql.firewall_rules:
+            tripleo.stretch_mysql.firewall_rules:
               '104 mysql galera-bundle':
                 dport:
                   - 873
