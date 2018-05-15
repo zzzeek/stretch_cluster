@@ -131,7 +131,7 @@ outputs:
       logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
       # BEGIN DOCKER SETTINGS #
       puppet_config:
-        config_volume: mysql
+        config_volume: stretch_mysql
         puppet_tags: file # set this even though file is the default
         step_config:
           list_join:

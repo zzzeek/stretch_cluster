@@ -379,7 +379,7 @@ MYSQL_HOST=localhost\n",
         },
         bundle          => 'stretch-galera-bundle',
         require         => [Class['::mysql::server'],
-                            Pacemaker::Resource::Bundle['galera-bundle']],
+                            Pacemaker::Resource::Bundle['stretch-galera-bundle']],
         before          => Exec['galera-ready'],
       }
 
