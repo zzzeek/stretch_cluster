@@ -282,7 +282,7 @@ MYSQL_HOST=localhost\n",
           'options'    => 'ro',
         },
         'mysql-cfg-data'    => {
-          'source-dir' => '/var/lib/config-data/puppet-generated/mysql/',
+          'source-dir' => '/var/lib/config-data/puppet-generated/stretch_mysql/',
           'target-dir' => '/var/lib/kolla/config_files/src',
           'options'    => 'ro',
         },
@@ -297,19 +297,19 @@ MYSQL_HOST=localhost\n",
           'options'    => 'ro',
         },
         'mysql-lib'         => {
-          'source-dir' => '/var/lib/mysql',
+          'source-dir' => '/var/lib/stretch_mysql',
           'target-dir' => '/var/lib/mysql',
           'options'    => 'rw',
         },
         # NOTE: we cannot remove this bind mount until the resource-agent
         # can use the configured log-file for initial bootstrap operations
         'mysql-log-mariadb' => {
-          'source-dir' => '/var/log/mariadb',
+          'source-dir' => '/var/log/stretch_mariadb',
           'target-dir' => '/var/log/mariadb',
           'options'    => 'rw',
         },
         'mysql-log'         => {
-          'source-dir' => '/var/log/containers/mysql',
+          'source-dir' => '/var/log/containers/stretch_mysql',
           'target-dir' => '/var/log/mysql',
           'options'    => 'rw',
         },

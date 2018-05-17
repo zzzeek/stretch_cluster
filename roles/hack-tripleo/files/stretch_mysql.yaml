@@ -141,7 +141,7 @@ outputs:
               - "include ::tripleo::profile::pacemaker::database::stretch_mysql_bundle"
         config_image: {get_param: DockerMysqlConfigImage}
       kolla_config:
-        /var/lib/kolla/config_files/mysql.json:
+        /var/lib/kolla/config_files/stretch_mysql.json:
           command: /usr/sbin/pacemaker_remoted
           config_files:
             - dest: /etc/libqb/force-filesystem-sockets
@@ -172,7 +172,7 @@ outputs:
       docker_config_scripts: {get_attr: [ContainersCommon, docker_config_scripts]}
       docker_config:
         step_1:
-          mysql_data_ownership:
+          stretch_mysql_data_ownership:
             start_order: 0
             detach: false
             image: {get_param: DockerMysqlImage}
@@ -181,8 +181,8 @@ outputs:
             # Kolla does only non-recursive chown
             command: ['chown', '-R', 'mysql:', '/var/lib/mysql']
             volumes:
-              - /var/lib/mysql:/var/lib/mysql
-          mysql_bootstrap:
+              - /var/lib/stretch_mysql:/var/lib/mysql
+          stretch_mysql_bootstrap:
             start_order: 1
             detach: false
             image: {get_param: DockerMysqlImage}
@@ -207,9 +207,9 @@ outputs:
               list_concat:
                 - {get_attr: [ContainersCommon, volumes]}
                 -
-                  - /var/lib/kolla/config_files/mysql.json:/var/lib/kolla/config_files/config.json
-                  - /var/lib/config-data/puppet-generated/mysql/:/var/lib/kolla/config_files/src:ro
-                  - /var/lib/mysql:/var/lib/mysql
+                  - /var/lib/kolla/config_files/stretch_mysql.json:/var/lib/kolla/config_files/config.json
+                  - /var/lib/config-data/puppet-generated/stretch_mysql/:/var/lib/kolla/config_files/src:ro
+                  - /var/lib/stretch_mysql:/var/lib/mysql
             environment:
               - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
               - KOLLA_BOOTSTRAP=True
@@ -230,7 +230,7 @@ outputs:
                           passwords:
                             - {get_param: MysqlRootPassword}
                             - {get_param: [DefaultPasswords, mysql_root_password]}
-          mysql_image_tag:
+          stretch_mysql_image_tag:
             start_order: 2
             detach: false
             net: host
@@ -253,7 +253,7 @@ outputs:
               - /usr/bin:/usr/bin:ro
               - /var/run/docker.sock:/var/run/docker.sock:rw
         step_2:
-          mysql_init_bundle:
+          stretch_mysql_init_bundle:
             start_order: 1
             detach: false
             net: host
@@ -274,7 +274,7 @@ outputs:
                 - {get_attr: [ContainersCommon, docker_puppet_apply_volumes]}
                 - - /etc/corosync/corosync.conf:/etc/corosync/corosync.conf:ro
                   - /dev/shm:/dev/shm:rw
-                  - /var/lib/mysql:/var/lib/mysql:rw
+                  - /var/lib/stretch_mysql:/var/lib/mysql:rw
             environment:
               # NOTE: this should force this container to re-run on each
               # update (scale-out, etc.)
@@ -288,14 +288,15 @@ outputs:
             path: "{{ item }}"
             state: directory
           with_items:
-            - /var/log/containers/mysql
-            - /var/lib/mysql
+            - /var/log/containers/stretch_mysql
+            - /var/lib/stretch_mysql
+            - /var/log/stretch_mariadb
         - name: mysql logs readme
           copy:
-            dest: /var/log/mariadb/readme.txt
+            dest: /var/log/stretch_mariadb/readme.txt
             content: |
               Log files from mysql containers can be found under
-              /var/log/containers/mysql.
+              /var/log/containers/stretch_mysql.
           ignore_errors: true
       metadata_settings:
         get_attr: [MysqlPuppetBase, role_data, metadata_settings]
@@ -334,7 +335,7 @@ outputs:
             docker_image_latest: *mysql_image_pcmklatest
         - name: Check for Mysql Kolla configuration
           stat:
-            path: /var/lib/config-data/puppet-generated/mysql
+            path: /var/lib/config-data/puppet-generated/stretch_mysql
           register: mysql_kolla_config
         - name: Check if Mysql is already containerized
           set_fact:
@@ -405,7 +406,7 @@ outputs:
                   retries: 5
                   until: output.rc == 0
                 - name: Add a bind mount for logging in the galera bundle
-                  command: pcs resource bundle update stretch-galera-bundle storage-map add id=mysql-log source-dir=/var/log/containers/mysql target-dir=/var/log/mysql options=rw
+                  command: pcs resource bundle update stretch-galera-bundle storage-map add id=mysql-log source-dir=/var/log/containers/stretch_mysql target-dir=/var/log/mysql options=rw
                 - name: Reconfigure Mysql log file in the galera resource agent
                   command: pcs resource update galera log=/var/log/mysql/mysqld.log
                 - name: Enable the galera cluster resource
@@ -426,7 +427,7 @@ outputs:
           block:
             - name: Mysql upgrade script
               set_fact:
-                mysql_upgrade_script:
+                stretch_mysql_upgrade_script:
                   # idempotency: mysql_upgrade leaves a marker file
                   # in datadir, it does nothing if it has already been
                   # executed for the current version of MariaDB.
@@ -439,7 +440,7 @@ outputs:
                       - 'mysqladmin shutdown'
             - name: Bind mounts for temporary container
               set_fact:
-                mysql_upgrade_db_bind_mounts: *mysql_volumes
+                stretch_mysql_upgrade_db_bind_mounts: *mysql_volumes
             - name: Upgrade Mysql database from a temporary container
               shell:
                 str_replace:
@@ -448,9 +449,9 @@ outputs:
                   params:
                     UPGRADE_ENV: '-e "KOLLA_CONFIG_STRATEGY=COPY_ALWAYS"'
                     UPGRADE_IMAGE: *mysql_image_pcmklatest
-                    UPGRADE_VOLUMES: "-v {{ mysql_upgrade_db_bind_mounts | union(['/tmp/mariadb-upgrade:/var/log/mariadb:rw']) | join(' -v ')}}"
-                    UPGRADE_SCRIPT: "{{mysql_upgrade_script}}"
+                    UPGRADE_VOLUMES: "-v {{ stretch_mysql_upgrade_db_bind_mounts | union(['/tmp/mariadb-upgrade:/var/log/mariadb:rw']) | join(' -v ')}}"
+                    UPGRADE_SCRIPT: "{{stretch_mysql_upgrade_script}}"
               when: mysql_containerized|bool
             - name: Upgrade Mysql database from the host
-              shell: /bin/bash -ecx "{{mysql_upgrade_script}}"
+              shell: /bin/bash -ecx "{{stretch_mysql_upgrade_script}}"
               when: not mysql_containerized|bool
