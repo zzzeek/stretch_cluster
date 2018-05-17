@@ -276,44 +276,44 @@ MYSQL_HOST=localhost\n",
       }
 
       $storage_maps = {
-        'mysql-cfg-files'   => {
+        'stretch-mysql-cfg-files'   => {
           'source-dir' => '/var/lib/kolla/config_files/mysql.json',
           'target-dir' => '/var/lib/kolla/config_files/config.json',
           'options'    => 'ro',
         },
-        'mysql-cfg-data'    => {
+        'stretch-mysql-cfg-data'    => {
           'source-dir' => '/var/lib/config-data/puppet-generated/stretch_mysql/',
           'target-dir' => '/var/lib/kolla/config_files/src',
           'options'    => 'ro',
         },
-        'mysql-hosts'       => {
+        'stretch-mysql-hosts'       => {
           'source-dir' => '/etc/hosts',
           'target-dir' => '/etc/hosts',
           'options'    => 'ro',
         },
-        'mysql-localtime'   => {
+        'stretch-mysql-localtime'   => {
           'source-dir' => '/etc/localtime',
           'target-dir' => '/etc/localtime',
           'options'    => 'ro',
         },
-        'mysql-lib'         => {
+        'stretch-mysql-lib'         => {
           'source-dir' => '/var/lib/stretch_mysql',
           'target-dir' => '/var/lib/mysql',
           'options'    => 'rw',
         },
         # NOTE: we cannot remove this bind mount until the resource-agent
         # can use the configured log-file for initial bootstrap operations
-        'mysql-log-mariadb' => {
+        'stretch-mysql-log-mariadb' => {
           'source-dir' => '/var/log/stretch_mariadb',
           'target-dir' => '/var/log/mariadb',
           'options'    => 'rw',
         },
-        'mysql-log'         => {
+        'stretch-mysql-log'         => {
           'source-dir' => '/var/log/containers/stretch_mysql',
           'target-dir' => '/var/log/mysql',
           'options'    => 'rw',
         },
-        'mysql-dev-log'     => {
+        'stretch-mysql-dev-log'     => {
           'source-dir' => '/dev/log',
           'target-dir' => '/dev/log',
           'options'    => 'rw',
@@ -322,12 +322,12 @@ MYSQL_HOST=localhost\n",
 
       if $enable_internal_tls {
         $mysql_storage_maps_tls = {
-          'mysql-pki-gcomm-key'  => {
+          'stretch-mysql-pki-gcomm-key'  => {
             'source-dir' => '/etc/pki/tls/private/mysql.key',
             'target-dir' => '/var/lib/kolla/config_files/src-tls/etc/pki/tls/private/mysql.key',
             'options'    => 'ro',
           },
-          'mysql-pki-gcomm-cert' => {
+          'stretch-mysql-pki-gcomm-cert' => {
             'source-dir' => '/etc/pki/tls/certs/mysql.crt',
             'target-dir' => '/var/lib/kolla/config_files/src-tls/etc/pki/tls/certs/mysql.crt',
             'options'    => 'ro',
@@ -335,7 +335,7 @@ MYSQL_HOST=localhost\n",
         }
         if $ca_file {
           $ca_storage_maps_tls = {
-            'mysql-pki-gcomm-ca' => {
+            'stretch-mysql-pki-gcomm-ca' => {
               'source-dir' => $ca_file,
               'target-dir' => "/var/lib/kolla/config_files/src-tls${ca_file}",
               'options'    => 'ro',
@@ -358,6 +358,7 @@ MYSQL_HOST=localhost\n",
           score              => 0,
           expression         => ['stretch-galera-role eq true'],
         },
+
         container_options => 'network=host',
         options           => '--user=root --log-driver=journald -e KOLLA_CONFIG_STRATEGY=COPY_ALWAYS',
         run_command       => '/bin/bash /usr/local/bin/kolla_start',
