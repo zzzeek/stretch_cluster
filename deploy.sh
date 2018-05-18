@@ -75,10 +75,10 @@ download_images() {
     mkdir -p ${OVERCLOUD_IMAGES}/${RELEASE}
     pushd ${OVERCLOUD_IMAGES}/${RELEASE}
 
-    if ! [ -f ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar ]; then
+    if  [ ! -f "ironic-python-agent.tar" ]; then
         curl -O ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar
     fi
-    if ! [ -f ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar ]; then
+    if  [ ! -f "overcloud-full.tar" ]; then
         curl -O ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar
     fi
     popd
