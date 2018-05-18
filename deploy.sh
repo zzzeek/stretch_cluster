@@ -74,8 +74,13 @@ setup_infrared() {
 download_images() {
     mkdir -p ${OVERCLOUD_IMAGES}/${RELEASE}
     pushd ${OVERCLOUD_IMAGES}/${RELEASE}
-    curl -O ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar
-    curl -O ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar
+
+    if ! [ -f ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar ]; then
+        curl -O ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar
+    fi
+    if ! [ -f ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar ]; then
+        curl -O ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar
+    fi
     popd
 }
 
