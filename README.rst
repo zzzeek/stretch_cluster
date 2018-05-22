@@ -65,14 +65,3 @@ Breaking down the build further, we can run individual steps::
   # deploy the "stretch galera" setup across the two overclouds
   $ CMDS="deploy_stretch" ./deploy.sh
 
-Not Done Yet
-============
-
-* We aren't using Pacemaker to control the new Galera cluster or the clustercheck
-  engine, we are just launching the Docker container from Ansible here.
-
-* All the openstack .conf files need to have "region_name" or "os_region_name"
-  set correctly, ooo does not seem to do this consistently based on KeystoneRegion
-  (some versions did it, others don't) so we have to finish writing out every possible
-  region config.   Nova is working so far so you can see "nova --os-region_name region_stack2 list"
-  work (assuming you do that from the corresponding region's undercloud)
