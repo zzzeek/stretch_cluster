@@ -93,7 +93,7 @@
 #
 class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   $mysql_docker_image             = hiera('tripleo::profile::pacemaker::database::stretch_mysql_bundle::mysql_docker_image', undef),
-  $control_port                   = hiera('tripleo::profile::pacemaker::database::stretch_mysql_bundle::control_port', '3123'),
+  $control_port                   = hiera('tripleo::profile::pacemaker::database::stretch_mysql_bundle::control_port', '3150'),
   $bootstrap_node                 = hiera('mysql_short_bootstrap_node_name'),
   $bind_address                   = hiera('tripleo::profile::pacemaker::database::stretch_mysql_bundle::bind_address', $::hostname),
   $ca_file                        = undef,
