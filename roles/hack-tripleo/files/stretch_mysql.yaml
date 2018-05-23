@@ -96,12 +96,12 @@ outputs:
                       data: {get_param: DockerMysqlImage}
                       expression: $.data.rightSplit(separator => ":", maxSplits => 1)[0]
                   - 'pcmklatest'
-            tripleo::profile::pacemaker::database::stretch_mysql_bundle::control_port: 3123
+            tripleo::profile::pacemaker::database::stretch_mysql_bundle::control_port: 3150
             tripleo.stretch_mysql.firewall_rules:
               '204 mysql stretch-galera-bundle':
                 dport:
                   - 873
-                  - 3123
+                  - 3150
                   - 3306
                   - 4444
                   - 4567

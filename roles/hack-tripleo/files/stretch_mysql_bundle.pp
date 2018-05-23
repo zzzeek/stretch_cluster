@@ -24,7 +24,7 @@
 #
 # [*control_port*]
 #   (Optional) The bundle's pacemaker_remote control port on the host
-#   Defaults to hiera('tripleo::profile::pacemaker::database::mysql_bundle::control_port', '3123')
+#   Defaults to hiera('tripleo::profile::pacemaker::database::mysql_bundle::control_port', '3150')
 #
 # [*bootstrap_node*]
 #   (Optional) The hostname of the node responsible for bootstrapping tasks
