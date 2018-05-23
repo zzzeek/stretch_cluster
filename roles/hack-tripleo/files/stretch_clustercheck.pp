@@ -24,7 +24,7 @@
 #
 # [*bind_address*]
 #   (Optional) The address that the local mysql instance should bind to.
-#   Defaults to hiera('stretchmysql_bind_host')
+#   Defaults to hiera('stretch_mysql_bind_host')
 #
 # [*clustercheck_user*]
 #   (Optional) The name of the clustercheck user.
@@ -39,7 +39,7 @@ class tripleo::profile::pacemaker::stretch_clustercheck (
   $step                  = Integer(hiera('step')),
   $clustercheck_user     = 'clustercheck',
   $clustercheck_password = hiera('mysql_clustercheck_password'),
-  $bind_address          = hiera('stretchmysql_bind_host'),
+  $bind_address          = hiera('stretch_mysql_bind_host'),
 ) {
 
   if $step >= 1 {
