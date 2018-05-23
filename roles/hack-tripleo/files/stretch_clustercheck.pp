@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 #
-# == Class: tripleo::profile::pacemaker::clustercheck
+# == Class: tripleo::profile::pacemaker::stretch_clustercheck
 #
 # Clustercheck, galera health check profile for tripleo
 #
@@ -35,7 +35,7 @@
 #   Defaults to hiera('mysql_clustercheck_password')
 #
 #
-class tripleo::profile::pacemaker::clustercheck (
+class tripleo::profile::pacemaker::stretch_clustercheck (
   $step                  = Integer(hiera('step')),
   $clustercheck_user     = 'clustercheck',
   $clustercheck_password = hiera('mysql_clustercheck_password'),
