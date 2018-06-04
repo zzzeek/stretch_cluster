@@ -1,0 +1,24 @@
+diff --git a/puppet/services/pacemaker/haproxy.yaml b/puppet/services/pacemaker/haproxy.yaml
+index b91e570b..da30b868 100644
+--- a/puppet/services/pacemaker/haproxy.yaml
++++ b/puppet/services/pacemaker/haproxy.yaml
+@@ -31,6 +31,9 @@ parameters:
+                  via parameter_defaults in the resource registry.
+     type: json
+ 
++conditions:
++  stretch_galera_enabled: {equals: [{get_param: EnableStretchGalera}, true]}
++
+ resources:
+   LoadbalancerServiceBase:
+     type: ../haproxy.yaml
+@@ -53,6 +56,9 @@ outputs:
+           - get_attr: [LoadbalancerServiceBase, role_data, config_settings]
+           - tripleo::haproxy::haproxy_service_manage: false
+             tripleo::haproxy::mysql_clustercheck: true
++          - if:
++            - stretch_galera_enabled
++            - tripleo::haproxy::stretch_mysql_enabled: true
+       step_config: |
+         include ::tripleo::profile::pacemaker::haproxy
+       host_prep_tasks: {get_attr: [LoadbalancerServiceBase, role_data, host_prep_tasks]}

@@ -1,0 +1,67 @@
+diff --git a/manifests/haproxy.pp b/manifests/haproxy.pp
+index ab3b8230..85a06412 100644
+--- a/manifests/haproxy.pp
++++ b/manifests/haproxy.pp
+@@ -304,6 +304,13 @@
+ #  and if mysql cluster checking is disabled, the member options will be: "union($haproxy_member_options, ['backup'])"
+ #  Defaults to undef
+ #
++# [*stretch_mysql*]
++#  (optional) Enable or not Stretch MySQL Galera binding
++#  Defaults to hiera('stretch_mysql_enabled', false)
++#
++# [*stretch_mysql_member_options*]
++#  options to use for stretch mysql HAProxy balancer members
++#
+ # [*rabbitmq*]
+ #  (optional) Enable or not RabbitMQ binding
+ #  Defaults to false
+@@ -634,6 +641,7 @@ class tripleo::haproxy (
+   $mysql_clustercheck          = false,
+   $mysql_max_conn              = undef,
+   $mysql_member_options        = undef,
++  $stretch_mysql_member_options= undef,
+   $rabbitmq                    = false,
+   $etcd                        = hiera('etcd_enabled', false),
+   $docker_registry             = hiera('enable_docker_registry', false),
+@@ -1335,6 +1343,40 @@ class tripleo::haproxy (
+       server_names      => hiera('mysql_node_names', $controller_hosts_names_real),
+       options           => $mysql_member_options_real,
+     }
++
++    if $stretch_mysql {
++        $stretch_mysql_vip = hiera('stretch_mysql_vip')
++        $stretch_mysql_bind_opts = {
++          "${stretch_mysql_vip}:3306" => $haproxy_listen_bind_param,
++        }
++
++        $stretch_mysql_listen_options = {
++          'option'         => [ 'tcpka', 'httpchk', 'tcplog' ],
++          'timeout client' => '90m',
++          'timeout server' => '90m',
++          'stick-table'    => 'type ip size 1000',
++          'stick'          => 'on dst',
++          'maxconn'        => $mysql_max_conn
++        }
++        # TODO: we would also want to add remote galera nodes as
++        # "backup"
++        $stretch_mysql_member_options = ['port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s']
++
++        haproxy::listen { 'stretch-mysql':
++          bind             => $stretch_mysql_bind_opts,
++          options          => $stretch_mysql_listen_options,
++          collect_exported => false,
++        }
++        haproxy::balancermember { 'stretch-mysql-backup':
++          listening_service => 'stretch-mysql',
++          ports             => '3306',
++          ipaddresses       => hiera('stretch_mysql_node_ips'),
++          server_names      => hiera('stretch_mysql_node_names'),
++          options           => $stretch_mysql_member_options,
++        }
++
++    }
++
+     if $manage_firewall {
+       include ::tripleo::firewall
+       $mysql_firewall_rules = {

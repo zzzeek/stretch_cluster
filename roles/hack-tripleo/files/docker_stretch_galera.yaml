@@ -4,3 +4,6 @@ resource_registry:
   # HA Containers managed by pacemaker
   OS::TripleO::Services::StretchClustercheck: ../docker/services/pacemaker/stretch_clustercheck.yaml
   OS::TripleO::Services::StretchMySQL: ../docker/services/pacemaker/database/stretch_mysql.yaml
+
+parameter_defaults:
+  EnableStretchGalera: true
