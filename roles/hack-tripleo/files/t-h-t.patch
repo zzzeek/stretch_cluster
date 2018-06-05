@@ -1,3 +1,163 @@
+diff --git a/docker/services/database/mysql.yaml b/docker/services/database/mysql.yaml
+index 3e67ff3a..70454e5d 100644
+--- a/docker/services/database/mysql.yaml
++++ b/docker/services/database/mysql.yaml
+@@ -52,6 +52,9 @@ parameters:
+     type: boolean
+     description: Flag to indicate undercloud upgrade process is being run.
+     default: false
++  KeystoneStretchEnabled:
++    type: boolean
++    default: false
+ 
+ conditions:
+ 
+@@ -83,6 +86,7 @@ outputs:
+                 pid-file: /var/lib/mysql/mariadb.pid
+               mysqld_safe:
+                 pid-file: /var/lib/mysql/mariadb.pid
++          - keystone_stretch_enabled: {get_param: KeystoneStretchEnabled}
+       logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
+       logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
+       # BEGIN DOCKER SETTINGS #
+diff --git a/docker/services/keystone.yaml b/docker/services/keystone.yaml
+index 02c705ee..4f2bf519 100644
+--- a/docker/services/keystone.yaml
++++ b/docker/services/keystone.yaml
+@@ -54,6 +54,9 @@ parameters:
+   EnableInternalTLS:
+     type: boolean
+     default: false
++  KeystoneStretchEnabled:
++    type: boolean
++    default: false
+ 
+ resources:
+ 
+@@ -62,6 +65,8 @@ resources:
+ 
+   MySQLClient:
+     type: ../../puppet/services/database/mysql-client.yaml
++    properties:
++      UseStretchMySQL: {get_param: KeystoneStretchEnabled}
+ 
+   KeystoneBase:
+     type: ../../puppet/services/keystone.yaml
+diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
+index 73d3e6f5..d00be864 100644
+--- a/network/endpoints/endpoint_data.yaml
++++ b/network/endpoints/endpoint_data.yaml
+@@ -100,6 +100,12 @@ Mysql:
+     protocol: mysql+pymysql
+     port: 3306
+ 
++StretchMysql:
++    External:
++        net_param: StretchMysql
++    protocol: mysql+pymysql
++    port: 3306
++
+ Heat:
+     Internal:
+         net_param: HeatApi
+diff --git a/network/endpoints/endpoint_map.yaml b/network/endpoints/endpoint_map.yaml
+index 1346b94c..4f425329 100644
+--- a/network/endpoints/endpoint_map.yaml
++++ b/network/endpoints/endpoint_map.yaml
+@@ -76,6 +76,7 @@ parameters:
+       MistralPublic: {protocol: http, port: '8989', host: IP_ADDRESS}
+       MistralUIConfig: {protocol: http, port: '3000', host: IP_ADDRESS}
+       MysqlInternal: {protocol: mysql+pymysql, port: '3306', host: IP_ADDRESS}
++      StretchMysqlExternal: {protocol: mysql+pymysql, port: '3306', host: IP_ADDRESS}
+       NeutronAdmin: {protocol: http, port: '9696', host: IP_ADDRESS}
+       NeutronInternal: {protocol: http, port: '9696', host: IP_ADDRESS}
+       NeutronPublic: {protocol: http, port: '9696', host: IP_ADDRESS}
+diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
+index a87f5f91..33c09d87 100644
+--- a/network/service_net_map.j2.yaml
++++ b/network/service_net_map.j2.yaml
+@@ -67,6 +67,7 @@ parameters:
+       RedisNetwork: internal_api
+       GaneshaNetwork: storage_nfs
+       MysqlNetwork: internal_api
++      StretchMysqlNetwork: external
+       SnmpdNetwork: internal_api
+       CephClusterNetwork: storage_mgmt
+       CephMonNetwork: storage
+diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
+index d98c8e1b..d038cc40 100644
+--- a/puppet/services/database/mysql-client.yaml
++++ b/puppet/services/database/mysql-client.yaml
+@@ -38,6 +38,9 @@ parameters:
+     type: string
+     description: Specifies the default CA cert to use if TLS is used for
+                  services in the internal network.
++  UseStretchMySQL:
++    type: boolean
++    default: false
+ 
+ outputs:
+   role_data:
+@@ -50,7 +53,10 @@ outputs:
+             template:
+               "%{hiera('$NETWORK')}"
+             params:
+-              $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
++              - if:
++                - {equals: [{get_param: [UseStretchMySQL]}, true]}
++                - $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
++                - $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
+         tripleo::profile::base::database::mysql::client::enable_ssl: {get_param: EnableInternalTLS}
+         tripleo::profile::base::database::mysql::client::ssl_ca: {get_param: InternalTLSCAFile}
+       step_config: |
+diff --git a/puppet/services/database/mysql.yaml b/puppet/services/database/mysql.yaml
+index 25b0d341..4e4bbec3 100644
+--- a/puppet/services/database/mysql.yaml
++++ b/puppet/services/database/mysql.yaml
+@@ -62,7 +62,6 @@ parameters:
+     description: Enable IPv6 in MySQL
+     type: boolean
+ 
+-
+ conditions:
+ 
+   internal_tls_enabled: {equals: [{get_param: EnableInternalTLS}, true]}
+diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
+index a5dd283e..38cc5c6c 100644
+--- a/puppet/services/keystone.yaml
++++ b/puppet/services/keystone.yaml
+@@ -286,6 +286,9 @@ parameters:
+     default: ''
+     description: Indicate whether this resource may be shared with the domain received in the request
+                  "origin" header.
++  KeystoneStretchEnabled:
++    type: boolean
++    default: false
+ 
+ parameter_groups:
+ - label: deprecated
+@@ -316,7 +319,7 @@ conditions:
+   keystone_fernet_tokens: {equals: [{get_param: KeystoneTokenProvider}, "fernet"]}
+   keystone_ldap_domain_enabled: {equals: [{get_param: KeystoneLDAPDomainEnable}, True]}
+   service_debug_unset: {equals : [{get_param: KeystoneDebug}, '']}
+-
++  keystone_stretch_enabled: {equals: [{get_param: KeystoneStretchEnabled}, True]}
+   # Security compliance
+   change_password_upon_first_use_set: {not: {equals: [{get_param: KeystoneChangePasswordUponFirstUse}, '']}}
+   disable_user_account_days_inactive_set: {not: {equals: [{get_param: KeystoneDisableUserAccountDaysInactive}, '']}}
+@@ -345,10 +348,10 @@ outputs:
+             - keystone::cors::allowed_origin: {get_param: KeystoneCorsAllowedOrigin}
+           - keystone::database_connection:
+               make_url:
+-                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
++                scheme: {get_param: [EndpointMap, {if: [keystone_stretch_enabled, StretchMysqlInternal, MysqlInternal]}, protocol]}
+                 username: keystone
+                 password: {get_param: AdminToken}
+-                host: {get_param: [EndpointMap, MysqlInternal, host]}
++                host: {get_param: [EndpointMap, {if: [keystone_stretch_enabled, StretchMysqlInternal, MysqlInternal]}, host]}
+                 path: /keystone
+                 query:
+                   read_default_file: /etc/my.cnf.d/tripleo.cnf
 diff --git a/puppet/services/pacemaker/haproxy.yaml b/puppet/services/pacemaker/haproxy.yaml
 index b91e570b..ed6c6f34 100644
 --- a/puppet/services/pacemaker/haproxy.yaml
@@ -27,3 +187,16 @@ index b91e570b..ed6c6f34 100644
        step_config: |
          include ::tripleo::profile::pacemaker::haproxy
        host_prep_tasks: {get_attr: [LoadbalancerServiceBase, role_data, host_prep_tasks]}
+diff --git a/roles_data.yaml b/roles_data.yaml
+index c2b172da..8c7de842 100644
+--- a/roles_data.yaml
++++ b/roles_data.yaml
+@@ -169,6 +169,8 @@
+     - OS::TripleO::Services::SkydiveAnalyzer
+     - OS::TripleO::Services::Snmp
+     - OS::TripleO::Services::Sshd
++    - OS::TripleO::Services::StretchClustercheck
++    - OS::TripleO::Services::StretchMySQL
+     - OS::TripleO::Services::SwiftProxy
+     - OS::TripleO::Services::SwiftDispersion
+     - OS::TripleO::Services::SwiftRingBuilder

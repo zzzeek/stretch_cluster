@@ -106,7 +106,6 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   $ipv6                           = str2bool(hiera('mysql_ipv6', false)),
   $pcs_tries                      = hiera('pcs_tries', 20),
   $step                           = Integer(hiera('step')),
-  $is_stretch_mysql               = true,
 ) {
   if $::hostname == downcase($bootstrap_node) {
     $pacemaker_master = true
@@ -259,6 +258,7 @@ MYSQL_HOST=localhost\n",
       manage_resources        => false,
       remove_default_accounts => $remove_default_accounts,
       mysql_server_options    => $mysqld_options,
+      is_stretch_mysql        => true,
     }
 
     if $pacemaker_master {

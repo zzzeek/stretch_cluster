@@ -46,23 +46,6 @@
         dest: "{{ tripleo_heat_templates }}/environments/docker-stretch-galera.yaml"
     }
 
-- name: add StretchMySQL role
-  lineinfile:
-    path: "{{ tripleo_heat_templates }}/roles_data.yaml"
-    insertafter: "   - OS::TripleO::Services::MySQL$"
-    line: "    - OS::TripleO::Services::StretchMySQL"
-
-- name: add StretchClustercheck role
-  lineinfile:
-    path: "{{ tripleo_heat_templates }}/roles_data.yaml"
-    insertafter: "    - OS::TripleO::Services::Clustercheck"
-    line: "    - OS::TripleO::Services::StretchClustercheck"
-
-- name: add network to service map
-  lineinfile:
-    path: "{{ tripleo_heat_templates }}/network/service_net_map.j2.yaml"
-    insertafter: "      MysqlNetwork"
-    line: "      StretchMysqlNetwork: external"
 
 - name: patch t-h-t
   patch:
