@@ -64,15 +64,17 @@
     insertafter: "      MysqlNetwork"
     line: "      StretchMysqlNetwork: external"
 
-- name: patch haproxy.yaml
+- name: patch t-h-t
   patch:
-      src: tht_haproxy_yaml.patch
-      dest: "{{ tripleo_heat_templates }}/puppet/services/pacemaker/haproxy.yaml"
+      src: t-h-t.patch
+      basedir: "{{ tripleo_heat_templates }}"
+      strip: 1
 
-- name: patch haproxy.pp
+- name: patch puppet_tripleo
   patch:
-      src: pto_haproxy_pp.patch
-      dest: "{{ puppet_tripleo }}/tripleo/manifests/haproxy.pp"
+      src: puppet-tripleo.patch
+      basedir: "{{ puppet_tripleo }}/tripleo/"
+      strip: 1
 
 - name: run upload-puppet-modules
   shell: |

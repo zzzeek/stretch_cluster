@@ -1,0 +1,249 @@
+diff --git a/manifests/haproxy.pp b/manifests/haproxy.pp
+index ab3b8230..8dda4c93 100644
+--- a/manifests/haproxy.pp
++++ b/manifests/haproxy.pp
+@@ -304,6 +304,13 @@
+ #  and if mysql cluster checking is disabled, the member options will be: "union($haproxy_member_options, ['backup'])"
+ #  Defaults to undef
+ #
++# [*stretch_mysql*]
++#  (optional) Enable or not Stretch MySQL Galera binding
++#  Defaults to hiera('stretch_mysql_enabled', false)
++#
++# [*stretch_mysql_member_options*]
++#  options to use for stretch mysql HAProxy balancer members
++#
+ # [*rabbitmq*]
+ #  (optional) Enable or not RabbitMQ binding
+ #  Defaults to false
+@@ -630,10 +637,12 @@ class tripleo::haproxy (
+   $octavia                     = hiera('octavia_api_enabled', false),
+   $designate                   = hiera('designate_api_enabled', false),
+   $mysql                       = hiera('mysql_enabled', false),
++  $stretch_mysql               = hiera('stretch_mysql_enabled', false),
+   $kubernetes_master           = hiera('kubernetes_master_enabled', false),
+   $mysql_clustercheck          = false,
+   $mysql_max_conn              = undef,
+   $mysql_member_options        = undef,
++  $stretch_mysql_member_options= undef,
+   $rabbitmq                    = false,
+   $etcd                        = hiera('etcd_enabled', false),
+   $docker_registry             = hiera('enable_docker_registry', false),
+@@ -1335,6 +1344,44 @@ class tripleo::haproxy (
+       server_names      => hiera('mysql_node_names', $controller_hosts_names_real),
+       options           => $mysql_member_options_real,
+     }
++
++    if $stretch_mysql {
++        $stretch_mysql_vip = hiera('stretch_mysql_vip')
++        $stretch_mysql_bind_opts = {
++          "${stretch_mysql_vip}:3306" => $haproxy_listen_bind_param,
++        }
++
++        $stretch_mysql_listen_options = {
++          'option'         => [ 'tcpka', 'httpchk', 'tcplog' ],
++          'timeout client' => '90m',
++          'timeout server' => '90m',
++          'stick-table'    => 'type ip size 1000',
++          'stick'          => 'on dst',
++          'maxconn'        => $mysql_max_conn
++        }
++        # TODO: we would also want to add remote galera nodes as
++        # "backup"
++        if $stretch_mysql_member_options {
++            $stretch_mysql_member_options_real = $stretch_mysql_member_options
++        } else {
++            $stretch_mysql_member_options_real = ['port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s']
++        }
++
++        haproxy::listen { 'stretch-mysql':
++          bind             => $stretch_mysql_bind_opts,
++          options          => $stretch_mysql_listen_options,
++          collect_exported => false,
++        }
++        haproxy::balancermember { 'stretch-mysql-backup':
++          listening_service => 'stretch-mysql',
++          ports             => '3306',
++          ipaddresses       => hiera('stretch_mysql_node_ips'),
++          server_names      => hiera('stretch_mysql_node_names'),
++          options           => $stretch_mysql_member_options_real,
++        }
++
++    }
++
+     if $manage_firewall {
+       include ::tripleo::firewall
+       $mysql_firewall_rules = {
+diff --git a/manifests/profile/base/database/mysql.pp b/manifests/profile/base/database/mysql.pp
+index b3316d4c..e46297db 100644
+--- a/manifests/profile/base/database/mysql.pp
++++ b/manifests/profile/base/database/mysql.pp
+@@ -92,6 +92,7 @@ class tripleo::profile::base::database::mysql (
+   $mysql_max_connections         = hiera('mysql_max_connections', undef),
+   $remove_default_accounts       = true,
+   $step                          = Integer(hiera('step')),
++  $is_stretch_mysql              = false,
+ ) {
+ 
+   if $::hostname == downcase($bootstrap_node) {
+@@ -171,82 +172,86 @@ class tripleo::profile::base::database::mysql (
+ 
+   if $step >= 2 and $sync_db {
+     Class['::mysql::server'] -> Mysql_database<||>
+-    if hiera('aodh_api_enabled', false) {
+-      include ::aodh::db::mysql
+-    }
+-    if hiera('ceilometer_collector_enabled', false) {
+-      include ::ceilometer::db::mysql
+-    }
+-    if hiera('cinder_api_enabled', false) {
+-      include ::cinder::db::mysql
+-    }
+-    if hiera('barbican_api_enabled', false) {
+-      include ::barbican::db::mysql
+-    }
+-    if hiera('congress_enabled', false) {
+-      include ::congress::db::mysql
+-    }
+-    if hiera('designate_api_enabled', false) {
+-      include ::designate::db::mysql
+-    }
+-    if hiera('glance_api_enabled', false) {
+-      include ::glance::db::mysql
+-    }
+-    if hiera('gnocchi_api_enabled', false) {
+-      include ::gnocchi::db::mysql
+-    }
+-    if hiera('heat_engine_enabled', false) {
+-      include ::heat::db::mysql
+-    }
+-    if hiera('ironic_api_enabled', false) {
+-      include ::ironic::db::mysql
+-    }
+-    if hiera('ironic_inspector_enabled', false) {
+-      include ::ironic::inspector::db::mysql
+-    }
+-    if hiera('keystone_enabled', false) {
++
++    if hiera('keystone_enabled', false) and hiera('keystone_stretch_enabled', false) == $is_stretch_mysql {
+       include ::keystone::db::mysql
+     }
+-    if hiera('manila_api_enabled', false) {
+-      include ::manila::db::mysql
+-    }
+-    if hiera('mistral_api_enabled', false) {
+-      include ::mistral::db::mysql
+-    }
+-    if hiera('neutron_api_enabled', false) {
+-      include ::neutron::db::mysql
+-    }
+-    if hiera('nova_api_enabled', false) {
+-      include ::nova::db::mysql
+-      include ::nova::db::mysql_api
+-    }
+-    if hiera('nova_placement_enabled', false) {
+-      include ::nova::db::mysql_placement
+-    }
+-    if hiera('octavia_api_enabled', false) {
+-      include ::octavia::db::mysql
+-    }
+-    if hiera('sahara_api_enabled', false) {
+-      include ::sahara::db::mysql
+-    }
+-    if hiera('tacker_enabled', false) {
+-      include ::tacker::db::mysql
+-    }
+-    if hiera('trove_api_enabled', false) {
+-      include ::trove::db::mysql
+-    }
+-    if hiera('panko_api_enabled', false) {
+-      include ::panko::db::mysql
+-    }
+-    if hiera('ec2_api_enabled', false) {
+-      include ::ec2api::db::mysql
+-    }
+-    if hiera('zaqar_api_enabled', false) and hiera('zaqar::db::mysql::user', '') == 'zaqar' {
+-      # NOTE: by default zaqar uses mongodb
+-      include ::zaqar::db::mysql
+-    }
+-    if hiera('veritas_hyperscale_controller_enabled', false) {
+-      include ::veritas_hyperscale::db::mysql
++
++    if ! $is_stretch_mysql {
++      if hiera('aodh_api_enabled', false) {
++        include ::aodh::db::mysql
++      }
++      if hiera('ceilometer_collector_enabled', false) {
++        include ::ceilometer::db::mysql
++      }
++      if hiera('cinder_api_enabled', false) {
++        include ::cinder::db::mysql
++      }
++      if hiera('barbican_api_enabled', false) {
++        include ::barbican::db::mysql
++      }
++      if hiera('congress_enabled', false) {
++        include ::congress::db::mysql
++      }
++      if hiera('designate_api_enabled', false) {
++        include ::designate::db::mysql
++      }
++      if hiera('glance_api_enabled', false) {
++        include ::glance::db::mysql
++      }
++      if hiera('gnocchi_api_enabled', false) {
++        include ::gnocchi::db::mysql
++      }
++      if hiera('heat_engine_enabled', false) {
++        include ::heat::db::mysql
++      }
++      if hiera('ironic_api_enabled', false) {
++        include ::ironic::db::mysql
++      }
++      if hiera('ironic_inspector_enabled', false) {
++        include ::ironic::inspector::db::mysql
++      }
++      if hiera('manila_api_enabled', false) {
++        include ::manila::db::mysql
++      }
++      if hiera('mistral_api_enabled', false) {
++        include ::mistral::db::mysql
++      }
++      if hiera('neutron_api_enabled', false) {
++        include ::neutron::db::mysql
++      }
++      if hiera('nova_api_enabled', false) {
++        include ::nova::db::mysql
++        include ::nova::db::mysql_api
++      }
++      if hiera('nova_placement_enabled', false) {
++        include ::nova::db::mysql_placement
++      }
++      if hiera('octavia_api_enabled', false) {
++        include ::octavia::db::mysql
++      }
++      if hiera('sahara_api_enabled', false) {
++        include ::sahara::db::mysql
++      }
++      if hiera('tacker_enabled', false) {
++        include ::tacker::db::mysql
++      }
++      if hiera('trove_api_enabled', false) {
++        include ::trove::db::mysql
++      }
++      if hiera('panko_api_enabled', false) {
++        include ::panko::db::mysql
++      }
++      if hiera('ec2_api_enabled', false) {
++        include ::ec2api::db::mysql
++      }
++      if hiera('zaqar_api_enabled', false) and hiera('zaqar::db::mysql::user', '') == 'zaqar' {
++        # NOTE: by default zaqar uses mongodb
++        include ::zaqar::db::mysql
++      }
++      if hiera('veritas_hyperscale_controller_enabled', false) {
++        include ::veritas_hyperscale::db::mysql
++      }
+     }
+   }
+ 

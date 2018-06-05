@@ -7,3 +7,8 @@ resource_registry:
 
 parameter_defaults:
   EnableStretchGalera: true
+
+  # TODO: need mysql.pp to see this in hiera(), what is the more legit
+  # way to do this?
+  ControllerExtraConfig:
+    keystone_stretch_enabled: true
