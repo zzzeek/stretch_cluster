@@ -9,9 +9,9 @@ index 3e67ff3a..70454e5d 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
- 
+
  conditions:
- 
+
 @@ -83,6 +86,7 @@ outputs:
                  pid-file: /var/lib/mysql/mariadb.pid
                mysqld_safe:
@@ -31,16 +31,16 @@ index 02c705ee..4f2bf519 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
- 
+
  resources:
- 
+
 @@ -62,6 +65,8 @@ resources:
- 
+
    MySQLClient:
      type: ../../puppet/services/database/mysql-client.yaml
 +    properties:
 +      UseStretchMySQL: {get_param: KeystoneStretchEnabled}
- 
+
    KeystoneBase:
      type: ../../puppet/services/keystone.yaml
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
@@ -50,7 +50,7 @@ index 73d3e6f5..d00be864 100644
 @@ -100,6 +100,12 @@ Mysql:
      protocol: mysql+pymysql
      port: 3306
- 
+
 +StretchMysql:
 +    External:
 +        net_param: StretchMysql
@@ -95,7 +95,7 @@ index d98c8e1b..d038cc40 100644
 +  UseStretchMySQL:
 +    type: boolean
 +    default: false
- 
+
  outputs:
    role_data:
 @@ -50,7 +53,10 @@ outputs:
@@ -117,10 +117,10 @@ index 25b0d341..4e4bbec3 100644
 @@ -62,7 +62,6 @@ parameters:
      description: Enable IPv6 in MySQL
      type: boolean
- 
+
 -
  conditions:
- 
+
    internal_tls_enabled: {equals: [{get_param: EnableInternalTLS}, true]}
 diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
 index a5dd283e..38cc5c6c 100644
@@ -133,7 +133,7 @@ index a5dd283e..38cc5c6c 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
- 
+
  parameter_groups:
  - label: deprecated
 @@ -316,7 +319,7 @@ conditions:
@@ -150,11 +150,11 @@ index a5dd283e..38cc5c6c 100644
            - keystone::database_connection:
                make_url:
 -                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
-+                scheme: {get_param: [EndpointMap, {if: [keystone_stretch_enabled, StretchMysqlInternal, MysqlInternal]}, protocol]}
++                scheme: {get_param: [EndpointMap, {if: [keystone_stretch_enabled, StretchMysqlExternal, MysqlInternal]}, protocol]}
                  username: keystone
                  password: {get_param: AdminToken}
 -                host: {get_param: [EndpointMap, MysqlInternal, host]}
-+                host: {get_param: [EndpointMap, {if: [keystone_stretch_enabled, StretchMysqlInternal, MysqlInternal]}, host]}
++                host: {get_param: [EndpointMap, {if: [keystone_stretch_enabled, StretchMysqlExternal, MysqlInternal]}, host]}
                  path: /keystone
                  query:
                    read_default_file: /etc/my.cnf.d/tripleo.cnf
@@ -173,7 +173,7 @@ index b91e570b..ed6c6f34 100644
 +
 +conditions:
 +  stretch_galera_enabled: {equals: [{get_param: EnableStretchGalera}, true]}
- 
+
  resources:
    LoadbalancerServiceBase:
 @@ -53,6 +60,10 @@ outputs:
