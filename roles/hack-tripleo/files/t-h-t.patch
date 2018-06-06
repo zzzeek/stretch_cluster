@@ -85,7 +85,7 @@ index a87f5f91..33c09d87 100644
        CephClusterNetwork: storage_mgmt
        CephMonNetwork: storage
 diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
-index d98c8e1b..d038cc40 100644
+index d98c8e1b..f64042c7 100644
 --- a/puppet/services/database/mysql-client.yaml
 +++ b/puppet/services/database/mysql-client.yaml
 @@ -38,6 +38,9 @@ parameters:
@@ -103,7 +103,7 @@ index d98c8e1b..d038cc40 100644
                "%{hiera('$NETWORK')}"
              params:
 -              $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
-+              - if:
++              if:
 +                - {equals: [{get_param: [UseStretchMySQL]}, true]}
 +                - $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
 +                - $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
