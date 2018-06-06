@@ -44,7 +44,7 @@ index 02c705ee..4f2bf519 100644
    KeystoneBase:
      type: ../../puppet/services/keystone.yaml
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
-index 73d3e6f5..d00be864 100644
+index 73d3e6f5..79cc09b3 100644
 --- a/network/endpoints/endpoint_data.yaml
 +++ b/network/endpoints/endpoint_data.yaml
 @@ -100,6 +100,12 @@ Mysql:
@@ -52,7 +52,7 @@ index 73d3e6f5..d00be864 100644
      port: 3306
  
 +StretchMysql:
-+    External:
++    Internal:
 +        net_param: StretchMysql
 +    protocol: mysql+pymysql
 +    port: 3306
@@ -60,18 +60,6 @@ index 73d3e6f5..d00be864 100644
  Heat:
      Internal:
          net_param: HeatApi
-diff --git a/network/endpoints/endpoint_map.yaml b/network/endpoints/endpoint_map.yaml
-index 1346b94c..4f425329 100644
---- a/network/endpoints/endpoint_map.yaml
-+++ b/network/endpoints/endpoint_map.yaml
-@@ -76,6 +76,7 @@ parameters:
-       MistralPublic: {protocol: http, port: '8989', host: IP_ADDRESS}
-       MistralUIConfig: {protocol: http, port: '3000', host: IP_ADDRESS}
-       MysqlInternal: {protocol: mysql+pymysql, port: '3306', host: IP_ADDRESS}
-+      StretchMysqlExternal: {protocol: mysql+pymysql, port: '3306', host: IP_ADDRESS}
-       NeutronAdmin: {protocol: http, port: '9696', host: IP_ADDRESS}
-       NeutronInternal: {protocol: http, port: '9696', host: IP_ADDRESS}
-       NeutronPublic: {protocol: http, port: '9696', host: IP_ADDRESS}
 diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
 index a87f5f91..33c09d87 100644
 --- a/network/service_net_map.j2.yaml
@@ -123,7 +111,7 @@ index 25b0d341..4e4bbec3 100644
  
    internal_tls_enabled: {equals: [{get_param: EnableInternalTLS}, true]}
 diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
-index a5dd283e..ec1259a8 100644
+index a5dd283e..820a50a1 100644
 --- a/puppet/services/keystone.yaml
 +++ b/puppet/services/keystone.yaml
 @@ -286,6 +286,9 @@ parameters:
@@ -153,7 +141,7 @@ index a5dd283e..ec1259a8 100644
 +                scheme:
 +                  if:
 +                    - keystone_stretch_enabled
-+                    - {get_param: [EndpointMap, StretchMysqlExternal, protocol]}
++                    - {get_param: [EndpointMap, StretchMysqlInternal, protocol]}
 +                    - {get_param: [EndpointMap, MysqlInternal, protocol]}
                  username: keystone
                  password: {get_param: AdminToken}
@@ -161,7 +149,7 @@ index a5dd283e..ec1259a8 100644
 +                host:
 +                  if:
 +                    - keystone_stretch_enabled
-+                    - {get_param: [EndpointMap, StretchMysqlExternal, host]}
++                    - {get_param: [EndpointMap, StretchMysqlInternal, host]}
 +                    - {get_param: [EndpointMap, MysqlInternal, host]}
                  path: /keystone
                  query:
