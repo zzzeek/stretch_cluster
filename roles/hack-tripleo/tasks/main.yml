@@ -53,6 +53,10 @@
       basedir: "{{ tripleo_heat_templates }}"
       strip: 1
 
+- name: regenerate endpoint map
+  shell: build_endpoint_map.py
+  chdir: "{{ tripleo_heat_templates }}/network/endpoints"
+
 - name: patch puppet_tripleo
   patch:
       src: puppet-tripleo.patch
