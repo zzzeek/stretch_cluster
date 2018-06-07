@@ -75,19 +75,18 @@ index ab3b8230..8dda4c93 100644
        include ::tripleo::firewall
        $mysql_firewall_rules = {
 diff --git a/manifests/profile/base/database/mysql.pp b/manifests/profile/base/database/mysql.pp
-index b3316d4c..30baef60 100644
+index b3316d4c..269be0c2 100644
 --- a/manifests/profile/base/database/mysql.pp
 +++ b/manifests/profile/base/database/mysql.pp
-@@ -92,6 +92,8 @@ class tripleo::profile::base::database::mysql (
+@@ -92,6 +92,7 @@ class tripleo::profile::base::database::mysql (
    $mysql_max_connections         = hiera('mysql_max_connections', undef),
    $remove_default_accounts       = true,
    $step                          = Integer(hiera('step')),
 +  $is_stretch_mysql              = false,
-+  $keystone_stretch_enabled      = false,
  ) {
  
    if $::hostname == downcase($bootstrap_node) {
-@@ -171,82 +173,115 @@ class tripleo::profile::base::database::mysql (
+@@ -171,82 +172,88 @@ class tripleo::profile::base::database::mysql (
  
    if $step >= 2 and $sync_db {
      Class['::mysql::server'] -> Mysql_database<||>
@@ -111,46 +110,24 @@ index b3316d4c..30baef60 100644
 -    }
 -    if hiera('glance_api_enabled', false) {
 -      include ::glance::db::mysql
-+
-+    if str2bool(hiera("keystone_stretch_no_leader", false)) {
-+        warning('keystone stretch no leader is true')
-+    } else {
-+        warning('keystone stretch no leader is false')
-     }
+-    }
 -    if hiera('gnocchi_api_enabled', false) {
 -      include ::gnocchi::db::mysql
-+
-+    if str2bool(hiera("keystone_stretch_enabled", false)) {
-+        warning('keystone_stretch_enabled from hiera is true')
-+    } else {
-+        warning('keystone_stretch_enabled from hiera is false')
-     }
+-    }
 -    if hiera('heat_engine_enabled', false) {
 -      include ::heat::db::mysql
-+
-+    if $keystone_stretch_enabled {
-+        warning('keystone_stretch_enabled local variable is true')
-+    } else {
-+        warning('keystone_stretch_enabled local variable is false')
-     }
+-    }
 -    if hiera('ironic_api_enabled', false) {
 -      include ::ironic::db::mysql
-+
-+    if true == $is_stretch_mysql {
-+        warning('true == $is_stretch_mysql')
-     }
+-    }
 -    if hiera('ironic_inspector_enabled', false) {
 -      include ::ironic::inspector::db::mysql
-+
-+    if false == $is_stretch_mysql {
-+        warning('false == $is_stretch_mysql')
-     }
+-    }
 -    if hiera('keystone_enabled', false) {
 +
-+    # TODO: how do I get this to be hiera("keystone_stretch_enabled") ? "hiera"
-+    # never seems to work for me.  also are booleans passed from heat as
-+    # str or bool, when do we use str2bool ?
-+    if hiera('keystone_enabled', false) and str2bool($keystone_stretch_enabled) == $is_stretch_mysql {
++    if hiera('keystone_enabled', false) and (
++      str2bool(hiera("keystone_stretch_enabled")) == $is_stretch_mysql
++    ) {
        include ::keystone::db::mysql
      }
 -    if hiera('manila_api_enabled', false) {

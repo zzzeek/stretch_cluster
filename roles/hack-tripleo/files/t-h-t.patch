@@ -1,26 +1,3 @@
-diff --git a/docker/services/database/mysql.yaml b/docker/services/database/mysql.yaml
-index 3e67ff3a..353a88d0 100644
---- a/docker/services/database/mysql.yaml
-+++ b/docker/services/database/mysql.yaml
-@@ -52,6 +52,9 @@ parameters:
-     type: boolean
-     description: Flag to indicate undercloud upgrade process is being run.
-     default: false
-+  KeystoneStretchEnabled:
-+    type: boolean
-+    default: false
- 
- conditions:
- 
-@@ -83,6 +86,8 @@ outputs:
-                 pid-file: /var/lib/mysql/mariadb.pid
-               mysqld_safe:
-                 pid-file: /var/lib/mysql/mariadb.pid
-+          - keystone_stretch_no_leader: {get_param: KeystoneStretchEnabled}
-+          - tripleo::profile::base::database::mysql::keystone_stretch_enabled: {get_param: KeystoneStretchEnabled}
-       logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
-       logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
-       # BEGIN DOCKER SETTINGS #
 diff --git a/docker/services/keystone.yaml b/docker/services/keystone.yaml
 index 02c705ee..4f2bf519 100644
 --- a/docker/services/keystone.yaml
@@ -99,18 +76,6 @@ index d98c8e1b..f64042c7 100644
          tripleo::profile::base::database::mysql::client::enable_ssl: {get_param: EnableInternalTLS}
          tripleo::profile::base::database::mysql::client::ssl_ca: {get_param: InternalTLSCAFile}
        step_config: |
-diff --git a/puppet/services/database/mysql.yaml b/puppet/services/database/mysql.yaml
-index 25b0d341..4e4bbec3 100644
---- a/puppet/services/database/mysql.yaml
-+++ b/puppet/services/database/mysql.yaml
-@@ -62,7 +62,6 @@ parameters:
-     description: Enable IPv6 in MySQL
-     type: boolean
- 
--
- conditions:
- 
-   internal_tls_enabled: {equals: [{get_param: EnableInternalTLS}, true]}
 diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
 index a5dd283e..820a50a1 100644
 --- a/puppet/services/keystone.yaml

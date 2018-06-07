@@ -61,6 +61,9 @@ parameters:
     description: >
       Setting this to a unique value will re-run any deployment tasks which
       perform configuration on a Heat stack-update.
+  KeystoneStretchEnabled:
+    type: boolean
+    default: false
 
 resources:
 
@@ -120,6 +123,7 @@ outputs:
                   "%{hiera('fqdn_$NETWORK')}"
                 params:
                   $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
+          - keystone_stretch_enabled: {get_param: KeystoneStretchEnabled}
           -
             if:
             - internal_tls_enabled
