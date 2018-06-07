@@ -9,16 +9,19 @@
     path: "{{ working_dir }}/tripleo-patch"
     state: directory
 
+- name: erase existing patched tripleo area
+  shell: rm -fr {{ working_dir }}/tripleo-patch
+
 - name: make patched puppet-tripleo area
   file:
     path: "{{ puppet_tripleo }}"
     state: directory
 
 - name: copy puppet-tripleo to local working dir
-  shell: cp -Ru /usr/share/openstack-puppet/modules/tripleo {{ puppet_tripleo }}/
+  shell: cp -R /usr/share/openstack-puppet/modules/tripleo {{ puppet_tripleo }}/
 
 - name: copy t-h-t files
-  shell: cp -Ru /usr/share/openstack-tripleo-heat-templates {{ working_dir }}/tripleo-patch/tripleo-heat-templates
+  shell: cp -R /usr/share/openstack-tripleo-heat-templates {{ working_dir }}/tripleo-patch/tripleo-heat-templates
 
 - name: deploy new t-h-t, tripleo-puppet files
   copy:
