@@ -9,16 +9,16 @@ index 02c705ee..4f2bf519 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
-
+ 
  resources:
-
+ 
 @@ -62,6 +65,8 @@ resources:
-
+ 
    MySQLClient:
      type: ../../puppet/services/database/mysql-client.yaml
 +    properties:
 +      UseStretchMySQL: {get_param: KeystoneStretchEnabled}
-
+ 
    KeystoneBase:
      type: ../../puppet/services/keystone.yaml
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
@@ -28,7 +28,7 @@ index 73d3e6f5..79cc09b3 100644
 @@ -100,6 +100,12 @@ Mysql:
      protocol: mysql+pymysql
      port: 3306
-
+ 
 +StretchMysql:
 +    Internal:
 +        net_param: StretchMysql
@@ -51,7 +51,7 @@ index a87f5f91..33c09d87 100644
        CephClusterNetwork: storage_mgmt
        CephMonNetwork: storage
 diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
-index d98c8e1b..f64042c7 100644
+index d98c8e1b..8212f924 100644
 --- a/puppet/services/database/mysql-client.yaml
 +++ b/puppet/services/database/mysql-client.yaml
 @@ -38,6 +38,9 @@ parameters:
@@ -61,18 +61,19 @@ index d98c8e1b..f64042c7 100644
 +  UseStretchMySQL:
 +    type: boolean
 +    default: false
-
+ 
  outputs:
    role_data:
-@@ -50,7 +53,10 @@ outputs:
+@@ -50,7 +53,11 @@ outputs:
              template:
                "%{hiera('$NETWORK')}"
              params:
 -              $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
-+              if:
-+                - {equals: [{get_param: UseStretchMySQL}, true]}
-+                - $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
-+                - $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
++              $NETWORK:
++                if:
++                  - {equals: [{get_param: UseStretchMySQL}, true]}
++                  - {get_param: [ServiceNetMap, StretchMysqlNetwork]}
++                  - {get_param: [ServiceNetMap, MysqlNetwork]}
          tripleo::profile::base::database::mysql::client::enable_ssl: {get_param: EnableInternalTLS}
          tripleo::profile::base::database::mysql::client::ssl_ca: {get_param: InternalTLSCAFile}
        step_config: |
@@ -87,7 +88,7 @@ index a5dd283e..820a50a1 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
-
+ 
  parameter_groups:
  - label: deprecated
 @@ -316,7 +319,7 @@ conditions:
@@ -135,7 +136,7 @@ index b91e570b..ed6c6f34 100644
 +
 +conditions:
 +  stretch_galera_enabled: {equals: [{get_param: EnableStretchGalera}, true]}
-
+ 
  resources:
    LoadbalancerServiceBase:
 @@ -53,6 +60,10 @@ outputs:
