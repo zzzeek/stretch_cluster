@@ -75,7 +75,7 @@ index ab3b8230..8dda4c93 100644
        include ::tripleo::firewall
        $mysql_firewall_rules = {
 diff --git a/manifests/profile/base/database/mysql.pp b/manifests/profile/base/database/mysql.pp
-index b3316d4c..0c0ccf1c 100644
+index b3316d4c..30baef60 100644
 --- a/manifests/profile/base/database/mysql.pp
 +++ b/manifests/profile/base/database/mysql.pp
 @@ -92,6 +92,8 @@ class tripleo::profile::base::database::mysql (
@@ -112,7 +112,7 @@ index b3316d4c..0c0ccf1c 100644
 -    if hiera('glance_api_enabled', false) {
 -      include ::glance::db::mysql
 +
-+    if str2bool(hiera("keystone_stretch_no_leader")) {
++    if str2bool(hiera("keystone_stretch_no_leader", false)) {
 +        warning('keystone stretch no leader is true')
 +    } else {
 +        warning('keystone stretch no leader is false')
@@ -120,7 +120,7 @@ index b3316d4c..0c0ccf1c 100644
 -    if hiera('gnocchi_api_enabled', false) {
 -      include ::gnocchi::db::mysql
 +
-+    if str2bool(hiera("keystone_stretch_enabled")) {
++    if str2bool(hiera("keystone_stretch_enabled", false)) {
 +        warning('keystone_stretch_enabled from hiera is true')
 +    } else {
 +        warning('keystone_stretch_enabled from hiera is false')
