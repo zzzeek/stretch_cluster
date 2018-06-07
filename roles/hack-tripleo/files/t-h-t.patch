@@ -1,5 +1,5 @@
 diff --git a/docker/services/database/mysql.yaml b/docker/services/database/mysql.yaml
-index 3e67ff3a..2b0a5d11 100644
+index 3e67ff3a..353a88d0 100644
 --- a/docker/services/database/mysql.yaml
 +++ b/docker/services/database/mysql.yaml
 @@ -52,6 +52,9 @@ parameters:
@@ -12,10 +12,11 @@ index 3e67ff3a..2b0a5d11 100644
  
  conditions:
  
-@@ -83,6 +86,7 @@ outputs:
+@@ -83,6 +86,8 @@ outputs:
                  pid-file: /var/lib/mysql/mariadb.pid
                mysqld_safe:
                  pid-file: /var/lib/mysql/mariadb.pid
++          - keystone_stretch_no_leader: {get_param: KeystoneStretchEnabled}
 +          - tripleo::profile::base::database::mysql::keystone_stretch_enabled: {get_param: KeystoneStretchEnabled}
        logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
        logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
