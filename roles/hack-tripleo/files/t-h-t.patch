@@ -1,26 +1,3 @@
-diff --git a/docker/services/keystone.yaml b/docker/services/keystone.yaml
-index 02c705ee..4f2bf519 100644
---- a/docker/services/keystone.yaml
-+++ b/docker/services/keystone.yaml
-@@ -54,6 +54,9 @@ parameters:
-   EnableInternalTLS:
-     type: boolean
-     default: false
-+  KeystoneStretchEnabled:
-+    type: boolean
-+    default: false
- 
- resources:
- 
-@@ -62,6 +65,8 @@ resources:
- 
-   MySQLClient:
-     type: ../../puppet/services/database/mysql-client.yaml
-+    properties:
-+      UseStretchMySQL: {get_param: KeystoneStretchEnabled}
- 
-   KeystoneBase:
-     type: ../../puppet/services/keystone.yaml
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
 index 73d3e6f5..79cc09b3 100644
 --- a/network/endpoints/endpoint_data.yaml
