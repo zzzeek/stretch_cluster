@@ -249,3 +249,75 @@ index b3316d4c..269be0c2 100644
      }
    }
  
+diff --git a/manifests/profile/base/database/mysql/client.pp b/manifests/profile/base/database/mysql/client.pp
+index 5b736ad6..417344c3 100644
+--- a/manifests/profile/base/database/mysql/client.pp
++++ b/manifests/profile/base/database/mysql/client.pp
+@@ -31,10 +31,20 @@
+ #   (Optional) Name of the ini section to be passed to pymysql connection strings
+ #   Defaults to 'tripleo'
+ #
++# [*mysql_read_stretch_group*]
++#   (Optional) Name of the ini section to be passed to pymysql connection strings
++#   for services connecting to the optional galera "stretch" service
++#   Defaults to 'tripleo-stretch'
++#
+ # [*mysql_client_bind_address*]
+ #   (Optional) Client IP address of the host that will be written in the mysql_read_default_file
+ #   Defaults to undef
+ #
++# [*mysql_stretch_bind_address*]
++#   (Optional) Client IP address of the host that will be written for the
++#   optional galera "stretch" service
++#   Defaults to undef
++#
+ # [*ssl_ca*]
+ #   (Optional) The SSL CA file to use to verify the MySQL server's certificate.
+ #   Defaults to '/etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt'
+@@ -48,7 +58,9 @@ class tripleo::profile::base::database::mysql::client (
+   $enable_ssl                = false,
+   $mysql_read_default_file   = '/etc/my.cnf.d/tripleo.cnf',
+   $mysql_read_default_group  = 'tripleo',
++  $mysql_read_stretch_group  = 'tripleo-stretch',
+   $mysql_client_bind_address = undef,
++  $mysql_stretch_bind_address= undef,
+   $ssl_ca                    = '/etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt',
+   $step                      = Integer(hiera('step')),
+ ) {
+@@ -63,19 +75,33 @@ class tripleo::profile::base::database::mysql::client (
+       ]
+     }
+ 
++    if is_ip_addresses($mysql_stretch_bind_address) {
++      $stretch_bind_changes = [
++        "set ${mysql_read_stretch_group}/bind-address '${mysql_stretch_bind_address}'"
++      ]
++    } else {
++      $stretch_bind_changes = [
++        "rm ${mysql_read_stretch_group}/bind-address"
++      ]
++    }
++
+     if $enable_ssl {
+       $changes_ssl = [
+         "set ${mysql_read_default_group}/ssl '1'",
+-        "set ${mysql_read_default_group}/ssl-ca '${ssl_ca}'"
++        "set ${mysql_read_default_group}/ssl-ca '${ssl_ca}'",
++        "set ${mysql_read_stretch_group}/ssl '1'",
++        "set ${mysql_read_stretch_group}/ssl-ca '${ssl_ca}'"
+       ]
+     } else {
+       $changes_ssl = [
+         "rm ${mysql_read_default_group}/ssl",
+-        "rm ${mysql_read_default_group}/ssl-ca"
++        "rm ${mysql_read_default_group}/ssl-ca",
++        "rm ${mysql_read_stretch_group}/ssl",
++        "rm ${mysql_read_stretch_group}/ssl-ca"
+       ]
+     }
+ 
+-    $conf_changes = union($client_bind_changes, $changes_ssl)
++    $conf_changes = union($client_bind_changes, $stretch_bind_changes, $changes_ssl)
+ 
+     # Create /etc/my.cnf.d/tripleo.cnf
+     # If the folder /etc/my.cnf.d does not exist (e.g. if mariadb is not

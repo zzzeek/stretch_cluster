@@ -51,34 +51,31 @@ index a87f5f91..33c09d87 100644
        CephClusterNetwork: storage_mgmt
        CephMonNetwork: storage
 diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
-index d98c8e1b..8212f924 100644
+index d98c8e1b..0fd0fb06 100644
 --- a/puppet/services/database/mysql-client.yaml
 +++ b/puppet/services/database/mysql-client.yaml
-@@ -38,6 +38,9 @@ parameters:
-     type: string
-     description: Specifies the default CA cert to use if TLS is used for
-                  services in the internal network.
-+  UseStretchMySQL:
-+    type: boolean
-+    default: false
- 
- outputs:
-   role_data:
-@@ -50,7 +53,11 @@ outputs:
+@@ -45,12 +45,19 @@ outputs:
+     value:
+       service_name: mysql_client
+       config_settings:
++        # note this setting is per role, not per service
+         tripleo::profile::base::database::mysql::client::mysql_client_bind_address:
+           str_replace:
              template:
                "%{hiera('$NETWORK')}"
              params:
--              $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
-+              $NETWORK:
-+                if:
-+                  - {equals: [{get_param: UseStretchMySQL}, true]}
-+                  - {get_param: [ServiceNetMap, StretchMysqlNetwork]}
-+                  - {get_param: [ServiceNetMap, MysqlNetwork]}
+               $NETWORK: {get_param: [ServiceNetMap, MysqlNetwork]}
++        tripleo::profile::base::database::mysql::client::mysql_stretch_bind_address:
++          str_replace:
++            template:
++              "%{hiera('$NETWORK')}"
++            params:
++              $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
          tripleo::profile::base::database::mysql::client::enable_ssl: {get_param: EnableInternalTLS}
          tripleo::profile::base::database::mysql::client::ssl_ca: {get_param: InternalTLSCAFile}
        step_config: |
 diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
-index a5dd283e..820a50a1 100644
+index a5dd283e..06a94865 100644
 --- a/puppet/services/keystone.yaml
 +++ b/puppet/services/keystone.yaml
 @@ -286,6 +286,9 @@ parameters:
@@ -100,7 +97,7 @@ index a5dd283e..820a50a1 100644
    # Security compliance
    change_password_upon_first_use_set: {not: {equals: [{get_param: KeystoneChangePasswordUponFirstUse}, '']}}
    disable_user_account_days_inactive_set: {not: {equals: [{get_param: KeystoneDisableUserAccountDaysInactive}, '']}}
-@@ -345,10 +348,18 @@ outputs:
+@@ -345,14 +348,22 @@ outputs:
              - keystone::cors::allowed_origin: {get_param: KeystoneCorsAllowedOrigin}
            - keystone::database_connection:
                make_url:
@@ -121,6 +118,11 @@ index a5dd283e..820a50a1 100644
                  path: /keystone
                  query:
                    read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  read_default_group: {if: [keystone_stretch_enabled, "tripleo-stretch", "tripleo"]}
+             keystone::token_expiration: {get_param: TokenExpiration}
+             keystone::admin_token: {get_param: AdminToken}
+             keystone::admin_password: {get_param: AdminPassword}
 diff --git a/puppet/services/pacemaker/haproxy.yaml b/puppet/services/pacemaker/haproxy.yaml
 index b91e570b..ed6c6f34 100644
 --- a/puppet/services/pacemaker/haproxy.yaml
