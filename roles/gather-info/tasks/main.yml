@@ -2,6 +2,7 @@
   include_vars: "{{ playbook_dir }}/../config.yml"
   tags: always
 
+
 - name: get galera-node specific information
   when: "'galera_nodes' in group_names"
   block:
@@ -15,7 +16,7 @@
          transport_ip_number: '{{ transport_ip_number_cmd.stdout_lines[0] }}'
 
     - name: get docker container name
-      shell: "docker ps | grep galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '^galera'"
+      shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '^stretch-galera'"
       register: docker_ps_cmd
       become: true
 
@@ -23,36 +24,23 @@
       set_fact:
         galera_docker_container_name: "{{ docker_ps_cmd.stdout }}"
 
-    - name: get docker image name for galera from already running DB
-      shell: docker inspect {{ docker_ps_cmd.stdout }}
-      register: docker_inspect_cmd
+    - name: get galera DB root password
+      shell: "crudini --get <(docker exec {{ galera_docker_container_name }} cat /root/.my.cnf) client password | xargs echo"
+      register: docker_pw_cmd
       become: true
 
-    - name: get galera image name
-      set_fact: galera_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
-
-    - name: get docker image name for clustercheck already running
-      shell: docker inspect clustercheck
-      register: docker_inspect_cmd
-      become: true
-
-    - name: get clustercheck image name
-      set_fact: clustercheck_image="{{ (docker_inspect_cmd.stdout | from_json)[0]['Config']['Image'] }}"
-
-    - name: get mysql uid / gid
-      docker_container:
-        name: stretch_galera_cmd
-        cleanup: true
-        image: "{{ galera_image }}"
-        command:  'bash -c  ''echo {\"uid\": `id mysql -u`, \"gid\": `id mysql -g`}'''
-        detach: false
-      register: mysql_id_cmd
-      become: true
-
-    - name: set mysql uid / gid facts
+    - name: set galera DB root password fact
       set_fact:
-        mysql_uid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['uid'] }}"
-        mysql_gid: "{{ (mysql_id_cmd.ansible_facts.docker_container.Output | from_json)['gid'] }}"
+        stretch_galera_root_password: "{{ docker_pw_cmd.stdout }}"
+
+    - name: set local galera login fact
+      set_fact:
+        stretch_galera_local_login: '-u root --password="{{ stretch_galera_root_password }}" -h {{ transport_ip_number }}'
+
+    - name: set master /follower login facts
+      set_fact:
+          stretch_galera_master_login: "{{ hostvars[galera_master_inventoryname]['stretch_galera_local_login'] }}"
+          stretch_galera_follower_login: "{{ hostvars[galera_follower_inventoryname]['stretch_galera_local_login'] }}"
 
 - name: get pacemaker nodes
   block:
@@ -65,25 +53,3 @@
       pacemaker_node_name: '{{ get_nodename_cmd.stdout }}'
   when: "'stack1_controller' in group_names or 'stack2_controller' in group_names"
 
-- name: set facts for configuring / accessing Galera / MySQL
-  set_fact:
-      stretch_galera_listen_port: "{{ stretch_galera_listen_port }}"
-      stretch_galera_root_password: "{{ stretch_galera_root_password }}"
-
-- name: set stack1-specific facts
-  set_fact:
-    stack_name: "stack1"
-    stretch_galera_vip: "{{ stack1_stretch_galera_vip }}"
-  when: "'stack1' in group_names"
-
-- name: set stack2-specific facts
-  set_fact:
-    stack_name: 'stack2'
-    stretch_galera_vip: "{{ stack2_stretch_galera_vip }}"
-  when: "'stack2' in group_names"
-
-- name: set MySQL vip login flags fact
-  set_fact:
-      stretch_galera_local_login: "-u root --password='{{ stretch_galera_root_password }}' -P {{ stretch_galera_listen_port }} -h {{ transport_ip_number }}"
-      stretch_galera_vip_login: "-u root --password='{{ stretch_galera_root_password }}' -h {{ stretch_galera_vip }}"
-  when: "'galera_nodes' in group_names"

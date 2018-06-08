@@ -23,21 +23,13 @@
   roles:
     - { role: add-undercloud-routes, tags: ['setup_routes'] }
 
-- name: deploy galera
-  hosts: galera_nodes
-  gather_facts: no
-  roles:
-     - { role: run-galera-containers, tags: ['run_galera'] }
-     - { role: run-clustercheck, tags: ['run_clustercheck'] }
-
-- name: point openstack at galera
+- name: setup region name in openstack services (tripleo should do this)
   hosts:
     - stack1_controller
     - stack2_controller
   gather_facts: no
   roles:
-     - { role: create-vip, tags: ['create_vip'] }
-     - { role: setup-haproxy, tags: ['setup_haproxy'] }
+    - { role: setup-openstack-services, tags: ['setup_openstack_services']}
 
 - name: setup keystone data
   hosts:
@@ -46,12 +38,9 @@
   roles:
     - { role: setup-keystone-db, tags: ['setup_keystone_db'] }
 
-
-- name: point keystone services to the new galera DB
-  hosts:
-    - stack1_controller
-    - stack2_controller
+- name: stretch galera
+  hosts: galera_nodes
   gather_facts: no
   roles:
-    - { role: setup-openstack-services, tags: ['setup_openstack_services'] }
+     - { role: stretch-galera-dbs, tags: ['stretch_galera'] }
 

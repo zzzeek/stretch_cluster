@@ -344,6 +344,12 @@ MYSQL_HOST=localhost\n",
           'target-dir' => '/dev/log',
           'options'    => 'rw',
         },
+        {
+        'stretch-galera-root-ssh' => {
+          'source-dir' => '/root/.ssh',
+          'target-dir' => '/root/.ssh',
+          'options'    => 'ro'
+        }
       }
 
       if $enable_internal_tls {

@@ -1,0 +1,25 @@
+# - name: shut down resource on stack2
+
+# - name: remove grastate.dat on stack2 to force an rsync
+
+# - name: add remote node map to pacemaker config on stack2
+
+- name: get docker container name
+  shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '.' "
+  register: docker_ps_cmd
+  become: true
+  retries: 5
+  delay: 5
+  any_errors_fatal: true
+  run_once: true
+
+- name: wait for galera to be available
+  shell: docker exec {{ docker_ps_cmd.stdout_lines[0] }} mysql -u root --password="{{ stretch_galera_root_password }}" -s --skip-column-names -e "show status like 'wsrep_local_state'"
+  register: result
+  until: result.stdout.find("4") != -1
+  retries: 20
+  delay: 5
+  become: true
+  any_errors_fatal: true
+  run_once: true
+
