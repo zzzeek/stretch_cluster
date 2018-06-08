@@ -312,18 +312,18 @@ deploy_overcloud() {
         ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
     fi
 
-        pushd ${SCRIPT_HOME}
-        ${ANSIBLE_PLAYBOOK} -vv \
-            -i ${ANSIBLE_HOSTS} \
-            --tags "${DEPLOY_OVERCLOUD_TAGS}" \
-            -e release_name=${RELEASE} \
-            -e container_namespace=${RELEASE_OR_MASTER} \
-            -e container_tag=${BUILD} \
-            -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
-            -e rh_stack_name="${STACK}" \
-            -e working_dir=/home/stack \
-            playbooks/deploy_overcloud.yml
-        popd
+    pushd ${SCRIPT_HOME}
+    ${ANSIBLE_PLAYBOOK} -vv \
+        -i ${ANSIBLE_HOSTS} \
+        --tags "${DEPLOY_OVERCLOUD_TAGS}" \
+        -e release_name=${RELEASE} \
+        -e container_namespace=${RELEASE_OR_MASTER} \
+        -e container_tag=${BUILD} \
+        -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
+        -e rh_stack_name="${STACK}" \
+        -e working_dir=/home/stack \
+        playbooks/deploy_overcloud.yml
+    popd
 
 }
 

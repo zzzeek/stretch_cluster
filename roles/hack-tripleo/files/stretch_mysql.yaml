@@ -64,6 +64,12 @@ parameters:
   KeystoneStretchEnabled:
     type: boolean
     default: false
+  StretchMySQLRemoteNodeNames:
+    type: comma_delimited_list
+    default: []
+  StretchMySQLRemoteNodeFQDNSNames:
+    type: comma_delimited_list
+    default: []
 
 resources:
 
@@ -103,6 +109,7 @@ outputs:
             tripleo.stretch_mysql.firewall_rules:
               '204 mysql stretch-galera-bundle':
                 dport:
+                  - 22
                   - 873
                   - 3150
                   - 3306
@@ -117,12 +124,17 @@ outputs:
                 params:
                   $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
 
+            stretch_mysql_remote_node_names: {get_param: StretchMySQLRemoteNodeNames}
+
+            stretch_mysql_remote_node_fqdns_names: {get_param: StretchMySQLRemoteNodeFQDNSNames}
+
             tripleo::profile::pacemaker::database::stretch_mysql_bundle::bind_address:
               str_replace:
                 template:
                   "%{hiera('fqdn_$NETWORK')}"
                 params:
                   $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
+
           - keystone_stretch_enabled: {get_param: KeystoneStretchEnabled}
           -
             if:

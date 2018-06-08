@@ -113,15 +113,30 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
     $pacemaker_master = false
   }
 
-  # FQDN are lowercase in /etc/hosts, so are pacemaker node names
-  $galera_node_names_lookup = downcase(hiera('stretch_mysql_short_node_names', [$::hostname]))
-  $galera_fqdns_names_lookup = downcase(hiera('stretch_mysql_node_names', [$::hostname]))
+  # pacemaker node names
+  $remote_node_names_lookup = hiera('stretch_mysql_remote_node_names', [])
+  $local_node_names_lookup = hiera('stretch_mysql_short_node_names', [$::hostname])
 
-  if is_array($galera_node_names_lookup) {
-    $galera_nodes = join($galera_fqdns_names_lookup, ',')
-  } else {
-    $galera_nodes = $galera_node_names_lookup
-  }
+  $galera_node_names_lookup = downcase(
+      concat(
+          $local_node_names_lookup,
+          $remote_node_names_lookup
+      )
+  )
+
+  # network DNS names, or IP numbers
+  $remote_node_fqdns_names_lookup = hiera('stretch_mysql_remote_node_fqdns_names', [])
+  $local_node_fqdns_names_lookup = hiera('stretch_mysql_node_names', [$::hostname])
+
+  $galera_fqdns_names_lookup = downcase(
+      concat(
+        $local_node_fqdns_names_lookup,
+        $remote_node_fqdns_names_lookup
+      )
+  )
+
+  $galera_nodes = join($galera_fqdns_names_lookup, ',')
+
   $galera_nodes_array = split($galera_nodes, ',')
   $galera_nodes_count = count($galera_nodes_array)
 
@@ -132,6 +147,16 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
     "${i[0]}:${i[1]}"
   }
   $cluster_host_map_string = join($host_map_array, ';')
+
+  # remote node array is pacemaker name to "root@hostname", e.g. an SSH string,
+  # or whatever we decide the stretch resource agent will use for remote pacemaker
+  # communication
+  $remote_node_map_array_tmp = zip($remote_node_names_lookup, $remote_node_fqdns_names_lookup)
+  $remote_node_map_array = $remote_node_map_array_tmp.map |$i| {
+    "${i[0]}:root@${i[1]}"
+  }
+  $remote_node_map_string = join($remote_node_map_array, ';')
+
 
   if $enable_internal_tls {
     $tls_certfile = $certificate_specs['service_certificate']
@@ -372,7 +397,7 @@ MYSQL_HOST=localhost\n",
         master_params   => '',
         meta_params     => "master-max=${galera_nodes_count} ordered=true container-attribute-target=host",
         op_params       => 'promote timeout=300s on-fail=block',
-        resource_params => "log='/var/log/mysql/mysqld.log' additional_parameters='--open-files-limit=16384' enable_creation=true wsrep_cluster_address='gcomm://${galera_nodes}' cluster_host_map='${cluster_host_map_string}'",
+        resource_params => "log='/var/log/mysql/mysqld.log' additional_parameters='--open-files-limit=16384' enable_creation=true wsrep_cluster_address='gcomm://${galera_nodes}' cluster_host_map='${cluster_host_map_string}' remote_node_map='${remote_node_map_string}'",
         tries           => $pcs_tries,
         location_rule   => {
           resource_discovery => 'exclusive',

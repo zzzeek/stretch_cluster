@@ -6,6 +6,27 @@ parameter_defaults:
   # mostly from https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/network_isolation.html
   # as well as https://github.com/openstack/tripleo-quickstart-extras/blob/master/roles/overcloud-prep-config/defaults/main.yml#L15
 
+  # TODO
+  # StretchMySQLRemoteNodeNames:
+  #   - stack1-overcloud-controller-0
+  #   - stack1-overcloud-controller-1
+  #   - stack1-overcloud-controller-2
+  #
+  #  ansible:
+  #  for node in gathered_remote_node_names
+  #   -  node
+  #  endfor
+
+  # StretchMySQLRemoteNodeFQDNSNames:
+  #   - 10.1.10.22
+  #   - 10.1.10.23
+  #   - 10.1.10.24
+  #
+  #  ansible:
+  #  for dns in gathered_remote_node_fqdns_names
+  #   -  node
+  #  endfor
+
   ExternalNetCidr: '{{ external_network_cidr }}'
   ExternalAllocationPools:
     -   start: {{ external_network_cidr|nthhost(10) }}
