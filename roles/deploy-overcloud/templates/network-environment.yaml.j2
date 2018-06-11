@@ -65,7 +65,8 @@ parameter_defaults:
 
 
   StretchSshIdPub: "{{ id_rsa_pub }}"
-  StretchSshId: "{{ id_rsa }}"
+  StretchSshId: |
+    {{ id_rsa | indent(width=4) }}
 
 
   # The overclouds are going to share the same Keystone database.  So lets
