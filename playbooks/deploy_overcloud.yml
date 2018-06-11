@@ -3,6 +3,12 @@
   gather_facts: yes
   any_errors_fatal: true
 
+- name: generate ssh key
+  hosts: hypervisor
+  gather_facts: no
+  roles:
+    - {role: gen-ssh-key, tags: ['gen_ssh_key']}
+
 - name: prep and deploy overcloud
   hosts: undercloud
   gather_facts: yes

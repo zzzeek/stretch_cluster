@@ -51,6 +51,12 @@ parameters:
     type: string
     description: Specifies the default CA cert to use if TLS is used for
                  services in the internal network.
+  StretchSshIdPub:
+    type: string
+    description: ssh public key for stretch resource agent, required.
+  StretchSshId:
+    type: string
+    description: ssh private key for stretch resource agent, required.
   ConfigDebug:
     default: false
     description: Whether to run config management (e.g. Puppet) in debug mode.
@@ -314,6 +320,39 @@ outputs:
               Log files from mysql containers can be found under
               /var/log/containers/stretch_mysql.
           ignore_errors: true
+      external_deploy_tasks:
+        # MARKMARK
+        - name: stretch_mysql_external_deploy_init
+          when: step == '1'
+          block:
+            - name: write public key
+              copy:
+                content: {get_param: StretchSshIdPub}
+                dest: /root/.ssh/id_rsa.pub
+                mode: 0644
+                owner: root
+                group: root
+              become: true
+
+            - name: write private key
+              copy:
+                content: {get_param: StretchSshId}
+                dest: /root/.ssh/id_rsa
+                mode: 0600
+                owner: root
+                group: root
+              become: true
+
+            - name: add authorized key
+              lineinfile:
+                create: yes
+                owner: root
+                group: root
+                mode: 0600
+                path: /root/.ssh/authorized_keys
+                line: "{{ id_rsa_pub }}"
+              become: true
+
       metadata_settings:
         get_attr: [MysqlPuppetBase, role_data, metadata_settings]
       update_tasks:

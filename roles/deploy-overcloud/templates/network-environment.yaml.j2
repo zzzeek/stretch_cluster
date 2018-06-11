@@ -64,6 +64,8 @@ parameter_defaults:
   {% endfor %}
 
 
+  StretchSshIdPub: "{{ id_rsa_pub }}"
+  StretchSshId: "{{ id_rsa }}"
 
 
   # The overclouds are going to share the same Keystone database.  So lets
@@ -76,6 +78,9 @@ parameter_defaults:
   # OSP versions seem to honor it and others ignore it, so we have to
   # populate .conf files with it after the fact regardless
   KeystoneRegion: "region_{{ rh_stack_name }}"
+
+  # Keystone's admin password as well as the database password!
+  AdminToken: "keystone_admin_token"
 
   # since we are sharing the same keystone, the services on both
   # overclouds need to use the same passwords.  clearly this would have

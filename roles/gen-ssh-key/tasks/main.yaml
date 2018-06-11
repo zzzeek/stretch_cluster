@@ -1,0 +1,24 @@
+- name: look for key
+  stat: path=/tmp/id_rsa_overcloud
+  register: ssh_keyfile
+
+- name: generate key
+  shell: ssh-keygen -t rsa -f /tmp/id_rsa_overcloud -N ''
+  when: not ssh_keyfile.stat.exists
+
+- name: read the public key
+  shell: cat /tmp/id_rsa_overcloud.pub
+  register: idrsapub
+  tags: always
+
+- name: read the private key
+  shell: cat /tmp/id_rsa_overcloud
+  register: idrsa
+  tags: always
+
+- name: store keys
+  set_fact:
+    id_rsa_pub: "{{ idrsapub.stdout }}"
+    id_rsa: "{{ idrsa.stdout }}"
+  tags: always
+

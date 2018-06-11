@@ -2,6 +2,12 @@
   include_vars: "{{ playbook_dir }}/../config.yml"
   tags: always
 
+- name: get hypervisor-generated ssh key
+  set_fact:
+    id_rsa_pub: "{{ hostvars['hypervisor']['id_rsa_pub'] }}"
+    id_rsa: "{{ hostvars['hypervisor']['id_rsa'] }}"
+  tags: always
+
 - name: set release number, hypervisor management address
   set_fact:
     release_numeric_version: "{{ release_numeric_versions[release_name] }}"

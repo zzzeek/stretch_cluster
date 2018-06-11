@@ -19,8 +19,8 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud build_hosts deploy_stretch"}
 
-: ${DEPLOY_STRETCH_TAGS:="ssh_keys,setup_routes,stretch_galera,setup_keystone_db,setup_openstack_services"}
-: ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,setup_vlan,create_instackenv,install_vbmc,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,create_deploy_script,run_deploy_overcloud"}
+: ${DEPLOY_STRETCH_TAGS:="setup_routes,stretch_galera,setup_keystone_db,setup_openstack_services"}
+: ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,install_vbmc,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,create_deploy_script,run_deploy_overcloud"}
 
 
 
