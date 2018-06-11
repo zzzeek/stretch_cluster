@@ -1,6 +1,5 @@
 - name: from stack2 overcloud, copy and merge into stack1 overcloud DB
-  when: "'stack2_controller' in group_names"
-  run_once: true
+  when: "inventory_hostname == 's2controller-0'"
   block:
 
   # note that by omitting --databases, we get a dump that's local to "keystone" and doesn't include

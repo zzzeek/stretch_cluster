@@ -2,6 +2,16 @@
   include_vars: "{{ playbook_dir }}/../config.yml"
   tags: always
 
+- name: set stack1 name
+  set_fact:
+    stack_name: "stack1"
+  when: "'stack1' in group_names"
+
+- name: set stack2 name
+  set_fact:
+    stack_name: "stack2"
+  when: "'stack2' in group_names"
+
 
 - name: get galera-node specific information
   when: "'galera_nodes' in group_names"
@@ -26,6 +36,8 @@
 
     - name: get galera DB root password
       shell: "crudini --get <(docker exec {{ galera_docker_container_name }} cat /root/.my.cnf) client password | xargs echo"
+      args:
+        executable: /bin/bash
       register: docker_pw_cmd
       become: true
 
@@ -39,8 +51,8 @@
 
     - name: set master /follower login facts
       set_fact:
-          stretch_galera_master_login: "{{ hostvars[galera_master_inventoryname]['stretch_galera_local_login'] }}"
-          stretch_galera_follower_login: "{{ hostvars[galera_follower_inventoryname]['stretch_galera_local_login'] }}"
+          stretch_galera_master_login: "{{ hostvars[stretch_galera_master_inventoryname]['stretch_galera_local_login'] }}"
+          stretch_galera_follower_login: "{{ hostvars[stretch_galera_follower_inventoryname]['stretch_galera_local_login'] }}"
 
 - name: get pacemaker nodes
   block:

@@ -242,8 +242,10 @@ s2controller-2
 [galera_nodes]
 s1controller-0
 s1controller-1
+s1controller-2
 s2controller-0
 s2controller-1
+s2controller-2
 
 [pacemaker_control_nodes]
 s1controller-0
