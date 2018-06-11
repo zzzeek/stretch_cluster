@@ -345,7 +345,7 @@ MYSQL_HOST=localhost\n",
           'options'    => 'rw',
         },
         'stretch-galera-root-ssh' => {
-          'source-dir' => '/root/.ssh',
+          'source-dir' => '/var/lib/stretch_mysql_ssh',
           'target-dir' => '/root/.ssh',
           'options'    => 'ro'
         }
