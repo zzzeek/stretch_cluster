@@ -324,13 +324,13 @@ outputs:
         - name: write public key
           copy:
             content: {get_param: StretchSshIdPub}
-            dest: /var/lib/stretch_mysql/id_rsa.pub
+            dest: /var/lib/stretch_mysql_ssh/id_rsa.pub
             mode: 0644
 
         - name: write private key
           copy:
             content: {get_param: StretchSshId}
-            dest: /var/lib/stretch_mysql/id_rsa
+            dest: /var/lib/stretch_mysql_ssh/id_rsa
             mode: 0600
         - name: add authorized key
           lineinfile:
