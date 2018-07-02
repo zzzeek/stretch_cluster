@@ -8,14 +8,6 @@
   roles:
      - { role: gather-info, tags: ['always'] }
 
-- name: sprinkle common ssh keys on all the overcloud nodes
-  hosts:
-    - stack1_controller
-    - stack2_controller
-  gather_facts: no
-  roles:
-    - { role: sprinkle-ssh, tags: ['ssh_keys']}
-
 - name: setup undercloud routes
   hosts:
     - undercloud
