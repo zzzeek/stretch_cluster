@@ -28,9 +28,15 @@ The overcloud nodes use the undercloud as their gateway, and the undercloud
 nodes then send packets between the two overclouds using an additional libvirt
 network connecting them.
 
-The additional playbook launches a new Galera cluster as well as a new
-"clustercheck" service also using Docker containers, re-using the existing
-Galera / clustercheck containers as a guide.
+The two overclouds are deployed with Keystone interacting with a separate
+Galera database that is then stretched so that both overclouds share the
+same database.
+
+The current version of the demo now patches tripleo-heat-templates, puppet-
+tripleo, as well as the galera docker image, so that more and more of the
+deployment process occurs as a function of tripleo itself, rather than as
+ansible playbooks that work against previously deployed overclouds.  This is to
+provide a template for how the feature will be proposed to tripleo directly.
 
 Invocation
 ==========
