@@ -1,5 +1,5 @@
 diff --git a/manifests/haproxy.pp b/manifests/haproxy.pp
-index ab3b8230..8dda4c93 100644
+index 63862813..ba00bd28 100644
 --- a/manifests/haproxy.pp
 +++ b/manifests/haproxy.pp
 @@ -304,6 +304,13 @@
@@ -16,7 +16,7 @@ index ab3b8230..8dda4c93 100644
  # [*rabbitmq*]
  #  (optional) Enable or not RabbitMQ binding
  #  Defaults to false
-@@ -630,10 +637,12 @@ class tripleo::haproxy (
+@@ -649,10 +656,12 @@ class tripleo::haproxy (
    $octavia                     = hiera('octavia_api_enabled', false),
    $designate                   = hiera('designate_api_enabled', false),
    $mysql                       = hiera('mysql_enabled', false),
@@ -26,10 +26,10 @@ index ab3b8230..8dda4c93 100644
    $mysql_max_conn              = undef,
    $mysql_member_options        = undef,
 +  $stretch_mysql_member_options= undef,
+   $openshift_master            = hiera('openshift_master_enabled', false),
    $rabbitmq                    = false,
    $etcd                        = hiera('etcd_enabled', false),
-   $docker_registry             = hiera('enable_docker_registry', false),
-@@ -1335,6 +1344,44 @@ class tripleo::haproxy (
+@@ -1363,6 +1372,44 @@ class tripleo::haproxy (
        server_names      => hiera('mysql_node_names', $controller_hosts_names_real),
        options           => $mysql_member_options_real,
      }

@@ -1,5 +1,5 @@
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
-index 73d3e6f5..79cc09b3 100644
+index 73d3e6f5a..79cc09b3a 100644
 --- a/network/endpoints/endpoint_data.yaml
 +++ b/network/endpoints/endpoint_data.yaml
 @@ -100,6 +100,12 @@ Mysql:
@@ -16,7 +16,7 @@ index 73d3e6f5..79cc09b3 100644
      Internal:
          net_param: HeatApi
 diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
-index a87f5f91..33c09d87 100644
+index 264383bfd..ea53ec523 100644
 --- a/network/service_net_map.j2.yaml
 +++ b/network/service_net_map.j2.yaml
 @@ -67,6 +67,7 @@ parameters:
@@ -24,11 +24,11 @@ index a87f5f91..33c09d87 100644
        GaneshaNetwork: storage_nfs
        MysqlNetwork: internal_api
 +      StretchMysqlNetwork: external
-       SnmpdNetwork: internal_api
+       SnmpdNetwork: ctrlplane
        CephClusterNetwork: storage_mgmt
        CephMonNetwork: storage
 diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
-index d98c8e1b..0fd0fb06 100644
+index d98c8e1b0..0fd0fb062 100644
 --- a/puppet/services/database/mysql-client.yaml
 +++ b/puppet/services/database/mysql-client.yaml
 @@ -45,12 +45,19 @@ outputs:
@@ -52,7 +52,7 @@ index d98c8e1b..0fd0fb06 100644
          tripleo::profile::base::database::mysql::client::ssl_ca: {get_param: InternalTLSCAFile}
        step_config: |
 diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
-index a5dd283e..06a94865 100644
+index a5dd283e8..06a948655 100644
 --- a/puppet/services/keystone.yaml
 +++ b/puppet/services/keystone.yaml
 @@ -286,6 +286,9 @@ parameters:
@@ -101,7 +101,7 @@ index a5dd283e..06a94865 100644
              keystone::admin_token: {get_param: AdminToken}
              keystone::admin_password: {get_param: AdminPassword}
 diff --git a/puppet/services/pacemaker/haproxy.yaml b/puppet/services/pacemaker/haproxy.yaml
-index b91e570b..ed6c6f34 100644
+index b91e570b5..ed6c6f346 100644
 --- a/puppet/services/pacemaker/haproxy.yaml
 +++ b/puppet/services/pacemaker/haproxy.yaml
 @@ -30,6 +30,13 @@ parameters:
@@ -130,7 +130,7 @@ index b91e570b..ed6c6f34 100644
          include ::tripleo::profile::pacemaker::haproxy
        host_prep_tasks: {get_attr: [LoadbalancerServiceBase, role_data, host_prep_tasks]}
 diff --git a/roles_data.yaml b/roles_data.yaml
-index c2b172da..8c7de842 100644
+index 98806399d..64d58cd6f 100644
 --- a/roles_data.yaml
 +++ b/roles_data.yaml
 @@ -169,6 +169,8 @@
