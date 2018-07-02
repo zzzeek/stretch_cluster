@@ -61,11 +61,15 @@
   args:
     chdir: "{{ tripleo_heat_templates }}/network/endpoints"
 
+- name: copy puppet_tripleo patch since ansible patch does not support -F
+  copy:
+     src: puppet-tripleo.patch
+     dest: /home/stack/
+
 - name: patch puppet_tripleo
-  patch:
-      src: puppet-tripleo.patch
-      basedir: "{{ puppet_tripleo }}/tripleo/"
-      strip: 1
+  shell: patch -F20 -p1 < /home/stack/puppet-tripleo.patch 
+  args:
+    chdir: "{{ puppet_tripleo }}/tripleo/"
 
 - name: run upload-puppet-modules
   shell: |
