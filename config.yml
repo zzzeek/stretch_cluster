@@ -1,6 +1,7 @@
 stretch_network_vlan_name: vlan10
 stretch_galera_imagename: stretch_galera
 
+ntp_server: clock.corp.redhat.com
 
 stretch_galera_master_inventoryname: s1controller-0
 stretch_galera_follower_inventoryname: s2controller-0

@@ -6,6 +6,8 @@ parameter_defaults:
   # mostly from https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/network_isolation.html
   # as well as https://github.com/openstack/tripleo-quickstart-extras/blob/master/roles/overcloud-prep-config/defaults/main.yml#L15
 
+  NtpServer: {{ ntp_server }}
+
   # TODO
   # StretchMySQLRemoteNodeNames:
   #   - stack1-overcloud-controller-0
