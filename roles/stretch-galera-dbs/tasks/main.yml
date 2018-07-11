@@ -1,25 +1,57 @@
+- name: setup variables
+  import_tasks: setup_variables.yml
+
+- name: modify /etc/hosts
+  blockinfile:
+    dest: /etc/hosts
+    block: {{ etc_hosts }}
+
+# - name: add all nodes to /etc/hosts on all controllers
+
+# e.g. on stack1:
+# /etc/hosts
+# 10.1.10.11 stack2-overcloud-controller-0.external
+# 10.1.10.21 stack2-overcloud-controller-1.external
+# 10.1.10.20 stack2-overcloud-controller-2.external
+
+# on stack2:
+# /etc/hosts
+# 10.0.10.19 stack1-overcloud-controller-0.external
+# 10.0.10.17 stack1-overcloud-controller-1.external
+# 10.0.10.11 stack1-overcloud-controller-2.external
+
+
 # - name: shut down resource on stack2
+# pcs resource disable stretch-galera
+# only on one stack2 node
+
 
 # - name: remove grastate.dat on stack2 to force an rsync
+# rm /var/lib/stretch_mysql/grastate.dat
+# on all stack2 nodes
+
+# -name: figure out remote_node_map
+
 
 # - name: add remote node map to pacemaker config on stack2
 
-- name: get docker container name
-  shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '.' "
-  register: docker_ps_cmd
-  become: true
-  retries: 5
-  delay: 5
-  any_errors_fatal: true
-  run_once: true
-
-- name: wait for galera to be available
-  shell: docker exec {{ docker_ps_cmd.stdout_lines[0] }} mysql -u root --password="{{ stretch_galera_root_password }}" -s --skip-column-names -e "show status like 'wsrep_local_state'"
-  register: result
-  until: result.stdout.find("4") != -1
-  retries: 20
-  delay: 5
-  become: true
-  any_errors_fatal: true
-  run_once: true
-
+#- name: get docker container name
+#  shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '.' "
+#  register: docker_ps_cmd
+#  become: true
+#  retries: 5
+#  delay: 5
+#  any_errors_fatal: true
+#  run_once: true
+#
+#- name: wait for galera to be available
+#  shell: docker exec {{ docker_ps_cmd.stdout_lines[0] }} mysql -u root --password="{{ stretch_galera_root_password }}" -s --skip-column-names -e "show status like 'wsrep_local_state'"
+#  register: result
+#  until: result.stdout.find("4") != -1
+#  retries: 20
+#  delay: 5
+#  become: true
+#  any_errors_fatal: true
+#  run_once: true
+#
+#

@@ -25,6 +25,10 @@
       set_fact:
          transport_ip_number: '{{ transport_ip_number_cmd.stdout_lines[0] }}'
 
+    - name: set external hostname for /etc/hosts
+      set_fact:
+        external_hostname: "{{ inventory_hostname }}.external"
+
     - name: get docker container name
       shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '^stretch-galera'"
       register: docker_ps_cmd
