@@ -4,54 +4,36 @@
 - name: modify /etc/hosts
   blockinfile:
     dest: /etc/hosts
-    block: {{ etc_hosts }}
+    block: "{{ etc_hosts }}"
+  become: yes
 
-# - name: add all nodes to /etc/hosts on all controllers
+- name: shut down resource on stack2
+  shell: pcs resource disable stretch-galera --wait=300
+  when: "'pacemaker_control_nodes' in group_names and 'stack2' in group_names"
+  become: yes
+ 
+- name: remove stack2 grastate.dat
+  shell: rm -f /var/lib/stretch_mysql/grastate.dat
+  when: "'stack2' in group_names"
+  become: yes
+ 
+- name: set remote_node map (all clusters)
+  shell: pcs resource update stretch-galera remote_node_map="{{ remote_node_map }}" --force
+  when: "'pacemaker_control_nodes' in group_names"
+  become: yes
 
-# e.g. on stack1:
-# /etc/hosts
-# 10.1.10.11 stack2-overcloud-controller-0.external
-# 10.1.10.21 stack2-overcloud-controller-1.external
-# 10.1.10.20 stack2-overcloud-controller-2.external
+- name: set new cluster address (all clusters)
+  shell: pcs resource update stretch-galera wsrep_cluster_address="{{ gcomm_address }}"
+  when: "'pacemaker_control_nodes' in group_names"
+  become: yes
 
-# on stack2:
-# /etc/hosts
-# 10.0.10.19 stack1-overcloud-controller-0.external
-# 10.0.10.17 stack1-overcloud-controller-1.external
-# 10.0.10.11 stack1-overcloud-controller-2.external
+- name: set new cluster host map address (all clusters)
+  shell: pcs resource update stretch-galera cluster_host_map="{{ cluster_host_map }}"
+  when: "'pacemaker_control_nodes' in group_names"
+  become: yes
 
+- name: re-enable resource (stack2 only)
+  shell: pcs resource enable stretch-galera --wait=300
+  when: "'pacemaker_control_nodes' in group_names and 'stack2' in group_names"
+  become: yes
 
-# - name: shut down resource on stack2
-# pcs resource disable stretch-galera
-# only on one stack2 node
-
-
-# - name: remove grastate.dat on stack2 to force an rsync
-# rm /var/lib/stretch_mysql/grastate.dat
-# on all stack2 nodes
-
-# -name: figure out remote_node_map
-
-
-# - name: add remote node map to pacemaker config on stack2
-
-#- name: get docker container name
-#  shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '.' "
-#  register: docker_ps_cmd
-#  become: true
-#  retries: 5
-#  delay: 5
-#  any_errors_fatal: true
-#  run_once: true
-#
-#- name: wait for galera to be available
-#  shell: docker exec {{ docker_ps_cmd.stdout_lines[0] }} mysql -u root --password="{{ stretch_galera_root_password }}" -s --skip-column-names -e "show status like 'wsrep_local_state'"
-#  register: result
-#  until: result.stdout.find("4") != -1
-#  retries: 20
-#  delay: 5
-#  become: true
-#  any_errors_fatal: true
-#  run_once: true
-#
-#
