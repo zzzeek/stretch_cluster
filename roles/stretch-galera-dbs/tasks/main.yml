@@ -1,6 +1,9 @@
 - name: setup variables
   import_tasks: setup_variables.yml
 
+# NOTE: these files don't seem to update immediately in the
+# docker containers, and pcs resource restart seems to refresh it 
+# (does that restart the container?)
 - name: modify /etc/hosts
   blockinfile:
     dest: /etc/hosts
