@@ -82,6 +82,11 @@ parameter_defaults:
   # populate .conf files with it after the fact regardless
   KeystoneRegion: "region_{{ rh_stack_name }}"
 
+  # MySQL root and clsutercheck passwords also, these should be 
+  # moved out to be separate for "stretch"
+  MysqlRootPassword: "mysql_root_pw"
+  MysqlClustercheckPassword: "clustercheck_pw"
+
   # Keystone's admin password as well as the database password!
   AdminToken: "keystone_admin_token"
 
