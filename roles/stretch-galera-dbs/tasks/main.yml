@@ -2,24 +2,30 @@
   import_tasks: setup_variables.yml
 
 # NOTE: these files don't seem to update immediately in the
-# docker containers, and pcs resource restart seems to refresh it 
-# (does that restart the container?)
+# docker containers.   just do a direct restart of docker container for now
+# which allows the pcs resource to stay running
 - name: modify /etc/hosts
   blockinfile:
     dest: /etc/hosts
     block: "{{ etc_hosts }}"
   become: yes
+  register: etc_hosts_changed
+
+- name: restart docker containers so /etc/hosts change is seen
+  shell: docker restart {{ galera_docker_container_name }}
+  become: yes
+  when: etc_hosts_changed.changed
 
 - name: shut down resource on stack2
   shell: pcs resource disable stretch-galera --wait=300
   when: "'pacemaker_control_nodes' in group_names and 'stack2' in group_names"
   become: yes
- 
+
 - name: remove stack2 grastate.dat
   shell: rm -f /var/lib/stretch_mysql/grastate.dat
   when: "'stack2' in group_names"
   become: yes
- 
+
 - name: set remote_node map (all clusters)
   shell: pcs resource update stretch-galera remote_node_map="{{ remote_node_map }}" --force
   when: "'pacemaker_control_nodes' in group_names"
