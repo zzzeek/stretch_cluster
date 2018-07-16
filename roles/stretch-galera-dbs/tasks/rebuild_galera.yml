@@ -1,0 +1,30 @@
+- name: shut down resource on stack2
+  shell: pcs resource disable stretch-galera --wait=300
+  when: "'pacemaker_control_nodes' in group_names and 'stack2' in group_names"
+  become: yes
+
+- name: remove stack2 grastate.dat
+  shell: rm -f /var/lib/stretch_mysql/grastate.dat
+  when: "'stack2' in group_names"
+  become: yes
+
+- name: set remote_node map (all clusters)
+  shell: pcs resource update stretch-galera remote_node_map="{{ remote_node_map }}" --force
+  when: "'pacemaker_control_nodes' in group_names"
+  become: yes
+
+- name: set new cluster address (all clusters)
+  shell: pcs resource update stretch-galera wsrep_cluster_address="{{ gcomm_address }}"
+  when: "'pacemaker_control_nodes' in group_names"
+  become: yes
+
+- name: set new cluster host map address (all clusters)
+  shell: pcs resource update stretch-galera cluster_host_map="{{ cluster_host_map }}"
+  when: "'pacemaker_control_nodes' in group_names"
+  become: yes
+
+- name: re-enable resource (stack2 only)
+  shell: pcs resource enable stretch-galera --wait=300
+  when: "'pacemaker_control_nodes' in group_names and 'stack2' in group_names"
+  become: yes
+

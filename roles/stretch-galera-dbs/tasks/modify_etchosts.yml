@@ -1,0 +1,15 @@
+# NOTE: these files don't seem to update immediately in the
+# docker containers.   just do a direct restart of docker container for now
+# which allows the pcs resource to stay running
+- name: modify /etc/hosts
+  blockinfile:
+    dest: /etc/hosts
+    block: "{{ etc_hosts }}"
+  become: yes
+  register: etc_hosts_changed
+
+- name: restart docker containers so /etc/hosts change is seen
+  shell: docker restart {{ galera_docker_container_name }}
+  become: yes
+  when: etc_hosts_changed.changed
+
