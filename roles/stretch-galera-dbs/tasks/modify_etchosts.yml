@@ -1,3 +1,19 @@
+# TODO: this localdomain thing is awkward, where can we get that in a portable way?
+- name: create stack1 /etc/hosts additions
+  set_fact:
+    etc_hosts: "{{ etc_hosts | default('') }}{{ hostvars[item]['transport_ip_number'] }}     {{ hostvars[item]['external_hostname'] }} {{ hostvars[item]['external_hostname'] }}.localdomain\n"
+  with_items: "{{ groups['galera_nodes'] | intersect(groups['stack2']) }}"
+  when: "'stack1' in group_names"
+
+- name: create stack2 /etc/hosts additions
+  set_fact:
+    etc_hosts: "{{ etc_hosts | default('') }}{{ hostvars[item]['transport_ip_number'] }}     {{ hostvars[item]['external_hostname'] }} {{ hostvars[item]['external_hostname'] }}.localdomain\n"
+  with_items: "{{ groups['galera_nodes'] | intersect(groups['stack1']) }}"
+  when: "'stack2' in group_names"
+
+
+
+
 # NOTE: these files don't seem to update immediately in the
 # docker containers.   just do a direct restart of docker container for now
 # which allows the pcs resource to stay running
