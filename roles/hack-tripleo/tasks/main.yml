@@ -49,12 +49,15 @@
         dest: "{{ tripleo_heat_templates }}/environments/docker-stretch-galera.yaml"
     }
 
+- name: copy t-h-t.patch since ansible patch does not support -F
+  copy:
+    src: t-h-t.patch
+    dest: /home/stack/
 
 - name: patch t-h-t
-  patch:
-      src: t-h-t.patch
-      basedir: "{{ tripleo_heat_templates }}"
-      strip: 1
+  shell: patch -F20 -p1 < /home/stack/t-h-t.patch
+  args:
+    chdir: "{{ tripleo_heat_templates }}"
 
 - name: regenerate endpoint map
   shell: ./build_endpoint_map.py
