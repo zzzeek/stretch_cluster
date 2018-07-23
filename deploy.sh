@@ -283,21 +283,26 @@ deploy_undercloud() {
     # "master".  various bits make it fetch "master" bits after that.
         # -e rr_release_name=${RELEASE} -e rr_master_release=NOTHING \
 
+    # these were renamed to "host" in https://github.com/openstack/instack-undercloud/commit/9c6424df5d9d0cb41ec78cbdddb520f1c1ec604b
+    #    --config-options DEFAULT.undercloud_public_vip=${PROVISIONING_IP_PREFIX}.2 \
+    #    --config-options DEFAULT.undercloud_admin_vip=${PROVISIONING_IP_PREFIX}.3 \
+
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
         --build ${BUILD} \
         -e rr_use_public_repos=true \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.local_ip=${PROVISIONING_IP_PREFIX}.1/24 \
+        --config-options DEFAULT.undercloud_public_host=${PROVISIONING_IP_PREFIX}.2 \
+        --config-options DEFAULT.undercloud_admin_host=${PROVISIONING_IP_PREFIX}.3 \
         --config-options DEFAULT.network_gateway=${PROVISIONING_IP_PREFIX}.1 \
-        --config-options DEFAULT.undercloud_public_vip=${PROVISIONING_IP_PREFIX}.2 \
-        --config-options DEFAULT.undercloud_admin_vip=${PROVISIONING_IP_PREFIX}.3 \
         --config-options DEFAULT.network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
         --config-options DEFAULT.masquerade_network=${PROVISIONING_IP_PREFIX}.0/24 \
         --config-options DEFAULT.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
         --config-options DEFAULT.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
         --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
+        --config-options DEFAULT.generate_service_certificate=false \
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
