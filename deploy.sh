@@ -295,12 +295,17 @@ deploy_undercloud() {
         --config-options DEFAULT.local_ip=${PROVISIONING_IP_PREFIX}.1/24 \
         --config-options DEFAULT.undercloud_public_host=${PROVISIONING_IP_PREFIX}.2 \
         --config-options DEFAULT.undercloud_admin_host=${PROVISIONING_IP_PREFIX}.3 \
-        --config-options DEFAULT.network_gateway=${PROVISIONING_IP_PREFIX}.1 \
-        --config-options DEFAULT.network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
+        --config-options DEFAULT.gateway=${PROVISIONING_IP_PREFIX}.1 \
+        --config-options ctlplane-subnet.gateway=${PROVISIONING_IP_PREFIX}.1 \
+        --config-options DEFAULT.cidr=${PROVISIONING_IP_PREFIX}.0/24 \
+        --config-options ctlplane-subnet.cidr=${PROVISIONING_IP_PREFIX}.0/24 \
         --config-options DEFAULT.masquerade_network=${PROVISIONING_IP_PREFIX}.0/24 \
         --config-options DEFAULT.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
+        --config-options ctlplane-subnet.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
         --config-options DEFAULT.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
+        --config-options ctlplane-subnet.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
         --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
+        --config-options ctlplane-subnet.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
         --config-options DEFAULT.generate_service_certificate=false \
         --images-task import --images-url ${IMAGE_URL}
