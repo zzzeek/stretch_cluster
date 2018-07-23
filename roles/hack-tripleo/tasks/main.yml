@@ -51,8 +51,8 @@
 
 - name: copy t-h-t.patch since ansible patch does not support -F
   copy:
-    src: t-h-t.patch
-    dest: /home/stack/
+    src: t-h-t.{{ release_name }}.patch
+    dest: /home/stack/t-h-t.patch
 
 - name: patch t-h-t
   shell: patch -F20 -p1 < /home/stack/t-h-t.patch
@@ -66,11 +66,11 @@
 
 - name: copy puppet_tripleo patch since ansible patch does not support -F
   copy:
-     src: puppet-tripleo.patch
-     dest: /home/stack/
+     src: puppet-tripleo.{{ release_name }}.patch
+     dest: /home/stack/puppet-tripleo.patch
 
 - name: patch puppet_tripleo
-  shell: patch -F20 -p1 < /home/stack/puppet-tripleo.patch 
+  shell: patch -F20 -p1 < /home/stack/puppet-tripleo.patch
   args:
     chdir: "{{ puppet_tripleo }}/tripleo/"
 

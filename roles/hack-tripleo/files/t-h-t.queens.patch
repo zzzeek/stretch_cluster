@@ -1,0 +1,134 @@
+diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
+index 08bfc4dab..645964fc7 100644
+--- a/network/endpoints/endpoint_data.yaml
++++ b/network/endpoints/endpoint_data.yaml
+@@ -100,6 +100,12 @@ Mysql:
+     protocol: mysql+pymysql
+     port: 3306
+ 
++StretchMysql:
++    Internal:
++        net_param: StretchMysql
++    protocol: mysql+pymysql
++    port: 3306
++
+ Heat:
+     Internal:
+         net_param: HeatApi
+diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
+index aeaf856f1..42e336b49 100644
+--- a/network/service_net_map.j2.yaml
++++ b/network/service_net_map.j2.yaml
+@@ -65,6 +65,7 @@ parameters:
+       RedisNetwork: internal_api
+       GaneshaNetwork: storage_nfs
+       MysqlNetwork: internal_api
++      StretchMysqlNetwork: external
+       SnmpdNetwork: ctrlplane
+       CephClusterNetwork: storage_mgmt
+       CephMonNetwork: storage
+diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
+index 6215b6058..585e13405 100644
+--- a/puppet/services/database/mysql-client.yaml
++++ b/puppet/services/database/mysql-client.yaml
+@@ -45,7 +45,9 @@ outputs:
+     value:
+       service_name: mysql_client
+       config_settings:
++        # note this setting is per role, not per service
+         tripleo::profile::base::database::mysql::client::mysql_client_bind_address: {get_param: [ServiceNetMap, MysqlNetwork]}
++        tripleo::profile::base::database::mysql::client::mysql_stretch_bind_address: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
+         tripleo::profile::base::database::mysql::client::enable_ssl: {get_param: EnableInternalTLS}
+         tripleo::profile::base::database::mysql::client::ssl_ca: {get_param: InternalTLSCAFile}
+       step_config: |
+diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
+index 83e54a13f..c1348d6a0 100644
+--- a/puppet/services/keystone.yaml
++++ b/puppet/services/keystone.yaml
+@@ -286,6 +286,9 @@ parameter_groups:
+    parameters, please contact the TripleO development team on IRC or the
+    OpenStack mailing list.
+   parameters:
++  KeystoneStretchEnabled:
++    type: boolean
++    default: false
+   - KeystoneFernetKey0
+   - KeystoneFernetKey1
+   - KeystoneNotificationDriver
+@@ -307,7 +310,7 @@ conditions:
+   keystone_fernet_tokens: {equals: [{get_param: KeystoneTokenProvider}, "fernet"]}
+   keystone_ldap_domain_enabled: {equals: [{get_param: KeystoneLDAPDomainEnable}, True]}
+   service_debug_unset: {equals : [{get_param: KeystoneDebug}, '']}
+-
++  keystone_stretch_enabled: {equals: [{get_param: KeystoneStretchEnabled}, True]}
+   # Security compliance
+   change_password_upon_first_use_set: {not: {equals: [{get_param: KeystoneChangePasswordUponFirstUse}, '']}}
+   disable_user_account_days_inactive_set: {not: {equals: [{get_param: KeystoneDisableUserAccountDaysInactive}, '']}}
+@@ -330,14 +333,22 @@ outputs:
+           - get_attr: [ApacheServiceBase, role_data, config_settings]
+           - keystone::database_connection:
+               make_url:
+-                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
++                scheme:
++                  if:
++                    - keystone_stretch_enabled
++                    - {get_param: [EndpointMap, StretchMysqlInternal, protocol]}
++                    - {get_param: [EndpointMap, MysqlInternal, protocol]}
+                 username: keystone
+                 password: {get_param: AdminToken}
+-                host: {get_param: [EndpointMap, MysqlInternal, host]}
++                host:
++                  if:
++                    - keystone_stretch_enabled
++                    - {get_param: [EndpointMap, StretchMysqlInternal, host]}
++                    - {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /keystone
+                 query:
+                   read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  read_default_group: {if: [keystone_stretch_enabled, "tripleo-stretch", "tripleo"]}
+             keystone::admin_token: {get_param: AdminToken}
+             keystone::admin_password: {get_param: AdminPassword}
+             keystone::roles::admin::password: {get_param: AdminPassword}
+diff --git a/puppet/services/pacemaker/haproxy.yaml b/puppet/services/pacemaker/haproxy.yaml
+index 2fddca966..8a7f6aeda 100644
+--- a/puppet/services/pacemaker/haproxy.yaml
++++ b/puppet/services/pacemaker/haproxy.yaml
+@@ -30,6 +30,13 @@ parameters:
+     description: Mapping of service endpoint -> protocol. Typically set
+                  via parameter_defaults in the resource registry.
+     type: json
++  EnableStretchGalera:
++    default: if haproxy includes stretch galera config
++    type: boolean
++    default: false
++
++conditions:
++  stretch_galera_enabled: {equals: [{get_param: EnableStretchGalera}, true]}
+ 
+ resources:
+   LoadbalancerServiceBase:
+@@ -53,6 +60,10 @@ outputs:
+           - get_attr: [LoadbalancerServiceBase, role_data, config_settings]
+           - tripleo::haproxy::haproxy_service_manage: false
+             tripleo::haproxy::mysql_clustercheck: true
++          - if:
++            - stretch_galera_enabled
++            - tripleo::haproxy::stretch_mysql_enabled: true
++            - {}
+       step_config: |
+         include ::tripleo::profile::pacemaker::haproxy
+       metadata_settings:
+diff --git a/roles_data.yaml b/roles_data.yaml
+index 37d931db6..5478b60b0 100644
+--- a/roles_data.yaml
++++ b/roles_data.yaml
+@@ -162,6 +162,8 @@
+     - OS::TripleO::Services::SkydiveAnalyzer
+     - OS::TripleO::Services::Snmp
+     - OS::TripleO::Services::Sshd
++    - OS::TripleO::Services::StretchClustercheck
++    - OS::TripleO::Services::StretchMySQL
+     - OS::TripleO::Services::SwiftProxy
+     - OS::TripleO::Services::SwiftDispersion
+     - OS::TripleO::Services::SwiftRingBuilder
