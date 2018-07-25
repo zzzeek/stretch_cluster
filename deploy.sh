@@ -24,12 +24,12 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
 
 
-#RELEASE=rocky
-RELEASE=queens
-#RELEASE_OR_MASTER=master
-RELEASE_OR_MASTER=queens
-BUILD=current-tripleo-rdo-internal
-#BUILD=current-tripleo
+RELEASE=rocky
+#RELEASE=queens
+RELEASE_OR_MASTER=master
+#RELEASE_OR_MASTER=queens
+#BUILD=current-tripleo-rdo-internal
+BUILD=current-tripleo
 RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER}/delorean/${BUILD}/"
 IMAGE_URL="file:///tmp/"
 
@@ -293,6 +293,8 @@ deploy_undercloud() {
     # dont use ssl, but then the docker stuff fails
     #    --config-options DEFAULT.generate_service_certificate=false \
 
+    # container_images file works around issue I described at:
+    # https://review.gerrithub.io/c/redhat-openstack/infrared/+/417795/16/plugins/tripleo-undercloud/templates/undercloud.conf.j2#37
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
         --build ${BUILD} \
@@ -313,6 +315,7 @@ deploy_undercloud() {
         --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
         --config-options ctlplane-subnet.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
+        --config-options DEFAULT.container_images_file="" \
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}

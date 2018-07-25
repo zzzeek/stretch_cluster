@@ -1,11 +1,11 @@
 - name: work around https://bugs.launchpad.net/tripleo/+bug/1727347
   stat:
-    path: {{ working_dir }}/.tripleo/environments
+    path: "{{ working_dir }}/.tripleo/environments"
   register: env_file
 
 - name: remove .tripleo environments directory if present
   shell: mv .tripleo/environments .tripleo/enviroments_save
-  chdir: {{ working_dir }}/stackrc
+  chdir: "{{ working_dir }}/stackrc"
   when: env_file.exists == true
 
 - name: create container configs
@@ -21,7 +21,7 @@
 
 - name: restore .tripleo environments directory if present
   shell: mv .tripleo/environments_save .tripleo/enviroments
-  chdir: {{ working_dir }}/stackrc
+  chdir: "{{ working_dir }}/stackrc"
   when: env_file.exists == true
 
 - name: transfer docker images
