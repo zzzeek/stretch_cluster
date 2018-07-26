@@ -66,12 +66,11 @@
 
 : ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
 . ${OCF_FUNCTIONS_DIR}/ocf-shellfuncs
-. ${OCF_FUNCTIONS_DIR}/mysql-common.sh
 
-
-SSH_CMD="ssh -oStrictHostKeyChecking=no"
-
-NODENAME=$(ocf_attribute_target)
+if [ "$__OCF_ACTION" != "meta-data" ]; then
+    . ${OCF_FUNCTIONS_DIR}/mysql-common.sh
+    NODENAME=$(ocf_attribute_target)
+fi
 
 # It is common for some galera instances to store
 # check user that can be used to query status
@@ -218,7 +217,6 @@ mapping in option cluster_host_map.
 <content type="string" default=""/>
 </parameter>
 
-
 <parameter name="cluster_host_map" unique="0" required="0">
 <longdesc lang="en">
 A mapping of pacemaker node names to galera node names.
@@ -230,21 +228,6 @@ pcmk1:node.1.galera;pcmk2:node.2.galera;pcmk3:node.3.galera
 
 where the galera resource started on node pcmk1 would be named
 node.1.galera in the wsrep_cluster_address
-
-</longdesc>
-<shortdesc lang="en">Pacemaker to Galera name mapping</shortdesc>
-<content type="string" default=""/>
-</parameter>
-
-<parameter name="remote_node_map" unique="0" required="0">
-<longdesc lang="en">
-A mapping of pacemaker node names to remote hosts.
-
-Allows pacemaker nodes in remote pacemaker clusters to be part of this
-Galera cluster:
-
-root@pacemakerhost/pcmk1:node.1.galera;root@pacemakerhost/pcmk2:node.2.galera
-
 </longdesc>
 <shortdesc lang="en">Pacemaker to Galera name mapping</shortdesc>
 <content type="string" default=""/>
@@ -302,7 +285,7 @@ set_bootstrap_node()
 {
     local node=$(ocf_attribute_target $1)
 
-    remote_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-bootstrap" -v "true"
+    ${HA_SBIN_DIR}/crm_attribute -N $node -l reboot --name "${INSTANCE_ATTR_NAME}-bootstrap" -v "true"
 }
 
 clear_bootstrap_node()
@@ -329,7 +312,7 @@ clear_no_grastate()
 is_no_grastate()
 {
     local node=$(ocf_attribute_target $1)
-    remote_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-no-grastate" --quiet 2>/dev/null
+    ${HA_SBIN_DIR}/crm_attribute -N $node -l reboot --name "${INSTANCE_ATTR_NAME}-no-grastate" --quiet 2>/dev/null
 }
 
 clear_last_commit()
@@ -349,7 +332,7 @@ get_last_commit()
     if [ -z "$node" ]; then
        ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-last-committed" --quiet 2>/dev/null
     else
-       remote_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-last-committed" --quiet 2>/dev/null
+       ${HA_SBIN_DIR}/crm_attribute -N $node -l reboot --name "${INSTANCE_ATTR_NAME}-last-committed" --quiet 2>/dev/null
     fi
 }
 
@@ -370,7 +353,7 @@ get_safe_to_bootstrap()
     if [ -z "$node" ]; then
         ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-safe-to-bootstrap" --quiet 2>/dev/null
     else
-        remote_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-safe-to-bootstrap" --quiet 2>/dev/null
+        ${HA_SBIN_DIR}/crm_attribute -N $node -l reboot --name "${INSTANCE_ATTR_NAME}-safe-to-bootstrap" --quiet 2>/dev/null
     fi
 }
 
@@ -429,25 +412,7 @@ master_exists()
     fi
     # determine if a master instance is already up and is healthy
     crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
-
-    local master_exists_local=$?
-
-    if [ $master_exists_local -eq 0 ]; then
-        ocf_log info "Detected that a master exists for the local cluster"
-    fi
-
-    # if not, and we have remote nodes, check those also
-    if [ $master_exists_local -ne 0 ] && [ -n "$OCF_RESKEY_remote_node_map" ]; then
-        for remote_ssh in $(echo "$OCF_RESKEY_remote_node_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '{print $2;}' | sort | uniq); do
-            $SSH_CMD $remote_ssh crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
-                ocf_log info "Detected that a master exists for the remote cluster $remote_ssh"
-                return $?
-            fi
-        done
-    fi
-
-    return $master_exists_local
+    return $?
 }
 
 clear_master_score()
@@ -456,7 +421,7 @@ clear_master_score()
     if [ -z "$node" ]; then
         $CRM_MASTER -D
     else
-        remote_crm_master $node -D
+        $CRM_MASTER -D -N $node
     fi
 }
 
@@ -467,54 +432,9 @@ set_master_score()
     if [ -z "$node" ]; then
         $CRM_MASTER -v 100
     else
-        remote_crm_master $node -v 100
+        $CRM_MASTER -N $node -v 100
     fi
 }
-
-get_remote_node()
-{
-    local node=$1
-    if [ -z "$OCF_RESKEY_remote_node_map" ]; then
-        return
-    else
-        local retval=$(echo "$OCF_RESKEY_remote_node_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '$1=="'"$node"'" {print $2;exit}')
-        if [ -z "$retval" ]; then
-            return
-        else
-            echo $retval
-        fi
-    fi
-}
-
-remote_crm_master()
-{
-
-    local node=$1
-    shift
-
-    local remote_ssh=$(get_remote_node $node)
-
-    if [ -z "$remote_ssh" ]; then
-        $CRM_MASTER -N $node $@
-    else
-        $SSH_CMD $remote_ssh $CRM_MASTER -r ${INSTANCE_ATTR_NAME} -N $node $@
-    fi
-}
-
-remote_crm_attribute()
-{
-    local node=$1
-    shift
-
-    local remote_ssh=$(get_remote_node $node)
-
-    if [ -z "$remote_ssh" ]; then
-        ${HA_SBIN_DIR}/crm_attribute -N $node $@
-    else
-        $SSH_CMD $remote_ssh ${HA_SBIN_DIR}/crm_attribute -N $node $@
-    fi
-}
-
 
 promote_everyone()
 {
@@ -1042,6 +962,7 @@ fi
 
 # What kind of method was invoked?
 case "$1" in
+  sourceonly) return;;
   start)    galera_start;;
   stop)     galera_stop;;
   status)   mysql_common_status err;;
