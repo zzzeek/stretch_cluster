@@ -1,7 +1,7 @@
 - name: remove existing nodes
   shell: |
       source {{ working_dir }}/stackrc
-      openstack baremetal node list --format value -c UUID | xargs openstack baremetal node delete
+      for item in $( openstack baremetal node list --format value -c UUID ); do openstack baremetal node delete $item; done
   retries: 5
   delay: 10
 
