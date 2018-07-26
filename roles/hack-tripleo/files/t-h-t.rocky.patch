@@ -1,5 +1,5 @@
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
-index 73d3e6f5a..79cc09b3a 100644
+index cd2eddcd5..98e53429f 100644
 --- a/network/endpoints/endpoint_data.yaml
 +++ b/network/endpoints/endpoint_data.yaml
 @@ -100,6 +100,12 @@ Mysql:
@@ -16,7 +16,7 @@ index 73d3e6f5a..79cc09b3a 100644
      Internal:
          net_param: HeatApi
 diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
-index 264383bfd..ea53ec523 100644
+index 4c663dbb6..02fd664c5 100644
 --- a/network/service_net_map.j2.yaml
 +++ b/network/service_net_map.j2.yaml
 @@ -67,6 +67,7 @@ parameters:
@@ -27,6 +27,19 @@ index 264383bfd..ea53ec523 100644
        SnmpdNetwork: ctrlplane
        CephClusterNetwork: storage_mgmt
        CephMonNetwork: storage
+diff --git a/overcloud-resource-registry-puppet.j2.yaml b/overcloud-resource-registry-puppet.j2.yaml
+index fc6f44b55..98a0243bc 100644
+--- a/overcloud-resource-registry-puppet.j2.yaml
++++ b/overcloud-resource-registry-puppet.j2.yaml
+@@ -304,6 +304,8 @@ resource_registry:
+   OS::TripleO::Services::DockerRegistry: OS::Heat::None
+   OS::TripleO::Services::CertmongerUser: puppet/services/certmonger-user.yaml
+   OS::TripleO::Services::Clustercheck: OS::Heat::None
++  OS::TripleO::Services::StretchClustercheck: OS::Heat::None
++  OS::TripleO::Services::StretchMySQL: OS::Heat::None
+   OS::TripleO::Services::RsyslogSidecar: OS::Heat::None
+   OS::TripleO::Services::VRTSHyperScale: OS::Heat::None
+   OS::TripleO::Services::SkydiveAgent: OS::Heat::None
 diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
 index d98c8e1b0..0fd0fb062 100644
 --- a/puppet/services/database/mysql-client.yaml
