@@ -1,3 +1,10 @@
+- name: remove existing nodes
+  shell: |
+      source {{ working_dir }}/stackrc
+      openstack baremetal node list --format value -c UUID | xargs openstack baremetal node delete
+  retries: 5
+  delay: 10
+
 - name: register hosts to instack and configure boot
   shell: |
       set -eo pipefail
