@@ -79,7 +79,7 @@
       - name: get the node UUID
         shell: |
             source {{ working_dir }}/stackrc;
-            ironic node-list | grep -w {{ item.name | default(item) }} | awk '{print $2}'
+            openstack baremetal node list | grep -w {{ item.name | default(item) }} | awk '{print $2}'
         with_items: "{{ overcloud_facts.nodes | default([])}}"
         register: node_list
   when: "overcloud_facts.nodes[0].name is defined"
@@ -98,7 +98,8 @@
 - name: tag our nodes with the proper profile
   shell: |
       source {{ working_dir }}/stackrc;
-      ironic node-update {{ item[0].stdout }} add properties/capabilities='node:{{ node_name }},profile:{{ item[1].cmd.split() | last }},boot_option:local'
+      openstack baremetal node set --property capabilities='node:{{ node_name }},profile:{{ item[1].cmd.split() | last }},boot_option:local' {{ item[0].stdout }}
+
   vars:
     item_name: "{{ item[0].item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
     # with node_name we are trying to keep the original VM names linked to the
