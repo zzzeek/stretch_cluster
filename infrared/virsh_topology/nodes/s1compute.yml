@@ -1,6 +1,6 @@
 name: s1compute
 prefix: null
-cpu: "4"
+cpu: "1"
 cpumodel: "host-model"
 memory: "6144"
 swap: "0"

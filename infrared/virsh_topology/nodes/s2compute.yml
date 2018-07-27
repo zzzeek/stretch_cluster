@@ -1,6 +1,6 @@
 name: s2compute
 prefix: null
-cpu: "4"
+cpu: "2"
 cpumodel: "host-model"
 memory: "6144"
 swap: "0"
