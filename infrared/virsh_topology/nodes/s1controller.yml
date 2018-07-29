@@ -1,6 +1,6 @@
 name: s1controller
 prefix: null
-cpu: "2"
+cpu: "1"
 cpumodel: "host-model"
 memory: "16384"
 swap: "0"
