@@ -1,3 +1,18 @@
+diff --git a/docker/services/nova-placement.yaml b/docker/services/nova-placement.yaml
+index f6b849c84..14b72baad 100644
+--- a/docker/services/nova-placement.yaml
++++ b/docker/services/nova-placement.yaml
+@@ -120,7 +120,9 @@ outputs:
+         step_2:
+           get_attr: [NovaPlacementLogging, docker_config, step_2]
+         # start this early so it is up before computes start reporting
+-        step_3:
++        # FIXME(zzzeek): changed from step_3 to work around
++        # https://bugs.launchpad.net/tripleo/+bug/1784155
++        step_4:
+           nova_placement:
+             start_order: 1
+             image: {get_param: DockerNovaPlacementImage}
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
 index cd2eddcd5..98e53429f 100644
 --- a/network/endpoints/endpoint_data.yaml
