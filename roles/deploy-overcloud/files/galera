@@ -101,7 +101,9 @@ UEND
 }
 
 meta_data() {
-   cat <<END
+    extra_parameters="$1"
+
+    cat <<END
 <?xml version="1.0"?>
 <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
 <resource-agent name="galera">
@@ -248,6 +250,8 @@ Cluster check user password
 <shortdesc lang="en">check password</shortdesc>
 <content type="string" default="" />
 </parameter>
+
+${extra_parameters}
 
 </parameters>
 
@@ -914,65 +918,70 @@ galera_validate()
     mysql_common_validate
 }
 
-case "$1" in
-  meta-data)    meta_data
-        exit $OCF_SUCCESS;;
-  usage|help)   usage
-        exit $OCF_SUCCESS;;
-esac
-
-galera_validate
-rc=$?
-LSB_STATUS_STOPPED=3
-if [ $rc -ne 0 ]; then
+cmd_main() {
     case "$1" in
-        stop) exit $OCF_SUCCESS;;
-        monitor) exit $OCF_NOT_RUNNING;;
-        status) exit $LSB_STATUS_STOPPED;;
-        *) exit $rc;;
+      meta-data)    meta_data
+            exit $OCF_SUCCESS;;
+      usage|help)   usage
+            exit $OCF_SUCCESS;;
     esac
-fi
 
-if [ -z "${OCF_RESKEY_check_passwd}" ]; then
+    galera_validate
+    rc=$?
+    LSB_STATUS_STOPPED=3
+    if [ $rc -ne 0 ]; then
+        case "$1" in
+            stop) exit $OCF_SUCCESS;;
+            monitor) exit $OCF_NOT_RUNNING;;
+            status) exit $LSB_STATUS_STOPPED;;
+            *) exit $rc;;
+        esac
+    fi
+
+    if [ -z "${OCF_RESKEY_check_passwd}" ]; then
+        # This value is automatically sourced from /etc/sysconfig/checkcluster if available
+        OCF_RESKEY_check_passwd=${MYSQL_PASSWORD}
+    fi
+    if [ -z "${OCF_RESKEY_check_user}" ]; then
+        # This value is automatically sourced from /etc/sysconfig/checkcluster if available
+        OCF_RESKEY_check_user=${MYSQL_USERNAME}
+    fi
+    : ${OCF_RESKEY_check_user="root"}
+
+    MYSQL_OPTIONS_CHECK="-nNE --user=${OCF_RESKEY_check_user}"
+    if [ -n "${OCF_RESKEY_check_passwd}" ]; then
+        MYSQL_OPTIONS_CHECK="$MYSQL_OPTIONS_CHECK --password=${OCF_RESKEY_check_passwd}"
+    fi
+
     # This value is automatically sourced from /etc/sysconfig/checkcluster if available
-    OCF_RESKEY_check_passwd=${MYSQL_PASSWORD}
-fi
-if [ -z "${OCF_RESKEY_check_user}" ]; then
+    if [ -n "${MYSQL_HOST}" ]; then
+        MYSQL_OPTIONS_CHECK="$MYSQL_OPTIONS_CHECK -h ${MYSQL_HOST}"
+    fi
+
     # This value is automatically sourced from /etc/sysconfig/checkcluster if available
-    OCF_RESKEY_check_user=${MYSQL_USERNAME}
+    if [ -n "${MYSQL_PORT}" ]; then
+        MYSQL_OPTIONS_CHECK="$MYSQL_OPTIONS_CHECK -P ${MYSQL_PORT}"
+    fi
+
+    # What kind of method was invoked?
+    case "$1" in
+      start)    galera_start;;
+      stop)     galera_stop;;
+      status)   mysql_common_status err;;
+      monitor)  galera_monitor;;
+      promote)  galera_promote;;
+      demote)   galera_demote;;
+      validate-all) exit $OCF_SUCCESS;;
+
+     *)     usage
+            exit $OCF_ERR_UNIMPLEMENTED;;
+    esac
+}
+
+# run 'main' if we aren't "sourceonly"
+if [ $1 != "sourceonly" ]; then
+    cmd_main $@
 fi
-: ${OCF_RESKEY_check_user="root"}
 
-MYSQL_OPTIONS_CHECK="-nNE --user=${OCF_RESKEY_check_user}"
-if [ -n "${OCF_RESKEY_check_passwd}" ]; then
-    MYSQL_OPTIONS_CHECK="$MYSQL_OPTIONS_CHECK --password=${OCF_RESKEY_check_passwd}"
-fi
-
-# This value is automatically sourced from /etc/sysconfig/checkcluster if available
-if [ -n "${MYSQL_HOST}" ]; then
-    MYSQL_OPTIONS_CHECK="$MYSQL_OPTIONS_CHECK -h ${MYSQL_HOST}"
-fi
-
-# This value is automatically sourced from /etc/sysconfig/checkcluster if available
-if [ -n "${MYSQL_PORT}" ]; then
-    MYSQL_OPTIONS_CHECK="$MYSQL_OPTIONS_CHECK -P ${MYSQL_PORT}"
-fi
-
-
-
-# What kind of method was invoked?
-case "$1" in
-  sourceonly) return;;
-  start)    galera_start;;
-  stop)     galera_stop;;
-  status)   mysql_common_status err;;
-  monitor)  galera_monitor;;
-  promote)  galera_promote;;
-  demote)   galera_demote;;
-  validate-all) exit $OCF_SUCCESS;;
-
- *)     usage
-        exit $OCF_ERR_UNIMPLEMENTED;;
-esac
 
 # vi:sw=4:ts=4:et:

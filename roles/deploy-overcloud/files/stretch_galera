@@ -39,142 +39,11 @@
 
 SSH_CMD="ssh -oStrictHostKeyChecking=no"
 
+# copy original meta_data to galera_meta_data
+eval "$(echo "galera_meta_data()"; declare -f meta_data | tail -n +2)"
 
 meta_data() {
-   cat <<END
-<?xml version="1.0"?>
-<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-<resource-agent name="galera">
-<version>1.0</version>
-
-<longdesc lang="en">
-Resource script for managing galara database.
-</longdesc>
-<shortdesc lang="en">Manages a galara instance</shortdesc>
-<parameters>
-
-<parameter name="binary" unique="0" required="0">
-<longdesc lang="en">
-Location of the MySQL server binary
-</longdesc>
-<shortdesc lang="en">MySQL server binary</shortdesc>
-<content type="string" default="${OCF_RESKEY_binary_default}" />
-</parameter>
-
-<parameter name="client_binary" unique="0" required="0">
-<longdesc lang="en">
-Location of the MySQL client binary
-</longdesc>
-<shortdesc lang="en">MySQL client binary</shortdesc>
-<content type="string" default="${OCF_RESKEY_client_binary_default}" />
-</parameter>
-
-<parameter name="config" unique="0" required="0">
-<longdesc lang="en">
-Configuration file
-</longdesc>
-<shortdesc lang="en">MySQL config</shortdesc>
-<content type="string" default="${OCF_RESKEY_config_default}" />
-</parameter>
-
-<parameter name="datadir" unique="0" required="0">
-<longdesc lang="en">
-Directory containing databases
-</longdesc>
-<shortdesc lang="en">MySQL datadir</shortdesc>
-<content type="string" default="${OCF_RESKEY_datadir_default}" />
-</parameter>
-
-<parameter name="user" unique="0" required="0">
-<longdesc lang="en">
-User running MySQL daemon
-</longdesc>
-<shortdesc lang="en">MySQL user</shortdesc>
-<content type="string" default="${OCF_RESKEY_user_default}" />
-</parameter>
-
-<parameter name="group" unique="0" required="0">
-<longdesc lang="en">
-Group running MySQL daemon (for logfile and directory permissions)
-</longdesc>
-<shortdesc lang="en">MySQL group</shortdesc>
-<content type="string" default="${OCF_RESKEY_group_default}"/>
-</parameter>
-
-<parameter name="log" unique="0" required="0">
-<longdesc lang="en">
-The logfile to be used for mysqld.
-</longdesc>
-<shortdesc lang="en">MySQL log file</shortdesc>
-<content type="string" default="${OCF_RESKEY_log_default}"/>
-</parameter>
-
-<parameter name="pid" unique="0" required="0">
-<longdesc lang="en">
-The pidfile to be used for mysqld.
-</longdesc>
-<shortdesc lang="en">MySQL pid file</shortdesc>
-<content type="string" default="${OCF_RESKEY_pid_default}"/>
-</parameter>
-
-<parameter name="socket" unique="0" required="0">
-<longdesc lang="en">
-The socket to be used for mysqld.
-</longdesc>
-<shortdesc lang="en">MySQL socket</shortdesc>
-<content type="string" default="${OCF_RESKEY_socket_default}"/>
-</parameter>
-
-<parameter name="enable_creation" unique="0" required="0">
-<longdesc lang="en">
-If the MySQL database does not exist, it will be created
-</longdesc>
-<shortdesc lang="en">Create the database if it does not exist</shortdesc>
-<content type="boolean" default="${OCF_RESKEY_enable_creation_default}"/>
-</parameter>
-
-<parameter name="additional_parameters" unique="0" required="0">
-<longdesc lang="en">
-Additional parameters which are passed to the mysqld on startup.
-(e.g. --skip-external-locking or --skip-grant-tables)
-</longdesc>
-<shortdesc lang="en">Additional parameters to pass to mysqld</shortdesc>
-<content type="string" default="${OCF_RESKEY_additional_parameters_default}"/>
-</parameter>
-
-
-<parameter name="wsrep_cluster_address" unique="0" required="1">
-<longdesc lang="en">
-The galera cluster address. This takes the form of:
-gcomm://node,node,node
-
-Only nodes present in this node list will be allowed to start a galera instance.
-The galera node names listed in this address are expected to match valid
-pacemaker node names. If both names need to differ, you must provide a
-mapping in option cluster_host_map.
-</longdesc>
-<shortdesc lang="en">Galera cluster address</shortdesc>
-<content type="string" default=""/>
-</parameter>
-
-
-<parameter name="cluster_host_map" unique="0" required="0">
-<longdesc lang="en">
-A mapping of pacemaker node names to galera node names.
-
-To be used when both pacemaker and galera names need to differ,
-(e.g. when galera names map to IP from a specific network interface)
-This takes the form of:
-pcmk1:node.1.galera;pcmk2:node.2.galera;pcmk3:node.3.galera
-
-where the galera resource started on node pcmk1 would be named
-node.1.galera in the wsrep_cluster_address
-
-</longdesc>
-<shortdesc lang="en">Pacemaker to Galera name mapping</shortdesc>
-<content type="string" default=""/>
-</parameter>
-
+IFS='' read -r -d '' extraparams <<END
 <parameter name="remote_node_map" unique="0" required="0">
 <longdesc lang="en">
 A mapping of pacemaker node names to remote hosts.
@@ -189,38 +58,10 @@ root@pacemakerhost/pcmk1:node.1.galera;root@pacemakerhost/pcmk2:node.2.galera
 <content type="string" default=""/>
 </parameter>
 
-<parameter name="check_user" unique="0" required="0">
-<longdesc lang="en">
-Cluster check user.
-</longdesc>
-<shortdesc lang="en">MySQL test user</shortdesc>
-<content type="string" default="root" />
-</parameter>
-
-<parameter name="check_passwd" unique="0" required="0">
-<longdesc lang="en">
-Cluster check user password
-</longdesc>
-<shortdesc lang="en">check password</shortdesc>
-<content type="string" default="" />
-</parameter>
-
-</parameters>
-
-<actions>
-<action name="start" timeout="120s" />
-<action name="stop" timeout="120s" />
-<action name="status" timeout="60s" />
-<action name="monitor" depth="0" timeout="30s" interval="20s" />
-<action name="monitor" role="Master" depth="0" timeout="30s" interval="10s" />
-<action name="monitor" role="Slave" depth="0" timeout="30s" interval="30s" />
-<action name="promote" timeout="300s" />
-<action name="demote" timeout="120s" />
-<action name="validate-all" timeout="5s" />
-<action name="meta-data" timeout="5s" />
-</actions>
-</resource-agent>
 END
+
+galera_meta_data "$extraparams"
+
 }
 
 set_bootstrap_node()
@@ -374,19 +215,11 @@ remote_crm_attribute()
 
 promote_everyone()
 {
-
-#    for node in $(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' '); do
-#        local pcmk_node=$(galera_to_pcmk_name $node)
-#        if [ -z "$pcmk_node" ]; then
-#            ocf_log err "Could not determine pacemaker node from galera name <${node}>."
-#            return
-#        else
-#            node=$pcmk_node
-#        fi
-#
-#        set_master_score $node
-#    done
+    # turn into a no-op
+    echo;
 }
+
+cmd_main $@
 
 
 # vi:sw=4:ts=4:et:
