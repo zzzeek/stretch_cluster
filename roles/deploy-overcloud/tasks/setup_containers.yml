@@ -1,32 +1,40 @@
-- name: work around https://bugs.launchpad.net/tripleo/+bug/1727347
+- name: does overcloud_containers.yaml already exist?
   stat:
-    path: "{{ working_dir }}/.tripleo/environments"
-  register: env_file
+    path: "{{ working_dir }}/overcloud_containers.yaml"
+  register: overcloud_containers
 
-- name: remove .tripleo environments directory if present
-  shell: mv .tripleo/environments .tripleo/environments_save
-  chdir: "{{ working_dir }}/stackrc"
-  when: env_file.stat.exists | bool
+- name: install docker images
+  when: not overcloud_containers.stat.exists | bool
+  block:
+    - name: work around https://bugs.launchpad.net/tripleo/+bug/1727347
+      stat:
+        path: "{{ working_dir }}/.tripleo/environments"
+      register: env_file
 
-- name: create container configs
-  shell: >
-      source {{ working_dir }}/stackrc;
-      openstack overcloud container image prepare
-      --namespace docker.io/tripleo{{ container_namespace }}
-      --tag {{ container_tag }}
-      --tag-from-label rdo_version
-      --push-destination {{ undercloud_management_ip }}:8787
-      --output-env-file {{ working_dir }}/docker_registry.yaml
-      --output-images-file overcloud_containers.yaml
+    - name: remove .tripleo environments directory if present
+      shell: mv .tripleo/environments .tripleo/environments_save
+      chdir: "{{ working_dir }}/stackrc"
+      when: env_file.stat.exists | bool
 
-- name: restore .tripleo environments directory if present
-  shell: mv .tripleo/environments_save .tripleo/environments
-  chdir: "{{ working_dir }}/stackrc"
-  when: env_file.stat.exists | bool
+    - name: create container configs
+      shell: >
+          source {{ working_dir }}/stackrc;
+          openstack overcloud container image prepare
+          --namespace docker.io/tripleo{{ container_namespace }}
+          --tag {{ container_tag }}
+          --tag-from-label rdo_version
+          --push-destination {{ undercloud_management_ip }}:8787
+          --output-env-file {{ working_dir }}/docker_registry.yaml
+          --output-images-file overcloud_containers.yaml
 
-- name: transfer docker images
-  shell: >
-      source {{ working_dir }}/stackrc;
-      openstack overcloud container image upload --verbose
-      --config-file overcloud_containers.yaml
+    - name: restore .tripleo environments directory if present
+      shell: mv .tripleo/environments_save .tripleo/environments
+      chdir: "{{ working_dir }}/stackrc"
+      when: env_file.stat.exists | bool
+
+    - name: transfer docker images
+      shell: >
+          source {{ working_dir }}/stackrc;
+          openstack overcloud container image upload --verbose
+          --config-file overcloud_containers.yaml
 

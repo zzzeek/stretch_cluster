@@ -34,7 +34,7 @@
 # Initialization:
 
 : ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
-. ${OCF_FUNCTIONS_DIR}/galera sourceonly
+. ${OCF_ROOT}/resource.d/heartbeat/galera sourceonly
 
 
 SSH_CMD="ssh -oStrictHostKeyChecking=no"
