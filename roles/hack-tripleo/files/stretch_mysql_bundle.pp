@@ -398,7 +398,7 @@ MYSQL_HOST=localhost\n",
       }
 
       pacemaker::resource::ocf { 'stretch-galera':
-        ocf_agent_name  => 'heartbeat:galera',
+        ocf_agent_name  => 'heartbeat:stretch_galera',
         master_params   => '',
         meta_params     => "master-max=${galera_nodes_count} ordered=true container-attribute-target=host",
         op_params       => 'promote timeout=300s on-fail=block',

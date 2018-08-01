@@ -1,0 +1,392 @@
+#!/bin/sh
+#
+# Copyright (c) 2014 David Vossel <davidvossel@gmail.com>
+#                    All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it would be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# Further, this software is distributed without any warranty that it is
+# free of the rightful claim of any third person regarding infringement
+# or the like.  Any license provided herein, whether implied or
+# otherwise, applies only to this software file.  Patent licenses, if
+# any, provided herein do not apply to combinations of this program with
+# other software, or any other product whatsoever.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write the Free Software Foundation,
+# Inc., 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+
+##
+# README.
+#
+# Extend the Galera resource agent to support joining into a galera cluster
+# that is managed by multiple pacemaker clusters.
+##
+
+#######################################################################
+# Initialization:
+
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/galera sourceonly
+
+
+SSH_CMD="ssh -oStrictHostKeyChecking=no"
+
+
+meta_data() {
+   cat <<END
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="galera">
+<version>1.0</version>
+
+<longdesc lang="en">
+Resource script for managing galara database.
+</longdesc>
+<shortdesc lang="en">Manages a galara instance</shortdesc>
+<parameters>
+
+<parameter name="binary" unique="0" required="0">
+<longdesc lang="en">
+Location of the MySQL server binary
+</longdesc>
+<shortdesc lang="en">MySQL server binary</shortdesc>
+<content type="string" default="${OCF_RESKEY_binary_default}" />
+</parameter>
+
+<parameter name="client_binary" unique="0" required="0">
+<longdesc lang="en">
+Location of the MySQL client binary
+</longdesc>
+<shortdesc lang="en">MySQL client binary</shortdesc>
+<content type="string" default="${OCF_RESKEY_client_binary_default}" />
+</parameter>
+
+<parameter name="config" unique="0" required="0">
+<longdesc lang="en">
+Configuration file
+</longdesc>
+<shortdesc lang="en">MySQL config</shortdesc>
+<content type="string" default="${OCF_RESKEY_config_default}" />
+</parameter>
+
+<parameter name="datadir" unique="0" required="0">
+<longdesc lang="en">
+Directory containing databases
+</longdesc>
+<shortdesc lang="en">MySQL datadir</shortdesc>
+<content type="string" default="${OCF_RESKEY_datadir_default}" />
+</parameter>
+
+<parameter name="user" unique="0" required="0">
+<longdesc lang="en">
+User running MySQL daemon
+</longdesc>
+<shortdesc lang="en">MySQL user</shortdesc>
+<content type="string" default="${OCF_RESKEY_user_default}" />
+</parameter>
+
+<parameter name="group" unique="0" required="0">
+<longdesc lang="en">
+Group running MySQL daemon (for logfile and directory permissions)
+</longdesc>
+<shortdesc lang="en">MySQL group</shortdesc>
+<content type="string" default="${OCF_RESKEY_group_default}"/>
+</parameter>
+
+<parameter name="log" unique="0" required="0">
+<longdesc lang="en">
+The logfile to be used for mysqld.
+</longdesc>
+<shortdesc lang="en">MySQL log file</shortdesc>
+<content type="string" default="${OCF_RESKEY_log_default}"/>
+</parameter>
+
+<parameter name="pid" unique="0" required="0">
+<longdesc lang="en">
+The pidfile to be used for mysqld.
+</longdesc>
+<shortdesc lang="en">MySQL pid file</shortdesc>
+<content type="string" default="${OCF_RESKEY_pid_default}"/>
+</parameter>
+
+<parameter name="socket" unique="0" required="0">
+<longdesc lang="en">
+The socket to be used for mysqld.
+</longdesc>
+<shortdesc lang="en">MySQL socket</shortdesc>
+<content type="string" default="${OCF_RESKEY_socket_default}"/>
+</parameter>
+
+<parameter name="enable_creation" unique="0" required="0">
+<longdesc lang="en">
+If the MySQL database does not exist, it will be created
+</longdesc>
+<shortdesc lang="en">Create the database if it does not exist</shortdesc>
+<content type="boolean" default="${OCF_RESKEY_enable_creation_default}"/>
+</parameter>
+
+<parameter name="additional_parameters" unique="0" required="0">
+<longdesc lang="en">
+Additional parameters which are passed to the mysqld on startup.
+(e.g. --skip-external-locking or --skip-grant-tables)
+</longdesc>
+<shortdesc lang="en">Additional parameters to pass to mysqld</shortdesc>
+<content type="string" default="${OCF_RESKEY_additional_parameters_default}"/>
+</parameter>
+
+
+<parameter name="wsrep_cluster_address" unique="0" required="1">
+<longdesc lang="en">
+The galera cluster address. This takes the form of:
+gcomm://node,node,node
+
+Only nodes present in this node list will be allowed to start a galera instance.
+The galera node names listed in this address are expected to match valid
+pacemaker node names. If both names need to differ, you must provide a
+mapping in option cluster_host_map.
+</longdesc>
+<shortdesc lang="en">Galera cluster address</shortdesc>
+<content type="string" default=""/>
+</parameter>
+
+
+<parameter name="cluster_host_map" unique="0" required="0">
+<longdesc lang="en">
+A mapping of pacemaker node names to galera node names.
+
+To be used when both pacemaker and galera names need to differ,
+(e.g. when galera names map to IP from a specific network interface)
+This takes the form of:
+pcmk1:node.1.galera;pcmk2:node.2.galera;pcmk3:node.3.galera
+
+where the galera resource started on node pcmk1 would be named
+node.1.galera in the wsrep_cluster_address
+
+</longdesc>
+<shortdesc lang="en">Pacemaker to Galera name mapping</shortdesc>
+<content type="string" default=""/>
+</parameter>
+
+<parameter name="remote_node_map" unique="0" required="0">
+<longdesc lang="en">
+A mapping of pacemaker node names to remote hosts.
+
+Allows pacemaker nodes in remote pacemaker clusters to be part of this
+Galera cluster:
+
+root@pacemakerhost/pcmk1:node.1.galera;root@pacemakerhost/pcmk2:node.2.galera
+
+</longdesc>
+<shortdesc lang="en">Pacemaker to Galera name mapping</shortdesc>
+<content type="string" default=""/>
+</parameter>
+
+<parameter name="check_user" unique="0" required="0">
+<longdesc lang="en">
+Cluster check user.
+</longdesc>
+<shortdesc lang="en">MySQL test user</shortdesc>
+<content type="string" default="root" />
+</parameter>
+
+<parameter name="check_passwd" unique="0" required="0">
+<longdesc lang="en">
+Cluster check user password
+</longdesc>
+<shortdesc lang="en">check password</shortdesc>
+<content type="string" default="" />
+</parameter>
+
+</parameters>
+
+<actions>
+<action name="start" timeout="120s" />
+<action name="stop" timeout="120s" />
+<action name="status" timeout="60s" />
+<action name="monitor" depth="0" timeout="30s" interval="20s" />
+<action name="monitor" role="Master" depth="0" timeout="30s" interval="10s" />
+<action name="monitor" role="Slave" depth="0" timeout="30s" interval="30s" />
+<action name="promote" timeout="300s" />
+<action name="demote" timeout="120s" />
+<action name="validate-all" timeout="5s" />
+<action name="meta-data" timeout="5s" />
+</actions>
+</resource-agent>
+END
+}
+
+set_bootstrap_node()
+{
+    local node=$(ocf_attribute_target $1)
+
+    local_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-bootstrap" -v "true"
+}
+
+is_no_grastate()
+{
+    local node=$(ocf_attribute_target $1)
+    remote_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-no-grastate" --quiet 2>/dev/null
+}
+
+get_last_commit()
+{
+    local node=$(ocf_attribute_target $1)
+
+    if [ -z "$node" ]; then
+       ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-last-committed" --quiet 2>/dev/null
+    else
+       remote_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-last-committed" --quiet 2>/dev/null
+    fi
+}
+
+get_safe_to_bootstrap()
+{
+    local node=$(ocf_attribute_target $1)
+
+    if [ -z "$node" ]; then
+        ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-safe-to-bootstrap" --quiet 2>/dev/null
+    else
+        remote_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-safe-to-bootstrap" --quiet 2>/dev/null
+    fi
+}
+
+master_exists()
+{
+    if [ "$__OCF_ACTION" = "demote" ]; then
+        # We don't want to detect master instances during demote.
+        # 1. we could be detecting ourselves as being master, which is no longer the case.
+        # 2. we could be detecting other master instances that are in the process of shutting down.
+        # by not detecting other master instances in "demote" we are deferring this check
+        # to the next recurring monitor operation which will be much more accurate
+        return 1
+    fi
+    # determine if a master instance is already up and is healthy
+    crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
+
+    local master_exists_local=$?
+
+    if [ $master_exists_local -eq 0 ]; then
+        ocf_log info "Detected that a master exists for the local cluster"
+    fi
+
+    # if not, and we have remote nodes, check those also
+    if [ $master_exists_local -ne 0 ] && [ -n "$OCF_RESKEY_remote_node_map" ]; then
+        for remote_ssh in $(echo "$OCF_RESKEY_remote_node_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '{print $2;}' | sort | uniq); do
+            $SSH_CMD $remote_ssh crm_mon --as-xml | grep "resource.*id=\"${INSTANCE_ATTR_NAME}\".*role=\"Master\".*active=\"true\".*orphaned=\"false\".*failed=\"false\"" > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                ocf_log info "Detected that a master exists for the remote cluster $remote_ssh"
+                return $?
+            fi
+        done
+    fi
+
+    return $master_exists_local
+}
+
+clear_master_score()
+{
+    local node=$(ocf_attribute_target $1)
+    if [ -z "$node" ]; then
+        $CRM_MASTER -D
+    else
+        local_crm_master $node -D
+    fi
+}
+
+set_master_score()
+{
+    local node=$(ocf_attribute_target $1)
+
+    if [ -z "$node" ]; then
+        $CRM_MASTER -v 100
+    else
+        local_crm_master $node -v 100
+    fi
+}
+
+get_remote_node()
+{
+    local node=$1
+    if [ -z "$OCF_RESKEY_remote_node_map" ]; then
+        return
+    else
+        local retval=$(echo "$OCF_RESKEY_remote_node_map" | tr ';' '\n' | tr -d ' ' | sed 's/:/ /' | awk -F' ' '$1=="'"$node"'" {print $2;exit}')
+        if [ -z "$retval" ]; then
+            return
+        else
+            echo $retval
+        fi
+    fi
+}
+
+local_crm_master()
+{
+    local node=$1
+    shift
+
+    local remote_ssh=$(get_remote_node $node)
+
+    if [ -z "$remote_ssh" ]; then
+        $CRM_MASTER -N $node $@
+    fi
+
+    # if this is a remote node, don't set master; this will be set up
+    # from that pacemaker cluster.
+}
+
+local_crm_attribute()
+{
+    local node=$1
+    shift
+
+    local remote_ssh=$(get_remote_node $node)
+
+    if [ -z "$remote_ssh" ]; then
+        ${HA_SBIN_DIR}/crm_attribute -N $node $@
+    fi
+
+    # if this is a remote node, don't run any command
+
+}
+
+remote_crm_attribute()
+{
+    local node=$1
+    shift
+
+    local remote_ssh=$(get_remote_node $node)
+
+    if [ -z "$remote_ssh" ]; then
+        ${HA_SBIN_DIR}/crm_attribute -N $node $@
+    else
+        $SSH_CMD $remote_ssh ${HA_SBIN_DIR}/crm_attribute -N $node $@
+    fi
+}
+
+
+promote_everyone()
+{
+
+#    for node in $(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' '); do
+#        local pcmk_node=$(galera_to_pcmk_name $node)
+#        if [ -z "$pcmk_node" ]; then
+#            ocf_log err "Could not determine pacemaker node from galera name <${node}>."
+#            return
+#        else
+#            node=$pcmk_node
+#        fi
+#
+#        set_master_score $node
+#    done
+}
+
+
+# vi:sw=4:ts=4:et:

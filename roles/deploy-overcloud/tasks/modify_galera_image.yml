@@ -21,10 +21,15 @@
     src: enhanced_galera_dockerfile.j2
     dest: /tmp/stretch_galera_dockerbuild/Dockerfile
 
-- name: copy resource agent
+- name: copy galera resource agent
   copy:
-    src: galera_ra.sh
-    dest: /tmp/stretch_galera_dockerbuild/galera_ra.sh
+    src: galera
+    dest: /tmp/stretch_galera_dockerbuild/galera
+
+- name: copy stretch_galera resource agent
+  copy:
+    src: stretch_galera
+    dest: /tmp/stretch_galera_dockerbuild/stretch_galera
 
 # can't use ansible docker_image because it doesn't support
 # --network
