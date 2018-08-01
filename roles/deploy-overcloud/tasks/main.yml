@@ -34,6 +34,10 @@
   when: "rh_stack_name == 'stack2'"
   tags: always
 
+- name: remove existing overclouds
+  import_tasks: undeploy_overcloud.yml
+  tags: run_deploy_overcloud
+
 - name: set up vlan
   import_tasks: setup_vlan.yml
   tags: setup_vlan

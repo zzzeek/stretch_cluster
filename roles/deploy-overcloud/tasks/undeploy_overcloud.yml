@@ -1,0 +1,12 @@
+- name:  get existing overclouds
+  shell: |
+      source {{ working_dir }}/stackrc;
+      openstack stack list -c ID --format value
+  register: stack_names
+
+- name: remove existing overclouds
+  shell: | 
+      source {{ working_dir }}/stackrc;
+      openstack stack delete {{ item }} --wait --yes
+  with_items: "{{ stack_names.stdout_lines }}"
+ 
