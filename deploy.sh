@@ -87,11 +87,16 @@ patch_images() {
     TEMPDIR=$(mktemp -d)
     pushd $TEMPDIR
     tar -xf ${OVERCLOUD_IMAGES}/${RELEASE}/overcloud-full.tar
+    chmod 755 ${SCRIPT_HOME}/roles/deploy-overcloud/files/stretch_galera
+    chmod 755 ${SCRIPT_HOME}/roles/deploy-overcloud/files/galera
     virt-copy-in -a overcloud-full.qcow2 \
          ${SCRIPT_HOME}/roles/deploy-overcloud/files/stretch_galera \
          ${SCRIPT_HOME}/roles/deploy-overcloud/files/galera \
          /usr/lib/ocf/resource.d/heartbeat/
-    tar -cf ${OVERCLOUD_IMAGES}/${RELEASE}/overcloud-full.tar .
+    # it's important the tar file has no directory info in it, 
+    # like ./ .  infrared and probably others assume this is not
+    # present.
+    tar -cf ${OVERCLOUD_IMAGES}/${RELEASE}/overcloud-full.tar *
     popd 
     rm -fr $TEMPDIR
 }

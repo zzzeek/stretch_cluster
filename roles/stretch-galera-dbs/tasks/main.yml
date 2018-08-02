@@ -1,6 +1,6 @@
 - name: setup variables
   import_tasks: setup_variables.yml
-
+  tags: always
 
 - name: add to etc/hosts
   import_tasks: modify_etchosts.yml

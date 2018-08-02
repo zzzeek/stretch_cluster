@@ -25,14 +25,6 @@
       set_fact:
          transport_ip_number: '{{ transport_ip_number_cmd.stdout_lines[0] }}'
 
-    - name: get external hostname for /etc/hosts
-      shell: hostname
-      register: hostname_cmd
-
-    - name: set external hostname for /etc/hosts
-      set_fact:
-        external_hostname: "{{ hostname_cmd.stdout_lines[0] }}.external"
-
     - name: get docker container name
       shell: "docker ps | grep stretch-galera-bundle-docker | awk -F' ' '{print $NF}' | grep -e '^stretch-galera'"
       register: docker_ps_cmd
@@ -62,14 +54,4 @@
           stretch_galera_master_login: "{{ hostvars[stretch_galera_master_inventoryname]['stretch_galera_local_login'] }}"
           stretch_galera_follower_login: "{{ hostvars[stretch_galera_follower_inventoryname]['stretch_galera_local_login'] }}"
 
-- name: get pacemaker nodes
-  block:
-  - name: get pacemaker node name
-    shell: /usr/sbin/crm_node -n
-    register: get_nodename_cmd
-
-  - name: set pacemaker node name fact
-    set_fact:
-      pacemaker_node_name: '{{ get_nodename_cmd.stdout }}'
-  when: "'stack1_controller' in group_names or 'stack2_controller' in group_names"
 
