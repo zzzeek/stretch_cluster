@@ -14,7 +14,7 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
 COMBINED_HOSTS=${INFRARED_WORKSPACE}/combined_hosts
 
-SETUP_CMDS="cleanup_infrared setup_infrared download_images"
+SETUP_CMDS="cleanup_infrared setup_infrared download_images patch_images"
 BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud build_hosts deploy_stretch"}
@@ -81,6 +81,21 @@ download_images() {
     curl -O ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar
     popd
 }
+
+patch_images() {
+
+    TEMPDIR=$(mktemp -d)
+    pushd $TEMPDIR
+    tar -xf ${OVERCLOUD_IMAGES}/${RELEASE}/overcloud-full.tar
+    virt-copy-in -a overcloud-full.qcow2 \
+         ${SCRIPT_HOME}/roles/deploy-overcloud/files/stretch_galera \
+         ${SCRIPT_HOME}/roles/deploy-overcloud/files/galera \
+         /usr/lib/ocf/resource.d/heartbeat/
+    tar -cf ${OVERCLOUD_IMAGES}/${RELEASE}/overcloud-full.tar .
+    popd 
+    rm -fr $TEMPDIR
+}
+
 
 reset_workspace() {
     rm -fr ${INFRARED_WORKSPACE}
@@ -368,6 +383,10 @@ fi
 
 if [[ "${CMDS}" == *"download_images"* ]]; then
     download_images
+fi
+
+if [[ "${CMDS}" == *"patch_images"* ]]; then
+    patch_images
 fi
 
 if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
