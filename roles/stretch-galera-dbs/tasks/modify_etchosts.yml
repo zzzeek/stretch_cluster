@@ -12,8 +12,6 @@
   when: "'stack2' in group_names"
 
 
-
-
 # NOTE: these files don't seem to update immediately in the
 # docker containers.   just do a direct restart of docker container for now
 # which allows the pcs resource to stay running

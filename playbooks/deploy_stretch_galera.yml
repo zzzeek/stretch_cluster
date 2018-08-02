@@ -6,7 +6,7 @@
     - stack2
   gather_facts: no
   roles:
-     - { role: gather-info, tags: ['gather_info,setup_keystone_db,modify_etchosts'] }
+     - { role: gather-info, tags: ['always'] }
 
 - name: setup undercloud routes
   hosts:
