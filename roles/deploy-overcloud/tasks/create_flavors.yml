@@ -53,6 +53,7 @@
             source {{ working_dir }}/stackrc;
             openstack flavor list | awk '/{{ item_name }}/ {print $4}'
         vars:
+          # note this is custom for our naming convention
           item_name: "{{ item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
         with_items: "{{ overcloud_facts.nodes | default([]) }}"
         register: original_flavors
@@ -63,6 +64,7 @@
             flv_min_disk_size: 6
             flv_min_cpu: 1
             searched_string: "Flavor with name {{ item.name }} already exists"
+            # note this is custom for our naming convention
             item_name: "{{ item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
         shell: >
             source {{ working_dir }}/stackrc;
@@ -101,6 +103,7 @@
       openstack baremetal node set --property capabilities='node:{{ node_name }},profile:{{ item[1].cmd.split() | last }},boot_option:local' {{ item[0].stdout }}
 
   vars:
+    # note this is custom for our naming convention
     item_name: "{{ item[0].item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
     # with node_name we are trying to keep the original VM names linked to the
     # overcloud names, so we don't have to rewrite the inventory:
@@ -146,7 +149,9 @@
 - block:
     - name: Set default resource-class parameters
       vars:
-          name: "{{ item.name.rstrip('1234567890-').split('-')[-1] }}"
+          # note this is custom for our naming convention
+          name: "{{ item.name | regex_replace('(?:s1|s2)(.+?)-\\d', '\\1') }}"
+
       set_fact:
           default_resource_class: "{{ default_resource_class | default([]) + [{ 'name': name, 'flavor': name, 'node': item.name }] }}"
       with_items: "{{ overcloud_facts.nodes | default([])}}"
