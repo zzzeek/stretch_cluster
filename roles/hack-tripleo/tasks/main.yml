@@ -54,6 +54,12 @@
     src: t-h-t.{{ release_name }}.patch
     dest: /home/stack/t-h-t.patch
 
+- name: make sure patch is installed
+  yum:
+      name: patch
+      state: installed
+  become: yes
+
 - name: patch t-h-t
   shell: patch -F20 -p1 < /home/stack/t-h-t.patch
   args:
