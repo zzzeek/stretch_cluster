@@ -24,10 +24,8 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
 
 
-RELEASE=rocky
-#RELEASE=queens
+RELEASE=stein
 RELEASE_OR_MASTER=master
-#RELEASE_OR_MASTER=queens
 #BUILD=current-tripleo-rdo-internal
 BUILD=current-tripleo
 RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER}/delorean/${BUILD}/"
