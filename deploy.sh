@@ -317,6 +317,7 @@ deploy_undercloud() {
         --inventory=${LIMIT_HOSTFILE} \
         --build ${BUILD} \
         -e rr_use_public_repos=true \
+        -e rr_release_name=master \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.local_ip=${PROVISIONING_IP_PREFIX}.1/24 \
         --config-options DEFAULT.undercloud_public_host=${PROVISIONING_IP_PREFIX}.2 \
