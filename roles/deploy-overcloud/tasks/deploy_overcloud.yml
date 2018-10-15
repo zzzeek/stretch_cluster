@@ -1,11 +1,3 @@
-- name: transfer overcloud script
-  template:
-    src: deploy_overcloud.sh.j2
-    dest: "{{ working_dir }}/deploy_overcloud.sh"
-    mode: 0755
-  tags: create_deploy_script
-
-
 - name: gather running node names from other overcloud
   shell: virsh list --name | grep {{ (rh_stack_name == 'stack2') | ternary('s1', 's2') }}
   register: other_node_names

@@ -87,4 +87,4 @@
 
 - name: deploy overcloud
   import_tasks: deploy_overcloud.yml
-  tags: create_deploy_script,run_deploy_overcloud
+  tags: run_deploy_overcloud
