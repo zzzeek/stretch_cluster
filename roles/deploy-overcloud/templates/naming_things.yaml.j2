@@ -16,3 +16,29 @@ parameter_defaults:
     overcloud-controller-2: "{{ rh_stack_name }}-overcloud-controller-2"
     overcloud-compute-0: "{{ rh_stack_name }}-overcloud-compute-0"
     overcloud-novacompute-0: "{{ rh_stack_name }}-overcloud-compute-0"
+
+# TODO: this is hacky.   we can do better :)
+  ControllerIPs:
+    external:
+{% if rh_stack_name == 'stack1' %}
+      - 10.0.10.12
+      - 10.0.10.24
+      - 10.0.10.11
+{% else %}
+      - 10.1.10.12
+      - 10.1.10.24
+      - 10.1.10.11
+{% endif %}
+
+  # on stack1, add host entries pointing to stack2.
+  # on stack2, add host entries pointing to stack1.
+  ExtraHostFileEntries:
+{% if rh_stack_name == 'stack1' %}
+    - 10.1.10.12 stack2-overcloud-controller-0.external.localdomain stack2-overcloud-controller-0.external
+    - 10.1.10.24 stack2-overcloud-controller-1.external.localdomain stack2-overcloud-controller-1.external
+    - 10.1.10.11 stack2-overcloud-controller-2.external.localdomain stack2-overcloud-controller-2.external
+{% else %}
+    - 10.0.10.12 stack1-overcloud-controller-0.external.localdomain stack1-overcloud-controller-0.external
+    - 10.0.10.24 stack1-overcloud-controller-1.external.localdomain stack1-overcloud-controller-1.external
+    - 10.0.10.11 stack1-overcloud-controller-2.external.localdomain stack1-overcloud-controller-2.external
+{% endif %}

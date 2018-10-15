@@ -136,9 +136,10 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   )
 
   $galera_nodes = join($galera_fqdns_names_lookup, ',')
+  $local_galera_nodes = join($local_node_fqdns_names_lookup, ',')
 
-  $galera_nodes_array = split($galera_nodes, ',')
-  $galera_nodes_count = count($galera_nodes_array)
+  $local_galera_nodes_array = split($local_galera_nodes, ',')
+  $local_galera_nodes_count = count($local_galera_nodes_array)
 
   # construct a galera-pacemaker name mapping for the resource agent
   # [galera-0:galera-0.internalapi.local, ...]
@@ -382,8 +383,8 @@ MYSQL_HOST=localhost\n",
 
       pacemaker::resource::bundle { 'stretch-galera-bundle':
         image             => $mysql_docker_image,
-        replicas          => $galera_nodes_count,
-        masters           => $galera_nodes_count,
+        replicas          => $local_galera_nodes_count,
+        masters           => $local_galera_nodes_count,
         location_rule     => {
           resource_discovery => 'exclusive',
           score              => 0,
@@ -400,7 +401,7 @@ MYSQL_HOST=localhost\n",
       pacemaker::resource::ocf { 'stretch-galera':
         ocf_agent_name  => 'heartbeat:stretch_galera',
         master_params   => '',
-        meta_params     => "master-max=${galera_nodes_count} ordered=true container-attribute-target=host",
+        meta_params     => "master-max=${local_galera_nodes_count} ordered=true container-attribute-target=host",
         op_params       => 'promote timeout=300s on-fail=block',
         resource_params => "log='/var/log/mysql/mysqld.log' additional_parameters='--open-files-limit=16384' enable_creation=true wsrep_cluster_address='gcomm://${galera_nodes}' cluster_host_map='${cluster_host_map_string}' remote_node_map='${remote_node_map_string}'",
         tries           => $pcs_tries,

@@ -14,7 +14,10 @@ stretch_galera_root_password: galeraroot
 stack1_undercloud_inventoryname: s1undercloud-0
 stack2_undercloud_inventoryname: s2undercloud-0
 
-
+# NOTE: we have some hardcoding in
+# roles/deploy-overcloud/templates/naming_things.yaml.j2 and
+# network-environemnt.yaml.j2 that is dependent on these specific
+# settings should be genericized somehow
 stack1_external_network_cidr: 10.0.10.0/24
 stack1_internalapi_network_cidr: 10.0.20.0/24
 stack1_storage_network_cidr: 10.0.30.0/24

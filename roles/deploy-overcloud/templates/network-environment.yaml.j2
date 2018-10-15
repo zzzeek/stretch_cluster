@@ -8,7 +8,10 @@ parameter_defaults:
 
   NtpServer: {{ ntp_server }}
 
-  # TODO
+  # to deploy a second overcloud against an already running first overcloud
+  # with galera joining directly: host file entries need to be set up for
+  # names on the other overcloud on both sides first.
+  # 1. put host file entries for
   # StretchMySQLRemoteNodeNames:
   #   - stack1-overcloud-controller-0
   #   - stack1-overcloud-controller-1
@@ -20,9 +23,9 @@ parameter_defaults:
   #  endfor
 
   # StretchMySQLRemoteNodeFQDNSNames:
-  #   - 10.1.10.22
-  #   - 10.1.10.23
-  #   - 10.1.10.24
+  #   - stack1-overcloud-controller-0.external
+  #   - stack1-overcloud-controller-1.external
+  #   - stack1-overcloud-controller-2.external
   #
   #  ansible:
   #  for dns in gathered_remote_node_fqdns_names
