@@ -203,9 +203,3 @@
       # - install.version|default(undercloud_version)|openstack_release >= 12
 
 
-# this is zzzeek's
-- name: copy naming file
-  template:
-    src: naming_things.yaml.j2
-    dest: "{{ working_dir }}/naming_things.yaml"
-

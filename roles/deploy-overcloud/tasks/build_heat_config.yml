@@ -21,3 +21,9 @@
     dest: "{{ working_dir }}/two-nics-vlans/{{ item }}"
     mode: 0644
   with_items: ["controller.yaml", "compute.yaml"]
+
+- name: copy naming file
+  template:
+    src: naming_things.yaml.j2
+    dest: "{{ working_dir }}/naming_things.yaml"
+
