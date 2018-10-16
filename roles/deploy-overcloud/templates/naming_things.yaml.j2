@@ -1,4 +1,14 @@
-# see https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/10/html/advanced_overcloud_customization/sect-controlling_node_placement
+# see https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/13/html/advanced_overcloud_customization/sect-controlling_node_placement
+
+# tripleo_heat_templates variable comes from roles/hack-tripleo/tasks/main.yaml
+
+# set up for specific IP numbers for controllers, so that we can easily
+# predict from the other overcloud, set up hosts, etc.
+# note external_from_pool is dynamically generated
+# also it needs an absolute path?!  not sure why the example doesn't
+# show that
+resource_registry:
+  OS::TripleO::Controller::Ports::ExternalPort: {{ tripleo_heat_templates }}/network/ports/external_from_pool.yaml
 
 parameter_defaults:
   ControllerSchedulerHints:
@@ -30,8 +40,8 @@ parameter_defaults:
       - 10.1.10.11
 {% endif %}
 
-  # on stack1, add host entries pointing to stack2.
-  # on stack2, add host entries pointing to stack1.
+  # on stack1, add /etc/hosts entries pointing to stack2.
+  # on stack2, add /etc/hosts entries pointing to stack1.
   ExtraHostFileEntries:
 {% if rh_stack_name == 'stack1' %}
     - 10.1.10.12 stack2-overcloud-controller-0.external.localdomain stack2-overcloud-controller-0.external

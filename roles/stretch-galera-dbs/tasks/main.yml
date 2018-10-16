@@ -2,10 +2,6 @@
   import_tasks: setup_variables.yml
   tags: always
 
-- name: add to etc/hosts
-  import_tasks: modify_etchosts.yml
-  tags: modify_etchosts
-
 - name: rebuild galera on stack2
   import_tasks: rebuild_galera.yml
   tags: rebuild_galera
