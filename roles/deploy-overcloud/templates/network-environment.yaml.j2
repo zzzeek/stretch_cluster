@@ -8,29 +8,31 @@ parameter_defaults:
 
   NtpServer: {{ ntp_server }}
 
-  # to deploy a second overcloud against an already running first overcloud
-  # with galera joining directly: host file entries need to be set up for
-  # names on the other overcloud on both sides first.
-  # 1. put host file entries for
-  # StretchMySQLRemoteNodeNames:
-  #   - stack1-overcloud-controller-0
-  #   - stack1-overcloud-controller-1
-  #   - stack1-overcloud-controller-2
-  #
-  #  ansible:
-  #  for node in gathered_remote_node_names
-  #   -  node
-  #  endfor
+  # the first nodes we are installing across all the overclouds
+  # we are linking together.  here we must install stack1 first.
+  StretchMySQLBootstrapGaleraNodes:
+    - stack1-overcloud-controller-0
+    - stack1-overcloud-controller-1
+    - stack1-overcloud-controller-2
 
-  # StretchMySQLRemoteNodeFQDNSNames:
-  #   - stack1-overcloud-controller-0.external
-  #   - stack1-overcloud-controller-1.external
-  #   - stack1-overcloud-controller-2.external
-  #
-  #  ansible:
-  #  for dns in gathered_remote_node_fqdns_names
-  #   -  node
-  #  endfor
+  # all the pacemaker names for all stretch galera nodes in all overclouds
+  StretchMySQLRemoteNodeNames:
+    - stack1-overcloud-controller-0
+    - stack1-overcloud-controller-1
+    - stack1-overcloud-controller-2
+    - stack2-overcloud-controller-0
+    - stack2-overcloud-controller-1
+    - stack2-overcloud-controller-2
+
+  # all the hostnames that have to be resolvable everywhere
+  # for all stretch galera nodes in all overclouds
+  StretchMySQLRemoteNodeFQDNSNames:
+    - stack1-overcloud-controller-0.external
+    - stack1-overcloud-controller-1.external
+    - stack1-overcloud-controller-2.external
+    - stack2-overcloud-controller-0.external
+    - stack2-overcloud-controller-1.external
+    - stack2-overcloud-controller-2.external
 
   ExternalNetCidr: '{{ external_network_cidr }}'
   ExternalAllocationPools:

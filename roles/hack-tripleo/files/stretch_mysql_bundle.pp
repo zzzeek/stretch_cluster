@@ -113,6 +113,8 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
     $pacemaker_master = false
   }
 
+
+
   # pacemaker node names
   $remote_node_names_lookup = hiera('stretch_mysql_remote_node_names', [])
   $local_node_names_lookup = hiera('stretch_mysql_short_node_names', [$::hostname])
@@ -123,6 +125,9 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
           $remote_node_names_lookup
       )
   )
+
+  # safe to bootstrap node names, to allow bootstrap of the first overcloud
+  $stretch_mysql_bootstrap_galera_nodes = hiera('stretch_mysql_bootstrap_galera_nodes', [])
 
   # network DNS names, or IP numbers
   $remote_node_fqdns_names_lookup = hiera('stretch_mysql_remote_node_fqdns_names', [])
@@ -152,12 +157,26 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   # remote node array is pacemaker name to "root@hostname", e.g. an SSH string,
   # or whatever we decide the stretch resource agent will use for remote pacemaker
   # communication
+
+  # create a map of <pacemaker name>:<hostname>
   $remote_node_map_array_tmp = zip($remote_node_names_lookup, $remote_node_fqdns_names_lookup)
-  $remote_node_map_array = $remote_node_map_array_tmp.map |$i| {
+
+  # filter out entries where <pacemaker name> is one of our local galera node names
+  $remote_node_map_array_filterlocal = $remote_node_map_array_tmp.filter |$i| {
+    ! ($value in $local_galera_nodes)
+  }
+
+  # create string map with colons and semicolons of remote lookup
+  $remote_node_map_array = $remote_node_map_array_filterlocal.map |$i| {
     "${i[0]}:root@${i[1]}"
   }
   $remote_node_map_string = join($remote_node_map_array, ';')
 
+
+  # for safe to bootstrap, filter those nodes based on what we have locally
+  $stretch_mysql_bootstrap_galera_nodes_local = $stretch_mysql_bootstrap_galera_nodes.filter |$i| {
+    ($value in $local_galera_nodes)
+  }
 
   if $enable_internal_tls {
     $tls_certfile = $certificate_specs['service_certificate']
@@ -301,6 +320,21 @@ MYSQL_HOST=localhost\n",
         }
         # lint:endignore
       }
+
+      # set local safe to bootstrap flag if indicated for local nodes
+      $stretch_mysql_bootstrap_galera_nodes_local.each |String $node_name| {
+          # lint:ignore:puppet-lint-2.0.1 does not work with multiline strings
+          # and blocks (remove this when we move to 2.2.0 where this works)
+          pacemaker::property { "stretch-galera-safe-to-bootstrap-${node_name}":
+            property => "stretch-galera-safe-to-bootstrap",
+            value    => true,
+            tries    => $pcs_tries,
+            node     => $node_name,
+            before   => Pacemaker::Resource::Bundle['stretch-galera-bundle'],
+          }
+          # lint:endignore
+      }
+
 
       $storage_maps = {
         'stretch-mysql-cfg-files'   => {

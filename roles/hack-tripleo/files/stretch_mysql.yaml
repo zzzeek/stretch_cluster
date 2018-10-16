@@ -76,6 +76,9 @@ parameters:
   StretchMySQLRemoteNodeFQDNSNames:
     type: comma_delimited_list
     default: []
+  StretchMySQLBootstrapGaleraNodes:
+    type: comma_delimited_list
+    default: []
 
 resources:
 
@@ -133,6 +136,8 @@ outputs:
             stretch_mysql_remote_node_names: {get_param: StretchMySQLRemoteNodeNames}
 
             stretch_mysql_remote_node_fqdns_names: {get_param: StretchMySQLRemoteNodeFQDNSNames}
+
+            stretch_mysql_bootstrap_galera_nodes: {get_param: StretchMySQLBootstrapGaleraNodes}
 
             tripleo::profile::pacemaker::database::stretch_mysql_bundle::bind_address:
               str_replace:
