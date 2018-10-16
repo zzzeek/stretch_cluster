@@ -163,7 +163,7 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
 
   # filter out entries where <pacemaker name> is one of our local galera node names
   $remote_node_map_array_filterlocal = $remote_node_map_array_tmp.filter |$i| {
-    ! ($value in $local_galera_nodes)
+    ! ($i in $local_node_names_lookup)
   }
 
   # create string map with colons and semicolons of remote lookup
@@ -175,7 +175,7 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
 
   # for safe to bootstrap, filter those nodes based on what we have locally
   $stretch_mysql_bootstrap_galera_nodes_local = $stretch_mysql_bootstrap_galera_nodes.filter |$i| {
-    ($value in $local_galera_nodes)
+    ($i in $local_galera_nodes)
   }
 
   if $enable_internal_tls {
