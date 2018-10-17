@@ -147,10 +147,14 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   $remote_node_map_string = join($remote_node_map_strings, ';')
 
   # array of remote only node names
-  $remote_node_names_lookup = $remote_node_map_array.keys()
+  $remote_node_names_lookup = $remote_node_map_array.map |$i| {
+      $i[0]
+  }
 
   # array of remote only fqdns names
-  $remote_node_fqdns_names_lookup = $remote_node_map_array.values()
+  $remote_node_fqdns_names_lookup = $remote_node_map_array.map |$i| {
+      $i[1]
+  }
 
   # all galera node names that would be in gcomm://
   $galera_node_names_lookup = downcase(
@@ -452,8 +456,7 @@ MYSQL_HOST=localhost\n",
         master_params   => '',
         meta_params     => "master-max=${local_galera_nodes_count} ordered=true container-attribute-target=host",
         op_params       => 'promote timeout=300s on-fail=block',
-        resource_params => "log='/var/log/mysql/mysqld.log' additional_parameters='--open-files-limit=16384' enable_creation=true wsrep_cluster_address='gcomm://${galera_nodes}' cluster_host_map='${cluster_host_map_string}' remote_node_map='${remote_node_map_string}'
-        initial_bootstrap_nodes='${stretch_mysql_bootstrap_galera_nodes_string}'",
+        resource_params => "log='/var/log/mysql/mysqld.log' additional_parameters='--open-files-limit=16384' enable_creation=true wsrep_cluster_address='gcomm://${galera_nodes}' cluster_host_map='${cluster_host_map_string}' remote_node_map='${remote_node_map_string}'",
         tries           => $pcs_tries,
         location_rule   => {
           resource_discovery => 'exclusive',

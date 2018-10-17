@@ -57,17 +57,6 @@ root@pacemakerhost/pcmk1:node.1.galera;root@pacemakerhost/pcmk2:node.2.galera
 <shortdesc lang="en">Pacemaker to Galera name mapping</shortdesc>
 <content type="string" default=""/>
 </parameter>
-<parameter name="initial_bootstrap_nodes" unique="0" required="0">
-<longdesc lang="en">
-List of nodes that can be used for bootstrap without scanning through
-the whole set of nodes.
-
-Used to bootstrap the galera cluster before other pacemaker clusters
-are available.
-</longdesc>
-<shortdesc lang="en">Nodes for initial bootstrap</shortdesc>
-<content type="string" default=""/>
-</parameter>
 
 END
 
@@ -123,24 +112,30 @@ get_safe_to_bootstrap()
 
 all_bootstrap_candidates()
 {
-    # TODO: if this idea works at all, try to get this list by looking
-    # at the "initial bootstrap" flag alone, don't add this parameter
-    if [ x"$OCF_RESKEY_CRM_initial_bootstrap_nodes" != x ]; then
-        initial_boostrap_nodes=$("$OCF_RESKEY_CRM_initial_bootstrap_nodes" | tr -s ',' ' ')
-        for $node in $initial_bootstrap_nodes; do
-            local $is_initial_boot=$(is_initial_bootstrap $node)
-            if [ x"$is_initial_boot" != x ];
-                # node is marked as initial bootstrap in the attributes;
-                # which means we are in initial bootstrap mode which means
-                # return the list
-                echo "$initial_bootstrap_nodes"
-                return
-            fi
-        done
+
+    local initial_bootstrap_nodes=""
+
+    all_nodes=$(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' ')
+
+    ocf_log_info "searching for initial bootstrap nodes in list: $all_nodes"
+    for node in $all_nodes; do
+        local $is_initial_boot=$(is_initial_bootstrap $node)
+        ocf_log_info "for node $node, got initial boot flag $is_initial_boot"
+
+        if [ x"$is_initial_boot" != x ]; then
+            $initial_bootstrap_nodes="$initial_bootstrap_nodes $node"
+        fi
+    done
+
+    if [ x"$initial_bootstrap_nodes" != x ]; then
+        ocf_log_info "found initial bootstrap nodes, returning $initial_bootstrap_nodes"
+        echo "$initial_bootstrap_nodes"
+    else
+        ocf_log_info "past looking at initial bootstrap nodes"
+        # return normal list of all nodes
+        echo "$all_nodes"
     fi
 
-    # return normal list of all nodes
-    echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' '
 }
 
 master_exists()
