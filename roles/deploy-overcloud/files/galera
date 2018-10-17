@@ -484,6 +484,11 @@ pcmk_to_galera_name()
 }
 
 
+all_bootstrap_candidates()
+{
+    echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' '
+}
+
 detect_first_master()
 {
     local best_commit=0
@@ -496,7 +501,7 @@ detect_first_master()
     local best_node
     local safe_to_bootstrap
 
-    all_nodes=$(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' ')
+    all_nodes=$(all_bootstrap_candidates)
     best_node_gcomm=$(echo "$all_nodes" | sed 's/^.* \(.*\)$/\1/')
     best_node=$(galera_to_pcmk_name $best_node_gcomm)
     if [ -z "$best_node" ]; then
@@ -533,6 +538,8 @@ detect_first_master()
             # We don't need to wait for the other nodes to report state in this case
             missing_nodes=0
             break
+        else
+            ocf_log info "Node <${node}> is not marked as safe to bootstrap, continuing to look."
         fi
 
         last_commit=$(get_last_commit $node)

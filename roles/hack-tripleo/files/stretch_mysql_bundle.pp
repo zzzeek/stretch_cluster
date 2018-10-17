@@ -113,12 +113,46 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
     $pacemaker_master = false
   }
 
-
-
-  # pacemaker node names
-  $remote_node_names_lookup = hiera('stretch_mysql_remote_node_names', [])
+  # pacemaker node names, local only
   $local_node_names_lookup = hiera('stretch_mysql_short_node_names', [$::hostname])
 
+  # hostnames (DNS names or IP numbers), local only
+  $local_node_fqdns_names_lookup = hiera('stretch_mysql_node_names', [$::hostname])
+
+  # remote and possibly local node names
+  $remote_local_node_names = hiera('stretch_mysql_remote_node_names', [])
+
+  # remote and possibly local hostnames
+  $remote_local_fqdns_names = hiera('stretch_mysql_remote_node_fqdns_names', [])
+
+  # map of node->hostname which includes remote plus may include local
+  $remote_local_node_map_array = zip($remote_local_node_names, $remote_local_fqdns_names)
+
+  # remote node map that includes only remote, filter out for
+  # node name in local node names lookup.  by filtering the map this
+  # also filters out the fqdns names which might not match up with each
+  # other as well
+  $remote_node_map_array = $remote_local_node_map_array.filter |$i| {
+    ! ($i[0] in $local_node_names_lookup)
+  }
+
+  # create remote node map
+  # remote node array is pacemaker name to "root@hostname", e.g. an SSH string,
+  # or whatever we decide the stretch resource agent will use for remote pacemaker
+  # communication
+  # <remote_node>:root@<remote_hostname>;<remote_node>:root@<remote_hostname>
+  $remote_node_map_strings = $remote_node_map_array.map |$i| {
+    "${i[0]}:root@${i[1]}"
+  }
+  $remote_node_map_string = join($remote_node_map_strings, ';')
+
+  # array of remote only node names
+  $remote_node_names_lookup = $remote_node_map_array.keys()
+
+  # array of remote only fqdns names
+  $remote_node_fqdns_names_lookup = $remote_node_map_array.values()
+
+  # all galera node names that would be in gcomm://
   $galera_node_names_lookup = downcase(
       concat(
           $local_node_names_lookup,
@@ -126,13 +160,7 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
       )
   )
 
-  # safe to bootstrap node names, to allow bootstrap of the first overcloud
-  $stretch_mysql_bootstrap_galera_nodes = hiera('stretch_mysql_bootstrap_galera_nodes', [])
-
-  # network DNS names, or IP numbers
-  $remote_node_fqdns_names_lookup = hiera('stretch_mysql_remote_node_fqdns_names', [])
-  $local_node_fqdns_names_lookup = hiera('stretch_mysql_node_names', [$::hostname])
-
+  # all hostnames that would be in the cluster_host_map
   $galera_fqdns_names_lookup = downcase(
       concat(
         $local_node_fqdns_names_lookup,
@@ -140,13 +168,8 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
       )
   )
 
-  $galera_nodes = join($galera_fqdns_names_lookup, ',')
-  $local_galera_nodes = join($local_node_fqdns_names_lookup, ',')
-
-  $local_galera_nodes_array = split($local_galera_nodes, ',')
-  $local_galera_nodes_count = count($local_galera_nodes_array)
-
   # construct a galera-pacemaker name mapping for the resource agent
+  # this has to accommodate for both local and remote nodes
   # [galera-0:galera-0.internalapi.local, ...]
   $host_map_array_tmp = zip($galera_node_names_lookup, $galera_fqdns_names_lookup)
   $host_map_array = $host_map_array_tmp.map |$i| {
@@ -154,29 +177,21 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   }
   $cluster_host_map_string = join($host_map_array, ';')
 
-  # remote node array is pacemaker name to "root@hostname", e.g. an SSH string,
-  # or whatever we decide the stretch resource agent will use for remote pacemaker
-  # communication
+  # all galera nodes for gcomm://
+  # this includes local and remote
+  $galera_nodes = join($galera_fqdns_names_lookup, ',')
 
-  # create a map of <pacemaker name>:<hostname>
-  $remote_node_map_array_tmp = zip($remote_node_names_lookup, $remote_node_fqdns_names_lookup)
+  # number of pacemaker nodes we will have locally
+  $local_galera_nodes_count = count($local_node_fqdns_names_lookup)
 
-  # filter out entries where <pacemaker name> is one of our local galera node names
-  $remote_node_map_array_filterlocal = $remote_node_map_array_tmp.filter |$i| {
-    ! ($i in $local_node_names_lookup)
-  }
-
-  # create string map with colons and semicolons of remote lookup
-  $remote_node_map_array = $remote_node_map_array_filterlocal.map |$i| {
-    "${i[0]}:root@${i[1]}"
-  }
-  $remote_node_map_string = join($remote_node_map_array, ';')
-
+  # safe to bootstrap node names, to allow bootstrap of the first overcloud
+  $stretch_mysql_bootstrap_galera_nodes = hiera('stretch_mysql_bootstrap_galera_nodes', [])
 
   # for safe to bootstrap, filter those nodes based on what we have locally
   $stretch_mysql_bootstrap_galera_nodes_local = $stretch_mysql_bootstrap_galera_nodes.filter |$i| {
-    ($i in $local_galera_nodes)
+    ($i in $local_node_names_lookup)
   }
+  $stretch_mysql_bootstrap_galera_nodes_string = join($stretch_mysql_bootstrap_galera_nodes_local, ',')
 
   if $enable_internal_tls {
     $tls_certfile = $certificate_specs['service_certificate']
@@ -325,8 +340,8 @@ MYSQL_HOST=localhost\n",
       $stretch_mysql_bootstrap_galera_nodes_local.each |String $node_name| {
           # lint:ignore:puppet-lint-2.0.1 does not work with multiline strings
           # and blocks (remove this when we move to 2.2.0 where this works)
-          pacemaker::property { "stretch-galera-safe-to-bootstrap-${node_name}":
-            property => "stretch-galera-safe-to-bootstrap",
+          pacemaker::property { "stretch-galera-initial-bootstrap-${node_name}":
+            property => "stretch-galera-initial-bootstrap",
             value    => true,
             tries    => $pcs_tries,
             node     => $node_name,
@@ -437,7 +452,8 @@ MYSQL_HOST=localhost\n",
         master_params   => '',
         meta_params     => "master-max=${local_galera_nodes_count} ordered=true container-attribute-target=host",
         op_params       => 'promote timeout=300s on-fail=block',
-        resource_params => "log='/var/log/mysql/mysqld.log' additional_parameters='--open-files-limit=16384' enable_creation=true wsrep_cluster_address='gcomm://${galera_nodes}' cluster_host_map='${cluster_host_map_string}' remote_node_map='${remote_node_map_string}'",
+        resource_params => "log='/var/log/mysql/mysqld.log' additional_parameters='--open-files-limit=16384' enable_creation=true wsrep_cluster_address='gcomm://${galera_nodes}' cluster_host_map='${cluster_host_map_string}' remote_node_map='${remote_node_map_string}'
+        initial_bootstrap_nodes='${stretch_mysql_bootstrap_galera_nodes_string}'",
         tries           => $pcs_tries,
         location_rule   => {
           resource_discovery => 'exclusive',
