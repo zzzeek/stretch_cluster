@@ -486,7 +486,19 @@ pcmk_to_galera_name()
 
 all_bootstrap_candidates()
 {
-    echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' '
+    local pcmk_nodes=""
+    all_nodes=$(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' ')
+
+    for node in $all_nodes; do
+        local pcmk_node=$(galera_to_pcmk_name $node)
+        if [ -z "$pcmk_node" ]; then
+            ocf_log err "Could not determine pacemaker node from galera name <${node}>."
+            return
+        fi
+
+        pcmk_nodes="$pcmk_nodes $pcmk_node"
+    done
+    echo "$pcmk_nodes"
 }
 
 detect_first_master()
@@ -502,23 +514,10 @@ detect_first_master()
     local safe_to_bootstrap
 
     all_nodes=$(all_bootstrap_candidates)
-    best_node_gcomm=$(echo "$all_nodes" | sed 's/^.* \(.*\)$/\1/')
-    best_node=$(galera_to_pcmk_name $best_node_gcomm)
-    if [ -z "$best_node" ]; then
-        ocf_log err "Could not determine initial best node from galera name <${best_node_gcomm}>."
-        return
-    fi
+    best_node=$(echo "$all_nodes" | sed 's/^.* \(.*\)$/\1/')
 
     # avoid selecting a recovered node as bootstrap if possible
     for node in $all_nodes; do
-        local pcmk_node=$(galera_to_pcmk_name $node)
-        if [ -z "$pcmk_node" ]; then
-            ocf_log err "Could not determine pacemaker node from galera name <${node}>."
-            return
-        else
-            node=$pcmk_node
-        fi
-
         if is_no_grastate $node; then
             nodes_recovered="$nodes_recovered $node"
         else

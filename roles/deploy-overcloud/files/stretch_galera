@@ -66,7 +66,7 @@ galera_meta_data "$extraparams"
 
 is_initial_bootstrap()
 {
-    # look for the initial-bootstrap attribute, which is an optional attribute that 
+    # look for the initial-bootstrap attribute, which is an optional attribute that
     # can be set externally as the resource is first run, to indicate a subset of nodes
     # that are sufficient to do an initial bootstrap, without needing the additional
     # nodes to be available yet.  the flag is turned off as soon as this event proceeds.
@@ -128,25 +128,27 @@ all_bootstrap_candidates()
 
     local initial_bootstrap_nodes=""
     local is_initial_boot
+    local all_nodes_pcmk=""
 
     all_nodes=$(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' ')
 
     ocf_log info "searching for initial bootstrap nodes in FQDN list: $all_nodes"
-    for node in $all_nodes; do
-        # note we need the pacemaker name for local queries, but the result we are 
-        # returning to detect_first_master() is still a string list of fqdn names
-        local pcmk_node=$(galera_to_pcmk_name $node)
+    for gcomm_node in $all_nodes; do
+        local pcmk_node=$(galera_to_pcmk_name $gcomm_node)
         if [ -z "$pcmk_node" ]; then
-            ocf_log err "Could not determine pacemaker node from galera name <${node}>."
+            ocf_log err "Could not determine pacemaker node from galera name <${gcomm_node}>."
             return
         fi
+
+        all_nodes_pcmk="$all_nodes_pcmk $pcmk_node"
 
         is_initial_boot=$(is_initial_bootstrap $pcmk_node)
         ocf_log info "for node $pcmk_node, got initial boot flag value: $is_initial_boot"
 
         if [ x"$is_initial_boot" != x ]; then
-            initial_bootstrap_nodes="$initial_bootstrap_nodes $node"
+            initial_bootstrap_nodes="$initial_bootstrap_nodes $pcmk_node"
         fi
+
     done
 
     if [ x"$initial_bootstrap_nodes" != x ]; then
@@ -155,7 +157,7 @@ all_bootstrap_candidates()
     else
         ocf_log info "past looking at initial bootstrap nodes"
         # return normal list of all nodes
-        echo "$all_nodes"
+        echo "$all_nodes_pcmk"
     fi
 
 }
