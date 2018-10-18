@@ -66,9 +66,15 @@ galera_meta_data "$extraparams"
 
 is_initial_bootstrap()
 {
+    # look for the initial-bootstrap attribute, which is an optional attribute that 
+    # can be set externally as the resource is first run, to indicate a subset of nodes
+    # that are sufficient to do an initial bootstrap, without needing the additional
+    # nodes to be available yet.  the flag is turned off as soon as this event proceeds.
     local node=$(ocf_attribute_target $1)
 
-    local_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-initial-bootstrap" --quiet 2>/dev/null
+    # note there is no "-l reboot". because this value would have been set before the resource
+    # was run, reboot indicates it's only from the current run which means we'd never get it
+    local_crm_attribute $node --name "${INSTANCE_ATTR_NAME}-initial-bootstrap" --quiet 2>/dev/null
 }
 
 set_bootstrap_node()
@@ -77,10 +83,17 @@ set_bootstrap_node()
 
     local_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-bootstrap" -v "true"
 
-    # clear initial bootstrap flag
-    local_crm_attribute $NODENAME-l reboot --name "${INSTANCE_ATTR_NAME}-initial-bootstrap" -D
 
 }
+
+clear_bootstrap_node()
+{
+    ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-bootstrap" -D
+
+    # also clear initial bootstrap flag
+    ${HA_SBIN_DIR}/crm_attribute -N $NODENAME --name "${INSTANCE_ATTR_NAME}-initial-bootstrap" -D
+}
+
 
 is_no_grastate()
 {
@@ -118,18 +131,18 @@ all_bootstrap_candidates()
 
     all_nodes=$(echo "$OCF_RESKEY_wsrep_cluster_address" | sed 's/gcomm:\/\///g' | tr -d ' ' | tr -s ',' ' ')
 
-    ocf_log info "searching for initial bootstrap nodes in list: $all_nodes"
+    ocf_log info "searching for initial bootstrap nodes in FQDN list: $all_nodes"
     for node in $all_nodes; do
+        # note we need the pacemaker name for local queries, but the result we are 
+        # returning to detect_first_master() is still a string list of fqdn names
         local pcmk_node=$(galera_to_pcmk_name $node)
         if [ -z "$pcmk_node" ]; then
             ocf_log err "Could not determine pacemaker node from galera name <${node}>."
             return
-        else
-            node=$pcmk_node
         fi
 
-        is_initial_boot=$(is_initial_bootstrap $node)
-        ocf_log info "for node $node, got initial boot flag value: $is_initial_boot"
+        is_initial_boot=$(is_initial_bootstrap $pcmk_node)
+        ocf_log info "for node $pcmk_node, got initial boot flag value: $is_initial_boot"
 
         if [ x"$is_initial_boot" != x ]; then
             initial_bootstrap_nodes="$initial_bootstrap_nodes $node"
@@ -137,7 +150,7 @@ all_bootstrap_candidates()
     done
 
     if [ x"$initial_bootstrap_nodes" != x ]; then
-        ocf_log info "found initial bootstrap nodes, returning $initial_bootstrap_nodes"
+        ocf_log info "found initial bootstrap nodes, returning FQDN list $initial_bootstrap_nodes"
         echo "$initial_bootstrap_nodes"
     else
         ocf_log info "past looking at initial bootstrap nodes"
