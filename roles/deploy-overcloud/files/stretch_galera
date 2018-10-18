@@ -120,8 +120,16 @@ all_bootstrap_candidates()
 
     ocf_log info "searching for initial bootstrap nodes in list: $all_nodes"
     for node in $all_nodes; do
+        local pcmk_node=$(galera_to_pcmk_name $node)
+        if [ -z "$pcmk_node" ]; then
+            ocf_log err "Could not determine pacemaker node from galera name <${node}>."
+            return
+        else
+            node=$pcmk_node
+        fi
+
         is_initial_boot=$(is_initial_bootstrap $node)
-        ocf_log info "for node $node, got initial boot flag $is_initial_boot"
+        ocf_log info "for node $node, got initial boot flag value: $is_initial_boot"
 
         if [ x"$is_initial_boot" != x ]; then
             initial_bootstrap_nodes="$initial_bootstrap_nodes $node"
