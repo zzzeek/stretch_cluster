@@ -475,7 +475,8 @@ MYSQL_HOST=localhost\n",
         tries       => 180,
         try_sleep   => 10,
         environment => ['AVAILABLE_WHEN_READONLY=0'],
-        tag         => 'galera_ready'
+        tag         => 'galera_ready',
+        before      => ### ??? WHAT GOES HERE??? ####,
       }
 
       # We create databases and users for services at step 2 as well. This ensures
@@ -488,17 +489,15 @@ MYSQL_HOST=localhost\n",
       Exec['galera-ready'] -> Mysql_user<||>
 
       # reset local safe to bootstrap flag
+      # THIS HAS TO HAPPEN AFTER THE GALERA READY, 
       $stretch_mysql_bootstrap_galera_nodes_local.each |String $node_name| {
-          # lint:ignore:puppet-lint-2.0.1 does not work with multiline strings
-          # and blocks (remove this when we move to 2.2.0 where this works)
-          pacemaker::property { "stretch-galera-initial-bootstrap-${node_name}":
+          pacemaker::property { "stretch-galera-initial-bootstrap-absent-${node_name}":
             property => "stretch-galera-initial-bootstrap",
-            ensure   => absent
+            ensure   => absent,
             tries    => $pcs_tries,
             node     => $node_name,
-            after    => Exec['galera-ready'],
+            ### <--- there's no "after", raises a syntax error
           }
-          # lint:endignore
       }
 
     }
