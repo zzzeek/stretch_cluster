@@ -83,7 +83,6 @@ set_bootstrap_node()
 
     local_crm_attribute $node -l reboot --name "${INSTANCE_ATTR_NAME}-bootstrap" -v "true"
 
-
 }
 
 
@@ -206,12 +205,6 @@ set_master_score()
     else
         local_crm_master $node -v 100
     fi
-
-    # there's a master, so, we will definitely not be inside of
-    # detect_first_master() again as long as we are running.
-    # so clear initial bootstrap flag
-    ${HA_SBIN_DIR}/crm_attribute -N $NODENAME --name "${INSTANCE_ATTR_NAME}-initial-bootstrap" -D
-
 }
 
 get_remote_node()
