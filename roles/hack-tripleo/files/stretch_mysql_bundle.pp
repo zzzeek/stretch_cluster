@@ -486,6 +486,21 @@ MYSQL_HOST=localhost\n",
       File['/etc/sysconfig/clustercheck'] -> Mysql_user<||>
       Exec['galera-ready'] -> Mysql_database<||>
       Exec['galera-ready'] -> Mysql_user<||>
+
+      # reset local safe to bootstrap flag
+      $stretch_mysql_bootstrap_galera_nodes_local.each |String $node_name| {
+          # lint:ignore:puppet-lint-2.0.1 does not work with multiline strings
+          # and blocks (remove this when we move to 2.2.0 where this works)
+          pacemaker::property { "stretch-galera-initial-bootstrap-${node_name}":
+            property => "stretch-galera-initial-bootstrap",
+            ensure   => absent
+            tries    => $pcs_tries,
+            node     => $node_name,
+            after    => Exec['galera-ready'],
+          }
+          # lint:endignore
+      }
+
     }
   }
 }
