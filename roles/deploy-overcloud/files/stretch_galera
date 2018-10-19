@@ -86,13 +86,13 @@ set_bootstrap_node()
 
 }
 
-clear_bootstrap_node()
+clear_safe_to_bootstrap()
 {
-    ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-bootstrap" -D
-
+    ${HA_SBIN_DIR}/crm_attribute -N $NODENAME -l reboot --name "${INSTANCE_ATTR_NAME}-safe-to-bootstrap" -D
     # also clear initial bootstrap flag
     ${HA_SBIN_DIR}/crm_attribute -N $NODENAME --name "${INSTANCE_ATTR_NAME}-initial-bootstrap" -D
 }
+
 
 
 is_no_grastate()
