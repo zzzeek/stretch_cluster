@@ -476,7 +476,6 @@ MYSQL_HOST=localhost\n",
         try_sleep   => 10,
         environment => ['AVAILABLE_WHEN_READONLY=0'],
         tag         => 'galera_ready',
-        before      => ### ??? WHAT GOES HERE??? ####,
       }
 
       # We create databases and users for services at step 2 as well. This ensures
@@ -489,14 +488,13 @@ MYSQL_HOST=localhost\n",
       Exec['galera-ready'] -> Mysql_user<||>
 
       # reset local safe to bootstrap flag
-      # THIS HAS TO HAPPEN AFTER THE GALERA READY, 
       $stretch_mysql_bootstrap_galera_nodes_local.each |String $node_name| {
           pacemaker::property { "stretch-galera-initial-bootstrap-absent-${node_name}":
             property => "stretch-galera-initial-bootstrap",
             ensure   => absent,
             tries    => $pcs_tries,
             node     => $node_name,
-            ### <--- there's no "after", raises a syntax error
+            require => Exec['galera-ready']
           }
       }
 
