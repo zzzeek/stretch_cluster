@@ -8,13 +8,6 @@
   roles:
      - { role: gather-info, tags: ['always'] }
 
-- name: setup undercloud routes
-  hosts:
-    - undercloud
-  gather_facts: no
-  roles:
-    - { role: add-undercloud-routes, tags: ['setup_routes'] }
-
 - name: setup region name in openstack services (tripleo should do this)
   hosts:
     - stack1_controller
@@ -23,16 +16,4 @@
   roles:
     - { role: setup-openstack-services, tags: ['setup_openstack_services']}
 
-- name: setup keystone data
-  hosts:
-    - pacemaker_control_nodes
-  gather_facts: no
-  roles:
-    - { role: setup-keystone-db, tags: ['setup_keystone_db'] }
-
-- name: stretch galera
-  hosts: galera_nodes
-  gather_facts: no
-  roles:
-     - { role: stretch-galera-dbs, tags: ['stretch_galera'] }
 

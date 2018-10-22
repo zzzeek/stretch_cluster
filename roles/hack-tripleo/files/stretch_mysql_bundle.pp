@@ -494,7 +494,8 @@ MYSQL_HOST=localhost\n",
             tries     => $pcs_tries,
             try_sleep => 2,
             timeout   => 30,
-            require   => Exec['galera-ready']
+            require   => Exec['galera-ready'],
+            tag       => 'galera_ready'
           }
       }
 
