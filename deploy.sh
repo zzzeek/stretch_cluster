@@ -8,6 +8,10 @@ NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
 INFRARED_CHECKOUT=${CHECKOUTS}/infrared
+
+#INFRARED_REVISION="master"
+INFRARED_REVISION="31370846e54bec15d816cf3f3e923f0d74fa16a5"
+
 INFRARED_WORKSPACE_NAME=stack
 INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
 ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
@@ -48,6 +52,7 @@ setup_infrared() {
     if [ ! -d ${INFRARED_CHECKOUT} ]; then
         git clone https://github.com/redhat-openstack/infrared.git ${INFRARED_CHECKOUT}
         pushd ${INFRARED_CHECKOUT}
+        git checkout ${INFRARED_REVISION}
         for patchfile in `ls ${SCRIPT_HOME}/infrared/patches/*.patch`
         do
             patch -p1 < ${patchfile}
