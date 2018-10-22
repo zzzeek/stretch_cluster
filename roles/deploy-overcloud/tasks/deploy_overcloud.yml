@@ -1,28 +1,6 @@
-- name: gather running node names from other overcloud
-  shell: virsh list --name | grep {{ (rh_stack_name == 'stack2') | ternary('s1', 's2') }}
-  register: other_node_names
-  become: yes
-  delegate_to: hypervisor
-
-- name: deploy while suspending other overcloud
-  block:
-    - name: suspend the other overcloud to free up cpu
-      shell: virsh suspend {{ item }}
-      become: yes
-      with_items: "{{ other_node_names.stdout_lines }}"
-      delegate_to: hypervisor
-
-    - name: deploy!
-      shell: |
-          source {{ working_dir }}/stackrc;
-          {{ working_dir }}/deploy_overcloud.sh &> overcloud_deploy.log
-
-  always:
-    - name: resume the other overcloud
-      shell: virsh resume {{ item }}
-      become: yes
-      with_items: "{{ other_node_names.stdout_lines }}"
-      delegate_to: hypervisor
-
+- name: deploy!
+  shell: |
+      source {{ working_dir }}/stackrc;
+      {{ working_dir }}/deploy_overcloud.sh &> overcloud_deploy.log
   tags: run_deploy_overcloud
 
