@@ -26,10 +26,16 @@
         enabled: true
   when: vbmc_host == 'undercloud'
 
-- name: Remove existing Virtual BMCs
+- name: stop existing Virtual BMCs
   # grab only lines with port number (more than 2 digits)
   shell: |
       vbmc stop {{ item }}
+  ignore_errors: true
+  with_items: "{{ vbmc_nodes }}"
+
+- name: delete existing Virtual BMCs
+  # grab only lines with port number (more than 2 digits)
+  shell: |
       vbmc delete {{ item }}
   ignore_errors: true
   with_items: "{{ vbmc_nodes }}"
