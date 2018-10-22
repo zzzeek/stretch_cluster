@@ -1,4 +1,6 @@
-
+- name: pull config variables into environment
+  include_vars: "{{ playbook_dir }}/../config.yml"
+  tags: always
 
 - name: Get stretch interface ip
   shell: /sbin/ip -4 addr show | grep 172.16.0 | awk '{print $2}' | cut -d/ -f1
