@@ -25,7 +25,7 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud"
 
 #: ${DEPLOY_STRETCH_TAGS:="setup_routes,stretch_galera,setup_keystone_db,setup_openstack_services"}
 : ${DEPLOY_STRETCH_TAGS:="setup_openstack_services"}
-: ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,install_vbmc,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
+: ${DEPLOY_OVERCLOUD_TAGS:="setup_routes,hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,install_vbmc,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
 
 
 
@@ -39,8 +39,32 @@ IMAGE_URL="file:///tmp/"
 set -e
 set -x
 
+
+getinput() {
+  local prompt="$1"
+  local input=''
+
+  set +x
+  echo "${prompt}"
+  while [ "1" ];  do
+  read -rsn1 input
+  case "$input" in
+      Y) set -x; YESNO=1; return;;
+      n) set -x; YESNO=0; return;;
+      *) echo "please answer Y or n"
+  esac
+  done
+}
+
+
 cleanup_infrared() {
-    rm -fr ${INFRARED_CHECKOUT}
+    getinput "WARNING!  Will wipe out the entire infrared checkout, including all infrared hostfiles, ansible will no longer be able to run against current VMs, (Y)es/(n)o"
+
+    if [ "$YESNO" = "1" ]; then
+        rm -fr ${INFRARED_CHECKOUT}
+    else
+        exit -1
+    fi
 }
 
 setup_infrared() {
@@ -107,7 +131,13 @@ patch_images() {
 
 
 reset_workspace() {
-    rm -fr ${INFRARED_WORKSPACE}
+    getinput "WARNING!  Will wipe out the infrared workspace, which erases all infrared hostfiles, ansible will no longer be able to run against current VMs, (Y)es/(n)o "
+
+    if [ "$YESNO" == "1" ]; then
+        rm -fr ${INFRARED_WORKSPACE}
+    else
+       exit -1
+    fi
 }
 
 setup_infrared_env() {
