@@ -490,7 +490,7 @@ MYSQL_HOST=localhost\n",
       # reset local safe to bootstrap flag
       $stretch_mysql_bootstrap_galera_nodes_local.each |String $node_name| {
           exec { "stretch-galera-initial-bootstrap-absent-${node_name}":
-            command   => "crm_attribute --node ${node_name} --name stretch-galera-initial-bootstrap -D",
+            command   => "/sbin/crm_attribute --node ${node_name} --name stretch-galera-initial-bootstrap -D",
             tries     => $pcs_tries,
             try_sleep => 2,
             timeout   => 30,
