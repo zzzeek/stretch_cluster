@@ -19,9 +19,9 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 COMBINED_HOSTS=${INFRARED_WORKSPACE}/combined_hosts
 
 SETUP_CMDS="cleanup_infrared setup_infrared download_images patch_images"
-BUILD_ENVIRONMENT_CMDS="rebuild_vms deploy_undercloud setup_routes"
+BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts deploy_undercloud setup_routes"
 
-: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud build_hosts deploy_stretch"}
+: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud deploy_stretch"}
 
 : ${SETUP_ROUTES_TAGS:="setup_routes"}
 : ${DEPLOY_STRETCH_TAGS:="setup_openstack_services"}
@@ -458,6 +458,9 @@ if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
     upload_images
 fi
 
+if [[ "${CMDS}" == *"build_hosts"* ]]; then
+    build_combined_hosts
+fi
 
 for stack_arg in $STACKS ; do
     STACK="${stack_arg}"
@@ -467,9 +470,6 @@ for stack_arg in $STACKS ; do
     fi
 done
 
-if [[ "${CMDS}" == *"build_hosts"* ]]; then
-    build_combined_hosts
-fi
 
 if [[ "${CMDS}" == *"setup_routes"* ]]; then
     setup_routes
