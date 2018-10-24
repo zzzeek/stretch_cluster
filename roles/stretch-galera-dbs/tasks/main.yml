@@ -1,7 +1,0 @@
-- name: setup variables
-  import_tasks: setup_variables.yml
-  tags: always
-
-- name: rebuild galera on stack2
-  import_tasks: rebuild_galera.yml
-  tags: rebuild_galera

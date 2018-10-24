@@ -1,5 +1,0 @@
-- name: reload iptables
-  systemd:
-    name: iptables
-    state: reloaded
-  become: true
