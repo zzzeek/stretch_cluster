@@ -1,4 +1,4 @@
-commit 169865b518e03f2849b995c90dc68c3a98d5d0e6
+commit af59fb1659cc37c7de690f7afd82c9b502bad59a
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
@@ -32,11 +32,11 @@ index ee32b2e37..ea2ad5cd8 100644
            nova_placement:
              start_order: 1
              image: {get_param: DockerNovaPlacementImage}
-diff --git a/docker/services/pacemaker/database/stretch_mysql.yaml b/docker/services/pacemaker/database/stretch_mysql.yaml
+diff --git a/docker/services/pacemaker/database/stretch-mysql.yaml b/docker/services/pacemaker/database/stretch-mysql.yaml
 new file mode 100644
 index 000000000..3b234c491
 --- /dev/null
-+++ b/docker/services/pacemaker/database/stretch_mysql.yaml
++++ b/docker/services/pacemaker/database/stretch-mysql.yaml
 @@ -0,0 +1,519 @@
 +heat_template_version: queens
 +
@@ -557,11 +557,11 @@ index 000000000..3b234c491
 +            - name: Upgrade Mysql database from the host
 +              shell: /bin/bash -ecx "{{stretch_mysql_upgrade_script}}"
 +              when: not mysql_containerized|bool
-diff --git a/docker/services/pacemaker/stretch_clustercheck.yaml b/docker/services/pacemaker/stretch_clustercheck.yaml
+diff --git a/docker/services/pacemaker/stretch-clustercheck.yaml b/docker/services/pacemaker/stretch-clustercheck.yaml
 new file mode 100644
 index 000000000..99bd78642
 --- /dev/null
-+++ b/docker/services/pacemaker/stretch_clustercheck.yaml
++++ b/docker/services/pacemaker/stretch-clustercheck.yaml
 @@ -0,0 +1,101 @@
 +heat_template_version: queens
 +
@@ -664,11 +664,11 @@ index 000000000..99bd78642
 +      upgrade_tasks:
 +      update_tasks:
 +        # Nothing: It's not managed by pacemaker, so let paunch do it.
-diff --git a/environments/docker_stretch_galera.yaml b/environments/docker_stretch_galera.yaml
+diff --git a/environments/docker-stretch-galera.yaml b/environments/docker-stretch-galera.yaml
 new file mode 100644
 index 000000000..4df594d71
 --- /dev/null
-+++ b/environments/docker_stretch_galera.yaml
++++ b/environments/docker-stretch-galera.yaml
 @@ -0,0 +1,10 @@
 +# Add it *after* -e docker-ha.yaml:
 +# ...deploy..-e docker.yaml -e docker-ha.yaml -e docker_stretch_galera.yaml
