@@ -1,4 +1,4 @@
-commit af59fb1659cc37c7de690f7afd82c9b502bad59a
+commit f45ac305334a5f347c4ed5f4df6d276a9b23304d
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
@@ -666,7 +666,7 @@ index 000000000..99bd78642
 +        # Nothing: It's not managed by pacemaker, so let paunch do it.
 diff --git a/environments/docker-stretch-galera.yaml b/environments/docker-stretch-galera.yaml
 new file mode 100644
-index 000000000..4df594d71
+index 000000000..ac1b5d8a5
 --- /dev/null
 +++ b/environments/docker-stretch-galera.yaml
 @@ -0,0 +1,10 @@
@@ -674,8 +674,8 @@ index 000000000..4df594d71
 +# ...deploy..-e docker.yaml -e docker-ha.yaml -e docker_stretch_galera.yaml
 +resource_registry:
 +  # HA Containers managed by pacemaker
-+  OS::TripleO::Services::StretchClustercheck: ../docker/services/pacemaker/stretch_clustercheck.yaml
-+  OS::TripleO::Services::StretchMySQL: ../docker/services/pacemaker/database/stretch_mysql.yaml
++  OS::TripleO::Services::StretchClustercheck: ../docker/services/pacemaker/stretch-clustercheck.yaml
++  OS::TripleO::Services::StretchMySQL: ../docker/services/pacemaker/database/stretch-mysql.yaml
 +
 +parameter_defaults:
 +  EnableStretchGalera: true
