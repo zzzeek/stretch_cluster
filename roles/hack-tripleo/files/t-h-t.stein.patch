@@ -1,4 +1,4 @@
-commit f45ac305334a5f347c4ed5f4df6d276a9b23304d
+commit f232b1d3f30b23171791e386989d58699a233764
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
@@ -559,7 +559,7 @@ index 000000000..3b234c491
 +              when: not mysql_containerized|bool
 diff --git a/docker/services/pacemaker/stretch-clustercheck.yaml b/docker/services/pacemaker/stretch-clustercheck.yaml
 new file mode 100644
-index 000000000..99bd78642
+index 000000000..956fad7cf
 --- /dev/null
 +++ b/docker/services/pacemaker/stretch-clustercheck.yaml
 @@ -0,0 +1,101 @@
@@ -613,7 +613,7 @@ index 000000000..99bd78642
 +# rewriting the tripleo.mysql.firewall_rules key with the baremetal firewall
 +# rules (see LP#1728918)
 +  MysqlPuppetBase:
-+    type: ../../../docker/services/pacemaker/database/stretch_mysql.yaml
++    type: ../../../docker/services/pacemaker/database/stretch-mysql.yaml
 +    properties:
 +      EndpointMap: {get_param: EndpointMap}
 +      ServiceData: {get_param: ServiceData}
