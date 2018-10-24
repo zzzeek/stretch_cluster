@@ -35,8 +35,11 @@ parameter_defaults:
     - stack2-overcloud-controller-2.external
 
   ExternalNetCidr: '{{ external_network_cidr }}'
+  # note we are pre-assigning three IPs to stretch galera
+  # on the external net, so this is bumped to 20 to prevent
+  # conflicts (which I just saw happen and wow was it spectacular)
   ExternalAllocationPools:
-    -   start: {{ external_network_cidr|nthhost(10) }}
+    -   start: {{ external_network_cidr|nthhost(20) }}
         end: {{ external_network_cidr|nthhost(250) }}
 
   InternalApiNetCidr: '{{ internalapi_network_cidr }}'

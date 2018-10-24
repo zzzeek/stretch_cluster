@@ -32,12 +32,12 @@ parameter_defaults:
     external:
 {% if rh_stack_name == 'stack1' %}
       - 10.0.10.12
-      - 10.0.10.24
-      - 10.0.10.11
+      - 10.0.10.13
+      - 10.0.10.14
 {% else %}
       - 10.1.10.12
-      - 10.1.10.24
-      - 10.1.10.11
+      - 10.1.10.13
+      - 10.1.10.14
 {% endif %}
 
   # on stack1, add /etc/hosts entries pointing to stack2.
@@ -45,10 +45,10 @@ parameter_defaults:
   ExtraHostFileEntries:
 {% if rh_stack_name == 'stack1' %}
     - 10.1.10.12 stack2-overcloud-controller-0.external.localdomain stack2-overcloud-controller-0.external
-    - 10.1.10.24 stack2-overcloud-controller-1.external.localdomain stack2-overcloud-controller-1.external
-    - 10.1.10.11 stack2-overcloud-controller-2.external.localdomain stack2-overcloud-controller-2.external
+    - 10.1.10.13 stack2-overcloud-controller-1.external.localdomain stack2-overcloud-controller-1.external
+    - 10.1.10.14 stack2-overcloud-controller-2.external.localdomain stack2-overcloud-controller-2.external
 {% else %}
     - 10.0.10.12 stack1-overcloud-controller-0.external.localdomain stack1-overcloud-controller-0.external
-    - 10.0.10.24 stack1-overcloud-controller-1.external.localdomain stack1-overcloud-controller-1.external
-    - 10.0.10.11 stack1-overcloud-controller-2.external.localdomain stack1-overcloud-controller-2.external
+    - 10.0.10.13 stack1-overcloud-controller-1.external.localdomain stack1-overcloud-controller-1.external
+    - 10.0.10.14 stack1-overcloud-controller-2.external.localdomain stack1-overcloud-controller-2.external
 {% endif %}
