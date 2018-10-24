@@ -154,6 +154,22 @@ outputs:
               tripleo::profile::pacemaker::database::stretch_mysql_bundle::ca_file:
                 get_param: InternalTLSCAFile
             - {}
+      service_config_settings:
+        haproxy:
+          tripleo::stretch_mysql::haproxy_endpoints:
+              stretch_mysql:
+                  internal_ip: "%{hiera('stretch_mysql_vip')}"
+                  service_port: 3306
+                  member_options: [ 'port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s' ]
+                  listen_options:
+                    option: [ 'tcpka', 'httpchk', 'tcplog' ]
+                    timeout client: '90m'
+                    timeout server: '90m'
+                    stick-table: 'type ip size 1000'
+                    stick: 'on dst'
+                    maxconn: "%{hiera('stretch_mysql_max_connections', undef)}"
+                  haproxy_listen_bind_param: ['transparent']
+
       logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
       logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
       # BEGIN DOCKER SETTINGS #

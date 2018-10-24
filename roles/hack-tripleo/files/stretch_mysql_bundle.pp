@@ -85,6 +85,11 @@
 #   (Optional) The number of times pcs commands should be retried.
 #   Defaults to hiera('pcs_tries', 20)
 #
+# [*stretch_mysql_max_connections*]
+#   (Optional) Maximum number of connections to MySQL.
+#   Defaults to hiera('stretch_mysql_max_connections', undef)
+#
+#
 # [*step*]
 #   (Optional) The current step in deployment. See tripleo-heat-templates
 #   for more details.
@@ -101,6 +106,7 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
   $enable_internal_tls            = hiera('enable_internal_tls', false),
   $gmcast_listen_addr             = hiera('stretch_mysql_bind_host'),
   $innodb_flush_log_at_trx_commit = hiera('innodb_flush_log_at_trx_commit', '1'),
+  $stretch_mysql_max_connections  = hiera('stretch_mysql_max_connections', undef),
   $sst_tls_cipher                 = '!SSLv2:kEEH:kRSA:kEDH:kPSK:+3DES:!aNULL:!eNULL:!MD5:!EXP:!RC4:!SEED:!IDEA:!DES',
   $sst_tls_options                = undef,
   $ipv6                           = str2bool(hiera('mysql_ipv6', false)),
@@ -242,7 +248,7 @@ class tripleo::profile::pacemaker::database::stretch_mysql_bundle (
       'query_cache_size'               => '0',
       'query_cache_type'               => '0',
       'bind-address'                   => $bind_address,
-      'max_connections'                => hiera('mysql_max_connections'),
+      'max_connections'                => $stretch_mysql_max_connections,
       'open_files_limit'               => '-1',
       'wsrep_on'                       => 'ON',
       'wsrep_provider'                 => '/usr/lib64/galera/libgalera_smm.so',

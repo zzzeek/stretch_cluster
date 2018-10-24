@@ -20,7 +20,7 @@ index cd2eddcd5..98e53429f 100644
 @@ -100,6 +100,12 @@ Mysql:
      protocol: mysql+pymysql
      port: 3306
- 
+
 +StretchMysql:
 +    Internal:
 +        net_param: StretchMysql
@@ -90,7 +90,7 @@ index a5dd283e8..06a948655 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
- 
+
  parameter_groups:
  - label: deprecated
 @@ -316,7 +319,7 @@ conditions:
@@ -128,35 +128,6 @@ index a5dd283e8..06a948655 100644
              keystone::token_expiration: {get_param: TokenExpiration}
              keystone::admin_token: {get_param: AdminToken}
              keystone::admin_password: {get_param: AdminPassword}
-diff --git a/puppet/services/pacemaker/haproxy.yaml b/puppet/services/pacemaker/haproxy.yaml
-index b91e570b5..ed6c6f346 100644
---- a/puppet/services/pacemaker/haproxy.yaml
-+++ b/puppet/services/pacemaker/haproxy.yaml
-@@ -30,6 +30,13 @@ parameters:
-     description: Mapping of service endpoint -> protocol. Typically set
-                  via parameter_defaults in the resource registry.
-     type: json
-+  EnableStretchGalera:
-+    default: if haproxy includes stretch galera config
-+    type: boolean
-+    default: false
-+
-+conditions:
-+  stretch_galera_enabled: {equals: [{get_param: EnableStretchGalera}, true]}
- 
- resources:
-   LoadbalancerServiceBase:
-@@ -53,6 +60,10 @@ outputs:
-           - get_attr: [LoadbalancerServiceBase, role_data, config_settings]
-           - tripleo::haproxy::haproxy_service_manage: false
-             tripleo::haproxy::mysql_clustercheck: true
-+          - if:
-+            - stretch_galera_enabled
-+            - tripleo::haproxy::stretch_mysql_enabled: true
-+            - {}
-       step_config: |
-         include ::tripleo::profile::pacemaker::haproxy
-       host_prep_tasks: {get_attr: [LoadbalancerServiceBase, role_data, host_prep_tasks]}
 diff --git a/roles_data.yaml b/roles_data.yaml
 index 98806399d..64d58cd6f 100644
 --- a/roles_data.yaml

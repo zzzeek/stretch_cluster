@@ -1,79 +1,3 @@
-diff --git a/manifests/haproxy.pp b/manifests/haproxy.pp
-index 63862813..ba00bd28 100644
---- a/manifests/haproxy.pp
-+++ b/manifests/haproxy.pp
-@@ -304,6 +304,13 @@
- #  and if mysql cluster checking is disabled, the member options will be: "union($haproxy_member_options, ['backup'])"
- #  Defaults to undef
- #
-+# [*stretch_mysql*]
-+#  (optional) Enable or not Stretch MySQL Galera binding
-+#  Defaults to hiera('stretch_mysql_enabled', false)
-+#
-+# [*stretch_mysql_member_options*]
-+#  options to use for stretch mysql HAProxy balancer members
-+#
- # [*rabbitmq*]
- #  (optional) Enable or not RabbitMQ binding
- #  Defaults to false
-@@ -649,10 +656,12 @@ class tripleo::haproxy (
-   $octavia                     = hiera('octavia_api_enabled', false),
-   $designate                   = hiera('designate_api_enabled', false),
-   $mysql                       = hiera('mysql_enabled', false),
-+  $stretch_mysql               = hiera('stretch_mysql_enabled', false),
-   $kubernetes_master           = hiera('kubernetes_master_enabled', false),
-   $mysql_clustercheck          = false,
-   $mysql_max_conn              = undef,
-   $mysql_member_options        = undef,
-+  $stretch_mysql_member_options= undef,
-   $openshift_master            = hiera('openshift_master_enabled', false),
-   $rabbitmq                    = false,
-   $etcd                        = hiera('etcd_enabled', false),
-@@ -1363,6 +1372,44 @@ class tripleo::haproxy (
-       server_names      => hiera('mysql_node_names', $controller_hosts_names_real),
-       options           => $mysql_member_options_real,
-     }
-+
-+    if $stretch_mysql {
-+        $stretch_mysql_vip = hiera('stretch_mysql_vip')
-+        $stretch_mysql_bind_opts = {
-+          "${stretch_mysql_vip}:3306" => $haproxy_listen_bind_param,
-+        }
-+
-+        $stretch_mysql_listen_options = {
-+          'option'         => [ 'tcpka', 'httpchk', 'tcplog' ],
-+          'timeout client' => '90m',
-+          'timeout server' => '90m',
-+          'stick-table'    => 'type ip size 1000',
-+          'stick'          => 'on dst',
-+          'maxconn'        => $mysql_max_conn
-+        }
-+        # TODO: we would also want to add remote galera nodes as
-+        # "backup"
-+        if $stretch_mysql_member_options {
-+            $stretch_mysql_member_options_real = $stretch_mysql_member_options
-+        } else {
-+            $stretch_mysql_member_options_real = ['port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s']
-+        }
-+
-+        haproxy::listen { 'stretch-mysql':
-+          bind             => $stretch_mysql_bind_opts,
-+          options          => $stretch_mysql_listen_options,
-+          collect_exported => false,
-+        }
-+        haproxy::balancermember { 'stretch-mysql-backup':
-+          listening_service => 'stretch-mysql',
-+          ports             => '3306',
-+          ipaddresses       => hiera('stretch_mysql_node_ips'),
-+          server_names      => hiera('stretch_mysql_node_names'),
-+          options           => $stretch_mysql_member_options_real,
-+        }
-+
-+    }
-+
-     if $manage_firewall {
-       include ::tripleo::firewall
-       $mysql_firewall_rules = {
 diff --git a/manifests/profile/base/database/mysql.pp b/manifests/profile/base/database/mysql.pp
 index b3316d4c..269be0c2 100644
 --- a/manifests/profile/base/database/mysql.pp
@@ -84,10 +8,10 @@ index b3316d4c..269be0c2 100644
    $step                          = Integer(hiera('step')),
 +  $is_stretch_mysql              = false,
  ) {
- 
+
    if $::hostname == downcase($bootstrap_node) {
 @@ -171,82 +172,88 @@ class tripleo::profile::base::database::mysql (
- 
+
    if $step >= 2 and $sync_db {
      Class['::mysql::server'] -> Mysql_database<||>
 -    if hiera('aodh_api_enabled', false) {
@@ -248,7 +172,7 @@ index b3316d4c..269be0c2 100644
 +      }
      }
    }
- 
+
 diff --git a/manifests/profile/base/database/mysql/client.pp b/manifests/profile/base/database/mysql/client.pp
 index 5b736ad6..417344c3 100644
 --- a/manifests/profile/base/database/mysql/client.pp
@@ -287,7 +211,7 @@ index 5b736ad6..417344c3 100644
 @@ -63,19 +75,33 @@ class tripleo::profile::base::database::mysql::client (
        ]
      }
- 
+
 +    if is_ip_addresses($mysql_stretch_bind_address) {
 +      $stretch_bind_changes = [
 +        "set ${mysql_read_stretch_group}/bind-address '${mysql_stretch_bind_address}'"
@@ -315,9 +239,9 @@ index 5b736ad6..417344c3 100644
 +        "rm ${mysql_read_stretch_group}/ssl-ca"
        ]
      }
- 
+
 -    $conf_changes = union($client_bind_changes, $changes_ssl)
 +    $conf_changes = union($client_bind_changes, $stretch_bind_changes, $changes_ssl)
- 
+
      # Create /etc/my.cnf.d/tripleo.cnf
      # If the folder /etc/my.cnf.d does not exist (e.g. if mariadb is not
