@@ -1,4 +1,4 @@
-commit 85d8bae5c129d5fd59cde927639e08da3c34fbc1
+commit 169865b518e03f2849b995c90dc68c3a98d5d0e6
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
@@ -7,6 +7,12 @@ Date:   Wed Oct 24 12:49:50 2018 -0400
     WIP: This is the patch used from the proof of concept so far.
     Changes will include that we might want to no longer use
     the term "stretch" in favor of "global".
+    
+    Also includes some KeystoneRegion additions.  this may be
+    better as a separate patch, and it needs to be determined where
+    this attribute needs to be set up and where it does not.
+    for the moment this gerrit is used as a single source for the
+    proof of concept.
     
     Change-Id: Ie6364fb57524cff09f4dab99512980b091fcf8e3
     Partial: blueprint global-database
@@ -658,6 +664,22 @@ index 000000000..99bd78642
 +      upgrade_tasks:
 +      update_tasks:
 +        # Nothing: It's not managed by pacemaker, so let paunch do it.
+diff --git a/environments/docker_stretch_galera.yaml b/environments/docker_stretch_galera.yaml
+new file mode 100644
+index 000000000..4df594d71
+--- /dev/null
++++ b/environments/docker_stretch_galera.yaml
+@@ -0,0 +1,10 @@
++# Add it *after* -e docker-ha.yaml:
++# ...deploy..-e docker.yaml -e docker-ha.yaml -e docker_stretch_galera.yaml
++resource_registry:
++  # HA Containers managed by pacemaker
++  OS::TripleO::Services::StretchClustercheck: ../docker/services/pacemaker/stretch_clustercheck.yaml
++  OS::TripleO::Services::StretchMySQL: ../docker/services/pacemaker/database/stretch_mysql.yaml
++
++parameter_defaults:
++  EnableStretchGalera: true
++  KeystoneStretchEnabled: true
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
 index 2a92ec229..d68045c8e 100644
 --- a/network/endpoints/endpoint_data.yaml
@@ -688,6 +710,18 @@ index d665b2a19..9ca61b26b 100644
    OS::TripleO::Services::RsyslogSidecar: OS::Heat::None
    OS::TripleO::Services::VRTSHyperScale: OS::Heat::None
    OS::TripleO::Services::SkydiveAgent: OS::Heat::None
+diff --git a/puppet/services/cinder-api.yaml b/puppet/services/cinder-api.yaml
+index 6050723d8..f2f881734 100644
+--- a/puppet/services/cinder-api.yaml
++++ b/puppet/services/cinder-api.yaml
+@@ -112,6 +112,7 @@ outputs:
+           - cinder::keystone::authtoken::www_authenticate_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix]}
+             cinder::keystone::authtoken::auth_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix]}
+             cinder::keystone::authtoken::auth_url: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix]}
++            cinder::keystone::authtoken::region_name: {get_param: KeystoneRegion}
+             cinder::keystone::authtoken::password: {get_param: CinderPassword}
+             cinder::keystone::authtoken::project_name: 'service'
+             cinder::keystone::authtoken::user_domain_name: 'Default'
 diff --git a/puppet/services/database/mysql-client.yaml b/puppet/services/database/mysql-client.yaml
 index d98c8e1b0..0fd0fb062 100644
 --- a/puppet/services/database/mysql-client.yaml
@@ -761,6 +795,30 @@ index ace2487b7..c6039bd5e 100644
              keystone::token_expiration: {get_param: TokenExpiration}
              keystone::admin_token: {get_param: AdminToken}
              keystone::admin_password: {get_param: AdminPassword}
+diff --git a/puppet/services/neutron-api.yaml b/puppet/services/neutron-api.yaml
+index d7fb4138f..3fc69b2cf 100644
+--- a/puppet/services/neutron-api.yaml
++++ b/puppet/services/neutron-api.yaml
+@@ -171,6 +171,7 @@ outputs:
+             neutron::keystone::authtoken::www_authenticate_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
+             neutron::keystone::authtoken::auth_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
+             neutron::keystone::authtoken::auth_url: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix]}
++            neutron::keystone::authtoken::region: {get_param: KeystoneRegion}
+             neutron::server::allow_automatic_l3agent_failover: {get_param: NeutronAllowL3AgentFailover}
+             neutron::server::enable_proxy_headers_parsing: true
+             neutron::keystone::authtoken::password: {get_param: NeutronPassword}
+diff --git a/puppet/services/nova-api.yaml b/puppet/services/nova-api.yaml
+index add5f032d..02b21a750 100644
+--- a/puppet/services/nova-api.yaml
++++ b/puppet/services/nova-api.yaml
+@@ -161,6 +161,7 @@ outputs:
+           nova::keystone::authtoken::www_authenticate_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
+           nova::keystone::authtoken::auth_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
+           nova::keystone::authtoken::auth_url: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix]}
++          nova::keystone::authtoken::region_name: {get_param: KeystoneRegion}
+           nova::api::enabled: true
+           nova::api::default_floating_pool: {get_param: NovaDefaultFloatingPool}
+           nova::api::sync_db_api: true
 diff --git a/roles_data.yaml b/roles_data.yaml
 index c219a16f4..4f171107c 100644
 --- a/roles_data.yaml
