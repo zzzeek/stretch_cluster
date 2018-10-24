@@ -23,32 +23,6 @@
 - name: copy t-h-t files
   shell: cp -R /usr/share/openstack-tripleo-heat-templates {{ working_dir }}/tripleo-patch/tripleo-heat-templates
 
-- name: deploy new t-h-t, tripleo-puppet files
-  copy:
-    src: "{{ item['src'] }}"
-    dest: "{{ item['dest'] }}"
-  with_items:
-    - {
-        src: "stretch_clustercheck.pp",
-        dest: "{{ puppet_tripleo }}/tripleo/manifests/profile/pacemaker/stretch_clustercheck.pp"
-    }
-    - {
-        src: "stretch_mysql_bundle.pp",
-        dest: "{{ puppet_tripleo }}/tripleo/manifests/profile/pacemaker/database/stretch_mysql_bundle.pp"
-    }
-    - {
-        src: "stretch_clustercheck.yaml",
-        dest: "{{ tripleo_heat_templates }}/docker/services/pacemaker/stretch_clustercheck.yaml"
-    }
-    - {
-        src: "stretch_mysql.yaml",
-        dest: "{{ tripleo_heat_templates }}/docker/services/pacemaker/database/stretch_mysql.yaml"
-    }
-    - {
-        src: "docker_stretch_galera.yaml",
-        dest: "{{ tripleo_heat_templates }}/environments/docker-stretch-galera.yaml"
-    }
-
 - name: copy t-h-t.patch since ansible patch does not support -F
   copy:
     src: t-h-t.{{ release_name }}.patch

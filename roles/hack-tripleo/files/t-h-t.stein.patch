@@ -1,8 +1,21 @@
+commit 85d8bae5c129d5fd59cde927639e08da3c34fbc1
+Author: Mike Bayer <mike_mp@zzzcomputing.com>
+Date:   Wed Oct 24 12:49:50 2018 -0400
+
+    Implement Global Galera database
+    
+    WIP: This is the patch used from the proof of concept so far.
+    Changes will include that we might want to no longer use
+    the term "stretch" in favor of "global".
+    
+    Change-Id: Ie6364fb57524cff09f4dab99512980b091fcf8e3
+    Partial: blueprint global-database
+
 diff --git a/docker/services/nova-placement.yaml b/docker/services/nova-placement.yaml
-index f6b849c84..14b72baad 100644
+index ee32b2e37..ea2ad5cd8 100644
 --- a/docker/services/nova-placement.yaml
 +++ b/docker/services/nova-placement.yaml
-@@ -120,7 +120,9 @@ outputs:
+@@ -118,7 +118,9 @@ outputs:
          step_2:
            get_attr: [NovaPlacementLogging, docker_config, step_2]
          # start this early so it is up before computes start reporting
@@ -13,14 +26,646 @@ index f6b849c84..14b72baad 100644
            nova_placement:
              start_order: 1
              image: {get_param: DockerNovaPlacementImage}
+diff --git a/docker/services/pacemaker/database/stretch_mysql.yaml b/docker/services/pacemaker/database/stretch_mysql.yaml
+new file mode 100644
+index 000000000..3b234c491
+--- /dev/null
++++ b/docker/services/pacemaker/database/stretch_mysql.yaml
+@@ -0,0 +1,519 @@
++heat_template_version: queens
++
++description: >
++  MySQL service deployment with pacemaker bundle
++
++parameters:
++  DockerMysqlImage:
++    description: image
++    type: string
++  DockerMysqlConfigImage:
++    description: The container image to use for the mysql config_volume
++    type: string
++  EndpointMap:
++    default: {}
++    description: Mapping of service endpoint -> protocol. Typically set
++                 via parameter_defaults in the resource registry.
++    type: json
++  ServiceData:
++    default: {}
++    description: Dictionary packing service data
++    type: json
++  ServiceNetMap:
++    default: {}
++    description: Mapping of service_name -> network name. Typically set
++                 via parameter_defaults in the resource registry.  This
++                 mapping overrides those in ServiceNetMapDefaults.
++    type: json
++  DefaultPasswords:
++    default: {}
++    type: json
++  MysqlRootPassword:
++    type: string
++    hidden: true
++    default: ''
++  MysqlClustercheckPassword:
++    type: string
++    hidden: true
++  RoleName:
++    default: ''
++    description: Role name on which the service is applied
++    type: string
++  RoleParameters:
++    default: {}
++    description: Parameters specific to the role
++    type: json
++  EnableInternalTLS:
++    type: boolean
++    default: false
++  InternalTLSCAFile:
++    default: '/etc/ipa/ca.crt'
++    type: string
++    description: Specifies the default CA cert to use if TLS is used for
++                 services in the internal network.
++  StretchSshIdPub:
++    type: string
++    description: ssh public key for stretch resource agent, required.
++  StretchSshId:
++    type: string
++    description: ssh private key for stretch resource agent, required.
++  ConfigDebug:
++    default: false
++    description: Whether to run config management (e.g. Puppet) in debug mode.
++    type: boolean
++  DeployIdentifier:
++    default: ''
++    type: string
++    description: >
++      Setting this to a unique value will re-run any deployment tasks which
++      perform configuration on a Heat stack-update.
++  KeystoneStretchEnabled:
++    type: boolean
++    default: false
++  StretchMySQLRemoteNodeNames:
++    type: comma_delimited_list
++    default: []
++  StretchMySQLRemoteNodeFQDNSNames:
++    type: comma_delimited_list
++    default: []
++  StretchMySQLBootstrapGaleraNodes:
++    type: comma_delimited_list
++    default: []
++
++resources:
++
++  ContainersCommon:
++    type: ../../containers-common.yaml
++
++  MysqlPuppetBase:
++    type: ../../../../puppet/services/pacemaker/database/mysql.yaml
++    properties:
++      EndpointMap: {get_param: EndpointMap}
++      ServiceData: {get_param: ServiceData}
++      ServiceNetMap: {get_param: ServiceNetMap}
++      DefaultPasswords: {get_param: DefaultPasswords}
++      RoleName: {get_param: RoleName}
++      RoleParameters: {get_param: RoleParameters}
++
++conditions:
++  puppet_debug_enabled: {get_param: ConfigDebug}
++  internal_tls_enabled: {equals: [{get_param: EnableInternalTLS}, true]}
++
++outputs:
++  role_data:
++    description: Containerized service MySQL using composable services.
++    value:
++      service_name: stretch_mysql
++      config_settings:
++        map_merge:
++          - {get_attr: [MysqlPuppetBase, role_data, config_settings]}
++          - tripleo::profile::pacemaker::database::stretch_mysql_bundle::mysql_docker_image: &mysql_image_pcmklatest
++              list_join:
++                - ':'
++                - - yaql:
++                      data: {get_param: DockerMysqlImage}
++                      expression: $.data.rightSplit(separator => ":", maxSplits => 1)[0]
++                  - 'pcmklatest'
++            tripleo::profile::pacemaker::database::stretch_mysql_bundle::control_port: 3150
++            tripleo.stretch_mysql.firewall_rules:
++              '204 mysql stretch-galera-bundle':
++                dport:
++                  - 22
++                  - 873
++                  - 3150
++                  - 3306
++                  - 4444
++                  - 4567
++                  - 4568
++                  - 9200
++            stretch_mysql_bind_host:
++              str_replace:
++                template:
++                  "%{hiera('$NETWORK')}"
++                params:
++                  $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
++
++            stretch_mysql_remote_node_names: {get_param: StretchMySQLRemoteNodeNames}
++
++            stretch_mysql_remote_node_fqdns_names: {get_param: StretchMySQLRemoteNodeFQDNSNames}
++
++            stretch_mysql_bootstrap_galera_nodes: {get_param: StretchMySQLBootstrapGaleraNodes}
++
++            tripleo::profile::pacemaker::database::stretch_mysql_bundle::bind_address:
++              str_replace:
++                template:
++                  "%{hiera('fqdn_$NETWORK')}"
++                params:
++                  $NETWORK: {get_param: [ServiceNetMap, StretchMysqlNetwork]}
++
++          - keystone_stretch_enabled: {get_param: KeystoneStretchEnabled}
++          -
++            if:
++            - internal_tls_enabled
++            -
++              tripleo::profile::pacemaker::database::stretch_mysql_bundle::ca_file:
++                get_param: InternalTLSCAFile
++            - {}
++      service_config_settings:
++        haproxy:
++          tripleo::stretch_mysql::haproxy_endpoints:
++              stretch_mysql:
++                  internal_ip: "%{hiera('stretch_mysql_vip')}"
++                  service_port: 3306
++                  member_options: [ 'port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s' ]
++                  listen_options:
++                    option: [ 'tcpka', 'httpchk', 'tcplog' ]
++                    timeout client: '90m'
++                    timeout server: '90m'
++                    stick-table: 'type ip size 1000'
++                    stick: 'on dst'
++                    maxconn: "%{hiera('stretch_mysql_max_connections', undef)}"
++                  haproxy_listen_bind_param: ['transparent']
++
++      logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
++      logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
++      # BEGIN DOCKER SETTINGS #
++      puppet_config:
++        config_volume: stretch_mysql
++        puppet_tags: file # set this even though file is the default
++        step_config:
++          list_join:
++            - "\n"
++            - - "['Mysql_datadir', 'Mysql_user', 'Mysql_database', 'Mysql_grant', 'Mysql_plugin'].each |String $val| { noop_resource($val) }"
++              - "exec {'wait-for-settle': command => '/bin/true' }"
++              - "include ::tripleo::profile::pacemaker::database::stretch_mysql_bundle"
++        config_image: {get_param: DockerMysqlConfigImage}
++      kolla_config:
++        /var/lib/kolla/config_files/stretch_mysql.json:
++          command: /usr/sbin/pacemaker_remoted
++          config_files:
++            - dest: /etc/libqb/force-filesystem-sockets
++              source: /dev/null
++              owner: root
++              perm: '0644'
++            - source: "/var/lib/kolla/config_files/src/*"
++              dest: "/"
++              merge: true
++              preserve_properties: true
++            - source: "/var/lib/kolla/config_files/src-tls/*"
++              dest: "/"
++              merge: true
++              optional: true
++              preserve_properties: true
++          permissions:
++            - path: /var/log/mysql
++              owner: mysql:mysql
++              recurse: true
++            - path: /etc/pki/tls/certs/mysql.crt
++              owner: mysql:mysql
++              perm: '0600'
++              optional: true
++            - path: /etc/pki/tls/private/mysql.key
++              owner: mysql:mysql
++              perm: '0600'
++              optional: true
++      docker_config_scripts: {get_attr: [ContainersCommon, docker_config_scripts]}
++      docker_config:
++        step_1:
++          stretch_mysql_data_ownership:
++            start_order: 0
++            detach: false
++            image: {get_param: DockerMysqlImage}
++            net: host
++            user: root
++            # Kolla does only non-recursive chown
++            command: ['chown', '-R', 'mysql:', '/var/lib/mysql']
++            volumes:
++              - /var/lib/stretch_mysql:/var/lib/mysql
++          stretch_mysql_bootstrap:
++            start_order: 1
++            detach: false
++            image: {get_param: DockerMysqlImage}
++            net: host
++            user: root
++            # Kolla bootstraps aren't idempotent, explicitly checking if bootstrap was done
++            command:
++              - 'bash'
++              - '-ecx'
++              -
++                list_join:
++                  - "\n"
++                  - - 'if [ -e /var/lib/mysql/mysql ]; then exit 0; fi'
++                    - 'echo -e "\n[mysqld]\nwsrep_provider=none" >> /etc/my.cnf'
++                    - 'sudo -u mysql -E kolla_start'
++                    - 'mysqld_safe --skip-networking --wsrep-on=OFF &'
++                    - 'timeout ${DB_MAX_TIMEOUT} /bin/bash -c ''until mysqladmin -uroot -p"${DB_ROOT_PASSWORD}" ping 2>/dev/null; do sleep 1; done'''
++                    - 'mysql -uroot -p"${DB_ROOT_PASSWORD}" -e "CREATE USER ''clustercheck''@''localhost'' IDENTIFIED BY ''${DB_CLUSTERCHECK_PASSWORD}'';"'
++                    - 'mysql -uroot -p"${DB_ROOT_PASSWORD}" -e "GRANT PROCESS ON *.* TO ''clustercheck''@''localhost'' WITH GRANT OPTION;"'
++                    - 'timeout ${DB_MAX_TIMEOUT} mysqladmin -uroot -p"${DB_ROOT_PASSWORD}" shutdown'
++            volumes: &mysql_volumes
++              list_concat:
++                - {get_attr: [ContainersCommon, volumes]}
++                -
++                  - /var/lib/kolla/config_files/stretch_mysql.json:/var/lib/kolla/config_files/config.json
++                  - /var/lib/config-data/puppet-generated/stretch_mysql/:/var/lib/kolla/config_files/src:ro
++                  - /var/lib/stretch_mysql:/var/lib/mysql
++            environment:
++              - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
++              - KOLLA_BOOTSTRAP=True
++              - DB_MAX_TIMEOUT=60
++              -
++                list_join:
++                  - '='
++                  - - 'DB_CLUSTERCHECK_PASSWORD'
++                    - {get_param: MysqlClustercheckPassword}
++              -
++                list_join:
++                  - '='
++                  - - 'DB_ROOT_PASSWORD'
++                    -
++                      yaql:
++                        expression: $.data.passwords.where($ != '').first()
++                        data:
++                          passwords:
++                            - {get_param: MysqlRootPassword}
++                            - {get_param: [DefaultPasswords, mysql_root_password]}
++          stretch_mysql_image_tag:
++            start_order: 2
++            detach: false
++            net: host
++            user: root
++            command:
++              - '/bin/bash'
++              - '-c'
++              - str_replace:
++                  template:
++                    "/usr/bin/docker tag 'MYSQL_IMAGE' 'MYSQL_IMAGE_PCMKLATEST'"
++                  params:
++                    MYSQL_IMAGE: {get_param: DockerMysqlImage}
++                    MYSQL_IMAGE_PCMKLATEST: *mysql_image_pcmklatest
++            image: {get_param: DockerMysqlImage}
++            volumes:
++              - /etc/hosts:/etc/hosts:ro
++              - /etc/localtime:/etc/localtime:ro
++              - /dev/shm:/dev/shm:rw
++              - /etc/sysconfig/docker:/etc/sysconfig/docker:ro
++              - /usr/bin:/usr/bin:ro
++              - /var/run/docker.sock:/var/run/docker.sock:rw
++        step_2:
++          stretch_mysql_init_bundle:
++            start_order: 1
++            detach: false
++            net: host
++            user: root
++            command: # '/docker_puppet_apply.sh "STEP" "TAGS" "CONFIG" "DEBUG"'
++              list_concat:
++                - - '/docker_puppet_apply.sh'
++                  - '2'
++                  - 'file,file_line,concat,augeas,pacemaker::resource::bundle,pacemaker::property,pacemaker::resource::ocf,pacemaker::constraint::order,pacemaker::constraint::colocation,galera_ready,mysql_database,mysql_grant,mysql_user'
++                  - 'include ::tripleo::profile::base::pacemaker;include ::tripleo::profile::pacemaker::database::stretch_mysql_bundle'
++                - if:
++                  - puppet_debug_enabled
++                  - - '--debug'
++                  - - ''
++            image: {get_param: DockerMysqlImage}
++            volumes:
++              list_concat:
++                - {get_attr: [ContainersCommon, docker_puppet_apply_volumes]}
++                - - /etc/corosync/corosync.conf:/etc/corosync/corosync.conf:ro
++                  - /dev/shm:/dev/shm:rw
++                  - /var/lib/stretch_mysql:/var/lib/mysql:rw
++            environment:
++              # NOTE: this should force this container to re-run on each
++              # update (scale-out, etc.)
++              - list_join:
++                  - ''
++                  - - 'TRIPLEO_DEPLOY_IDENTIFIER='
++                    - {get_param: DeployIdentifier}
++      host_prep_tasks:
++        - name: create persistent directories
++          file:
++            path: "{{ item }}"
++            state: directory
++          with_items:
++            - /var/log/containers/stretch_mysql
++            - /var/lib/stretch_mysql
++            - /var/log/stretch_mariadb
++            - /var/lib/stretch_mysql_ssh
++        - name: mysql logs readme
++          copy:
++            dest: /var/log/stretch_mariadb/readme.txt
++            content: |
++              Log files from mysql containers can be found under
++              /var/log/containers/stretch_mysql.
++          ignore_errors: true
++        - name: write public key
++          copy:
++            content: {get_param: StretchSshIdPub}
++            dest: /var/lib/stretch_mysql_ssh/id_rsa.pub
++            mode: 0644
++
++        - name: write private key
++          copy:
++            content: {get_param: StretchSshId}
++            dest: /var/lib/stretch_mysql_ssh/id_rsa
++            mode: 0600
++        - name: add authorized key
++          lineinfile:
++            create: yes
++            mode: 0600
++            path: /root/.ssh/authorized_keys
++            line: {get_param: StretchSshIdPub}
++
++      metadata_settings:
++        get_attr: [MysqlPuppetBase, role_data, metadata_settings]
++      update_tasks:
++        - name: Mariadb fetch and retag container image for pacemaker
++          when: step|int == 2
++          block: &mysql_fetch_retag_container_tasks
++            - name: Get docker Mariadb image
++              set_fact:
++                docker_image: {get_param: DockerMysqlImage}
++                docker_image_latest: *mysql_image_pcmklatest
++            - name: Get previous Mariadb image id
++              shell: "docker images | awk '/mariadb.* pcmklatest/{print $3}'"
++              register: mariadb_image_id
++            - block:
++                - name: Get a list of container using Mariadb image
++                  shell: "docker ps -a -q -f 'ancestor={{mariadb_image_id.stdout}}'"
++                  register: mariadb_containers_to_destroy
++                # It will be recreated with the delpoy step.
++                - name: Remove any container using the same Mariadb image
++                  shell: "docker rm -fv {{item}}"
++                  with_items: "{{ mariadb_containers_to_destroy.stdout_lines }}"
++                - name: Remove previous Mariadb images
++                  shell: "docker rmi -f {{mariadb_image_id.stdout}}"
++              when:
++                - mariadb_image_id.stdout != ''
++            - name: Pull latest Mariadb images
++              command: "docker pull {{docker_image}}"
++            - name: Retag pcmklatest to latest Mariadb image
++              shell: "docker tag {{docker_image}} {{docker_image_latest}}"
++            # Got to check that pacemaker_is_active is working fine with bundle.
++            # TODO: pacemaker_is_active resource doesn't support bundle.
++      upgrade_tasks:
++        - name: Get docker Mysql image
++          set_fact:
++            docker_image_latest: *mysql_image_pcmklatest
++        - name: Check for Mysql Kolla configuration
++          stat:
++            path: /var/lib/config-data/puppet-generated/stretch_mysql
++          register: mysql_kolla_config
++        - name: Check if Mysql is already containerized
++          set_fact:
++            mysql_containerized: "{{mysql_kolla_config.stat.isdir | default(false)}}"
++        - name: get bootstrap nodeid
++          tags: common
++          command: hiera -c /etc/puppet/hiera.yaml bootstrap_nodeid
++          register: bootstrap_node
++        - name: set is_bootstrap_node fact
++          tags: common
++          set_fact: is_bootstrap_node={{bootstrap_node.stdout|lower == ansible_hostname|lower}}
++        - name: Mysql baremetal to container upgrade tasks
++          when:
++            - step|int == 1
++            - not mysql_containerized|bool
++          block:
++            - name: Check cluster resource status
++              pacemaker_resource:
++                resource: stretch-galera
++                state: master
++                check_mode: true
++              ignore_errors: true
++              register: galera_res
++            - when: (is_bootstrap_node) and (galera_res|succeeded)
++              block:
++                - name: Disable the galera cluster resource
++                  pacemaker_resource:
++                    resource: stretch-galera
++                    state: disable
++                    wait_for_resource: true
++                  register: output
++                  retries: 5
++                  until: output.rc == 0
++                - name: Delete the stopped galera cluster resource.
++                  pacemaker_resource:
++                    resource: stretch-galera
++                    state: delete
++                    wait_for_resource: true
++                  register: output
++                  retries: 5
++                  until: output.rc == 0
++            - name: Disable mysql service
++              service: name=mariadb enabled=no
++            - name: Remove clustercheck service from xinetd
++              file: state=absent path=/etc/xinetd.d/galera-monitor
++            - name: Restart xinetd service after clustercheck removal
++              service: name=xinetd state=restarted
++        - name: Move Mysql logging to /var/log/containers
++          when:
++            - step|int == 1
++            - mysql_containerized|bool
++            - is_bootstrap_node
++          block:
++            - name: Check Mysql logging configuration in pacemaker
++              command: cibadmin --query --xpath "//storage-mapping[@id='mysql-log']"
++              ignore_errors: true
++              register: mysql_logs_moved
++            - name: Change Mysql logging configuration in pacemaker
++              # rc == 6 means the configuration doesn't exist in the CIB
++              when: mysql_logs_moved.rc == 6
++              block:
++                - name: Disable the galera cluster resource
++                  pacemaker_resource:
++                    resource: stretch-galera
++                    state: disable
++                    wait_for_resource: true
++                  register: output
++                  retries: 5
++                  until: output.rc == 0
++                - name: Add a bind mount for logging in the galera bundle
++                  command: pcs resource bundle update stretch-galera-bundle storage-map add id=mysql-log source-dir=/var/log/containers/stretch_mysql target-dir=/var/log/mysql options=rw
++                - name: Reconfigure Mysql log file in the galera resource agent
++                  command: pcs resource update galera log=/var/log/mysql/mysqld.log
++                - name: Enable the galera cluster resource
++                  pacemaker_resource:
++                    resource: stretch-galera
++                    state: enable
++                    wait_for_resource: true
++                  register: output
++                  retries: 5
++                  until: output.rc == 0
++        - name: Retag the pacemaker image if containerized
++          when:
++            - step|int == 3
++            - mysql_containerized|bool
++          block: *mysql_fetch_retag_container_tasks
++        - name: Check and upgrade Mysql database after major version upgrade
++          when: step|int == 4
++          block:
++            - name: Mysql upgrade script
++              set_fact:
++                stretch_mysql_upgrade_script:
++                  # idempotency: mysql_upgrade leaves a marker file
++                  # in datadir, it does nothing if it has already been
++                  # executed for the current version of MariaDB.
++                  list_join:
++                    - ' '
++                    - - '{% if mysql_containerized %}sudo -E kolla_set_configs; {% endif %}'
++                      - 'mysqld_safe --user=mysql --wsrep-provider=none --skip-networking --wsrep-on=off &'
++                      - 'timeout 60 sh -c ''while ! mysqladmin ping --silent; do sleep 1; done'';'
++                      - 'mysql_upgrade;'
++                      - 'mysqladmin shutdown'
++            - name: Bind mounts for temporary container
++              set_fact:
++                stretch_mysql_upgrade_db_bind_mounts: *mysql_volumes
++            - name: Upgrade Mysql database from a temporary container
++              shell:
++                str_replace:
++                  template:
++                    '/usr/bin/docker run --rm --log-driver=syslog -u root --net=host UPGRADE_ENV UPGRADE_VOLUMES "UPGRADE_IMAGE" /bin/bash -ecx "UPGRADE_SCRIPT"'
++                  params:
++                    UPGRADE_ENV: '-e "KOLLA_CONFIG_STRATEGY=COPY_ALWAYS"'
++                    UPGRADE_IMAGE: *mysql_image_pcmklatest
++                    UPGRADE_VOLUMES: "-v {{ stretch_mysql_upgrade_db_bind_mounts | union(['/tmp/mariadb-upgrade:/var/log/mariadb:rw']) | join(' -v ')}}"
++                    UPGRADE_SCRIPT: "{{stretch_mysql_upgrade_script}}"
++              when: mysql_containerized|bool
++            - name: Upgrade Mysql database from the host
++              shell: /bin/bash -ecx "{{stretch_mysql_upgrade_script}}"
++              when: not mysql_containerized|bool
+diff --git a/docker/services/pacemaker/stretch_clustercheck.yaml b/docker/services/pacemaker/stretch_clustercheck.yaml
+new file mode 100644
+index 000000000..99bd78642
+--- /dev/null
++++ b/docker/services/pacemaker/stretch_clustercheck.yaml
+@@ -0,0 +1,101 @@
++heat_template_version: queens
++
++description: >
++  MySQL HA clustercheck service deployment using puppet
++  This service is used by HAProxy in a HA scenario to report whether
++  the local galera node is synced
++
++parameters:
++  DockerClustercheckImage:
++    description: image
++    type: string
++  DockerClustercheckConfigImage:
++    description: The container image to use for the clustercheck config_volume
++    type: string
++  EndpointMap:
++    default: {}
++    description: Mapping of service endpoint -> protocol. Typically set
++                 via parameter_defaults in the resource registry.
++    type: json
++  ServiceData:
++    default: {}
++    description: Dictionary packing service data
++    type: json
++  ServiceNetMap:
++    default: {}
++    description: Mapping of service_name -> network name. Typically set
++                 via parameter_defaults in the resource registry.  This
++                 mapping overrides those in ServiceNetMapDefaults.
++    type: json
++  DefaultPasswords:
++    default: {}
++    type: json
++  RoleName:
++    default: ''
++    description: Role name on which the service is applied
++    type: string
++  RoleParameters:
++    default: {}
++    description: Parameters specific to the role
++    type: json
++
++resources:
++
++  ContainersCommon:
++    type: ../containers-common.yaml
++
++# We import from the corresponding docker service because otherwise we risk
++# rewriting the tripleo.mysql.firewall_rules key with the baremetal firewall
++# rules (see LP#1728918)
++  MysqlPuppetBase:
++    type: ../../../docker/services/pacemaker/database/stretch_mysql.yaml
++    properties:
++      EndpointMap: {get_param: EndpointMap}
++      ServiceData: {get_param: ServiceData}
++      ServiceNetMap: {get_param: ServiceNetMap}
++      DefaultPasswords: {get_param: DefaultPasswords}
++      RoleName: {get_param: RoleName}
++      RoleParameters: {get_param: RoleParameters}
++
++outputs:
++  role_data:
++    description: Containerized service stretch_clustercheck using composable services.
++    value:
++      service_name: stretch_clustercheck
++      config_settings: {get_attr: [MysqlPuppetBase, role_data, config_settings]}
++      logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
++      logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
++      # BEGIN DOCKER SETTINGS #
++      puppet_config:
++        config_volume: stretch_clustercheck
++        puppet_tags: file # set this even though file is the default
++        step_config: "include ::tripleo::profile::pacemaker::stretch_clustercheck"
++        config_image: {get_param: DockerClustercheckConfigImage}
++      kolla_config:
++        /var/lib/kolla/config_files/stretch_clustercheck.json:
++          command: /usr/sbin/xinetd -dontfork
++          config_files:
++            - source: "/var/lib/kolla/config_files/src/*"
++              dest: "/"
++              merge: true
++              preserve_properties: true
++      docker_config:
++        step_2:
++          stretch_clustercheck:
++            start_order: 1
++            image: {get_param: DockerClustercheckImage}
++            restart: always
++            net: host
++            volumes:
++              list_concat:
++                - {get_attr: [ContainersCommon, volumes]}
++                -
++                  - /var/lib/kolla/config_files/stretch_clustercheck.json:/var/lib/kolla/config_files/config.json
++                  - /var/lib/config-data/puppet-generated/stretch_clustercheck/:/var/lib/kolla/config_files/src:ro
++                  - /var/lib/stretch_mysql:/var/lib/mysql
++            environment:
++              - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
++      host_prep_tasks:
++      upgrade_tasks:
++      update_tasks:
++        # Nothing: It's not managed by pacemaker, so let paunch do it.
 diff --git a/network/endpoints/endpoint_data.yaml b/network/endpoints/endpoint_data.yaml
-index cd2eddcd5..98e53429f 100644
+index 2a92ec229..d68045c8e 100644
 --- a/network/endpoints/endpoint_data.yaml
 +++ b/network/endpoints/endpoint_data.yaml
 @@ -100,6 +100,12 @@ Mysql:
      protocol: mysql+pymysql
      port: 3306
-
+ 
 +StretchMysql:
 +    Internal:
 +        net_param: StretchMysql
@@ -30,24 +675,12 @@ index cd2eddcd5..98e53429f 100644
  Heat:
      Internal:
          net_param: HeatApi
-diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
-index 4c663dbb6..02fd664c5 100644
---- a/network/service_net_map.j2.yaml
-+++ b/network/service_net_map.j2.yaml
-@@ -67,6 +67,7 @@ parameters:
-       RedisNetwork: internal_api
-       GaneshaNetwork: storage_nfs
-       MysqlNetwork: internal_api
-+      StretchMysqlNetwork: external
-       SnmpdNetwork: ctrlplane
-       CephClusterNetwork: storage_mgmt
-       CephMonNetwork: storage
 diff --git a/overcloud-resource-registry-puppet.j2.yaml b/overcloud-resource-registry-puppet.j2.yaml
-index fc6f44b55..98a0243bc 100644
+index d665b2a19..9ca61b26b 100644
 --- a/overcloud-resource-registry-puppet.j2.yaml
 +++ b/overcloud-resource-registry-puppet.j2.yaml
-@@ -304,6 +304,8 @@ resource_registry:
-   OS::TripleO::Services::DockerRegistry: OS::Heat::None
+@@ -315,6 +315,8 @@ resource_registry:
+   OS::TripleO::Services::ContainerImagePrepare: puppet/services/container-image-prepare.yaml
    OS::TripleO::Services::CertmongerUser: puppet/services/certmonger-user.yaml
    OS::TripleO::Services::Clustercheck: OS::Heat::None
 +  OS::TripleO::Services::StretchClustercheck: OS::Heat::None
@@ -80,20 +713,20 @@ index d98c8e1b0..0fd0fb062 100644
          tripleo::profile::base::database::mysql::client::ssl_ca: {get_param: InternalTLSCAFile}
        step_config: |
 diff --git a/puppet/services/keystone.yaml b/puppet/services/keystone.yaml
-index a5dd283e8..06a948655 100644
+index ace2487b7..c6039bd5e 100644
 --- a/puppet/services/keystone.yaml
 +++ b/puppet/services/keystone.yaml
-@@ -286,6 +286,9 @@ parameters:
+@@ -284,6 +284,9 @@ parameters:
      default: ''
      description: Indicate whether this resource may be shared with the domain received in the request
                   "origin" header.
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
-
+ 
  parameter_groups:
  - label: deprecated
-@@ -316,7 +319,7 @@ conditions:
+@@ -314,7 +317,7 @@ conditions:
    keystone_fernet_tokens: {equals: [{get_param: KeystoneTokenProvider}, "fernet"]}
    keystone_ldap_domain_enabled: {equals: [{get_param: KeystoneLDAPDomainEnable}, True]}
    service_debug_unset: {equals : [{get_param: KeystoneDebug}, '']}
@@ -102,7 +735,7 @@ index a5dd283e8..06a948655 100644
    # Security compliance
    change_password_upon_first_use_set: {not: {equals: [{get_param: KeystoneChangePasswordUponFirstUse}, '']}}
    disable_user_account_days_inactive_set: {not: {equals: [{get_param: KeystoneDisableUserAccountDaysInactive}, '']}}
-@@ -345,14 +348,22 @@ outputs:
+@@ -343,14 +346,22 @@ outputs:
              - keystone::cors::allowed_origin: {get_param: KeystoneCorsAllowedOrigin}
            - keystone::database_connection:
                make_url:
@@ -129,10 +762,10 @@ index a5dd283e8..06a948655 100644
              keystone::admin_token: {get_param: AdminToken}
              keystone::admin_password: {get_param: AdminPassword}
 diff --git a/roles_data.yaml b/roles_data.yaml
-index 98806399d..64d58cd6f 100644
+index c219a16f4..4f171107c 100644
 --- a/roles_data.yaml
 +++ b/roles_data.yaml
-@@ -169,6 +169,8 @@
+@@ -171,6 +171,8 @@
      - OS::TripleO::Services::SkydiveAnalyzer
      - OS::TripleO::Services::Snmp
      - OS::TripleO::Services::Sshd
