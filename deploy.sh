@@ -21,10 +21,9 @@ COMBINED_HOSTS=${INFRARED_WORKSPACE}/combined_hosts
 SETUP_CMDS="cleanup_infrared setup_infrared download_images patch_images"
 BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts deploy_undercloud setup_routes"
 
-: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud deploy_stretch"}
+: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud"}
 
 : ${SETUP_ROUTES_TAGS:="setup_routes"}
-: ${DEPLOY_STRETCH_TAGS:="setup_openstack_services"}
 : ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,install_vbmc,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
 
 
@@ -413,16 +412,6 @@ setup_routes() {
 
 }
 
-deploy_stretch_cluster() {
-    pushd ${SCRIPT_HOME}
-    ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${COMBINED_HOSTS} \
-        --tags "${DEPLOY_STRETCH_TAGS}" \
-        playbooks/deploy_stretch_galera.yml
-    popd
-
-
-}
 
 if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
     cleanup_infrared
