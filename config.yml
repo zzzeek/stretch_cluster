@@ -14,6 +14,9 @@ stretch_galera_root_password: galeraroot
 stack1_undercloud_inventoryname: s1undercloud-0
 stack2_undercloud_inventoryname: s2undercloud-0
 
+stack1_undercloud_network_cidr: 192.168.24.0/24
+stack2_undercloud_network_cidr: 192.168.25.0/24
+
 # NOTE: we have some hardcoding in
 # roles/deploy-overcloud/templates/naming_things.yaml.j2 and
 # network-environemnt.yaml.j2 that is dependent on these specific

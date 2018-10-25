@@ -1,37 +1,5 @@
-- name: config
-  include_vars: "{{ playbook_dir }}/../config.yml"
-  tags: always
-
-- name: get hypervisor-generated ssh key
-  set_fact:
-    id_rsa_pub: "{{ hostvars['hypervisor']['id_rsa_pub'] }}"
-    id_rsa: "{{ hostvars['hypervisor']['id_rsa'] }}"
-  tags: always
-
-- name: set release number, hypervisor management address
-  set_fact:
-    release_numeric_version: "{{ release_numeric_versions[release_name] }}"
-    management_ipv4_address: "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}"
-  tags: always
-
-- name: setup stack1-local variables
-  set_fact:
-    external_network_cidr: "{{ stack1_external_network_cidr }}"
-    internalapi_network_cidr: "{{ stack1_internalapi_network_cidr }}"
-    storage_network_cidr: "{{ stack1_storage_network_cidr }}"
-    storagemgmt_network_cidr: "{{ stack1_storagemgmt_network_cidr }}"
-    tenant_network_cidr: "{{ stack1_tenant_network_cidr }}"
-  when: "rh_stack_name == 'stack1'"
-  tags: always
-
-- name: setup stack2-local variables
-  set_fact:
-    external_network_cidr: "{{ stack2_external_network_cidr }}"
-    internalapi_network_cidr: "{{ stack2_internalapi_network_cidr }}"
-    storage_network_cidr: "{{ stack2_storage_network_cidr }}"
-    storagemgmt_network_cidr: "{{ stack2_storagemgmt_network_cidr }}"
-    tenant_network_cidr: "{{ stack2_tenant_network_cidr }}"
-  when: "rh_stack_name == 'stack2'"
+- name: setup facts
+  import_tasks: setup_facts.yml
   tags: always
 
 - name: remove existing overclouds
@@ -92,6 +60,13 @@
   import_tasks: modify_galera_image.yml
   tags: prepare_containers,make_galera_image
 
-- name: deploy overcloud
+- name: deploy overcloud on stack1
   import_tasks: deploy_overcloud.yml
   tags: run_deploy_overcloud
+  when: "rh_stack_name == 'stack1'"
+
+- name: deploy overcloud on stack2
+  import_tasks: deploy_overcloud.yml
+  tags: run_deploy_overcloud
+  when: "rh_stack_name == 'stack2'"
+

@@ -376,14 +376,19 @@ deploy_undercloud() {
 }
 
 deploy_overcloud() {
-    if [[ $STACK == "stack1" ]]; then
-        PROVISIONING_IP_PREFIX=192.168.24
+    if [[ "${STACKS}" == *"stack1"* ]]; then
         ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
+        SPECIFY_STACK=" -e rh_stack_name=stack1"
     fi
 
-    if [[ $STACK == "stack2" ]]; then
-        PROVISIONING_IP_PREFIX=192.168.25
+    if [[ "${STACKS}" == *"stack2"* ]]; then
         ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
+        SPECIFY_STACK=" -e rh_stack_name=stack2"
+    fi
+
+    if [[ "${STACKS}" == *"stack1"* && "${STACKS}" == *"stack2"* ]]; then
+	ANSIBLE_HOSTS="${COMBINED_HOSTS}"
+        SPECIFY_STACK=""
     fi
 
     pushd ${SCRIPT_HOME}
@@ -393,9 +398,7 @@ deploy_overcloud() {
         -e release_name=${RELEASE} \
         -e container_namespace=${RELEASE_OR_MASTER} \
         -e container_tag=${BUILD} \
-        -e undercloud_network_cidr=${PROVISIONING_IP_PREFIX}.0/24 \
-        -e rh_stack_name="${STACK}" \
-        -e working_dir=/home/stack \
+        -e working_dir=/home/stack ${SPECIFY_STACK} \
         playbooks/deploy_overcloud.yml
     popd
 
@@ -465,13 +468,9 @@ if [[ "${CMDS}" == *"setup_routes"* ]]; then
 fi
 
 
-for stack_arg in $STACKS ; do
-    STACK="${stack_arg}"
 
-    if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
-     deploy_overcloud
-    fi
-
-done
+if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
+ deploy_overcloud
+fi
 
 
