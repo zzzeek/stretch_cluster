@@ -1,4 +1,4 @@
-commit 73ac4c46d84bd821778ef51ac60f2c2137fe661e
+commit df56a70fcc095b500187ab2cce3cb3b11f6a2b8b
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
@@ -34,10 +34,10 @@ index ee32b2e37..ea2ad5cd8 100644
              image: {get_param: DockerNovaPlacementImage}
 diff --git a/docker/services/pacemaker/database/stretch-mysql.yaml b/docker/services/pacemaker/database/stretch-mysql.yaml
 new file mode 100644
-index 000000000..4df5f496b
+index 000000000..b50115078
 --- /dev/null
 +++ b/docker/services/pacemaker/database/stretch-mysql.yaml
-@@ -0,0 +1,527 @@
+@@ -0,0 +1,535 @@
 +heat_template_version: queens
 +
 +description: >
@@ -209,7 +209,15 @@ index 000000000..4df5f496b
 +                # mysql max connections is per mysql server
 +                # TODO: should the number be a handful less to allow room for haproxy / pacemaker
 +                # clustercheck?
-+                member_options: [ 'port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s', 'maxconn', {get_param: StretchMysqlMaxConnections}]
++                member_options:
++                  - 'port 9200'
++                  - 'on-marked-down shutdown-sessions'
++                  - 'check'
++                  - 'inter 1s'
++                  - list_join:
++                      - ' '
++                      - - 'maxconn'
++                        - {get_param: StretchMysqlMaxConnections}
 +                # note we aren't using "stick" table or "backup" for listeners;
 +                # stretch galera works in true multi-master mode
 +                listen_options:
