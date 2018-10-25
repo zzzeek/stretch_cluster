@@ -1,19 +1,19 @@
-commit ef0530c2e218983d4c3f3ed20d727eded3632489
+commit 73ac4c46d84bd821778ef51ac60f2c2137fe661e
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
     Implement Global Galera database
-
+    
     WIP: This is the patch used from the proof of concept so far.
     Changes will include that we might want to no longer use
     the term "stretch" in favor of "global".
-
+    
     Also includes some KeystoneRegion additions.  this may be
     better as a separate patch, and it needs to be determined where
     this attribute needs to be set up and where it does not.
     for the moment this gerrit is used as a single source for the
     proof of concept.
-
+    
     Change-Id: Ie6364fb57524cff09f4dab99512980b091fcf8e3
     Partial: blueprint global-database
 
@@ -34,10 +34,10 @@ index ee32b2e37..ea2ad5cd8 100644
              image: {get_param: DockerNovaPlacementImage}
 diff --git a/docker/services/pacemaker/database/stretch-mysql.yaml b/docker/services/pacemaker/database/stretch-mysql.yaml
 new file mode 100644
-index 000000000..f2b421e06
+index 000000000..4df5f496b
 --- /dev/null
 +++ b/docker/services/pacemaker/database/stretch-mysql.yaml
-@@ -0,0 +1,525 @@
+@@ -0,0 +1,527 @@
 +heat_template_version: queens
 +
 +description: >
@@ -206,14 +206,16 @@ index 000000000..f2b421e06
 +                base_service_name: stretch_mysql
 +                internal_ip: "%{hiera('stretch_mysql_vip')}"
 +                service_port: 3306
-+                member_options: [ 'port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s' ]
++                # mysql max connections is per mysql server
++                # TODO: should the number be a handful less to allow room for haproxy / pacemaker
++                # clustercheck?
++                member_options: [ 'port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s', 'maxconn', {get_param: StretchMysqlMaxConnections}]
++                # note we aren't using "stick" table or "backup" for listeners;
++                # stretch galera works in true multi-master mode
 +                listen_options:
 +                  option: [ 'tcpka', 'httpchk', 'tcplog' ]
 +                  timeout client: '90m'
 +                  timeout server: '90m'
-+                  stick-table: 'type ip size 1000'
-+                  stick: 'on dst'
-+                  maxconn: {get_param: StretchMysqlMaxConnections}
 +                haproxy_listen_bind_param: ['transparent']
 +
 +      logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
@@ -693,7 +695,7 @@ index 2a92ec229..d68045c8e 100644
 @@ -100,6 +100,12 @@ Mysql:
      protocol: mysql+pymysql
      port: 3306
-
+ 
 +StretchMysql:
 +    Internal:
 +        net_param: StretchMysql
@@ -704,15 +706,15 @@ index 2a92ec229..d68045c8e 100644
      Internal:
          net_param: HeatApi
 diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
-index 4c663dbb6..02fd664c5 100644
+index c5f9c490c..7ba5a4783 100644
 --- a/network/service_net_map.j2.yaml
 +++ b/network/service_net_map.j2.yaml
-@@ -67,6 +67,7 @@ parameters:
+@@ -68,6 +68,7 @@ parameters:
        RedisNetwork: internal_api
        GaneshaNetwork: storage_nfs
        MysqlNetwork: internal_api
 +      StretchMysqlNetwork: external
-       SnmpdNetwork: ctrlplane
+       SnmpdNetwork: ctlplane
        CephClusterNetwork: storage_mgmt
        CephMonNetwork: storage
 diff --git a/overcloud-resource-registry-puppet.j2.yaml b/overcloud-resource-registry-puppet.j2.yaml
@@ -775,7 +777,7 @@ index ace2487b7..c6039bd5e 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
-
+ 
  parameter_groups:
  - label: deprecated
 @@ -314,7 +317,7 @@ conditions:
