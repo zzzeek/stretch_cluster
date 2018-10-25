@@ -2,5 +2,15 @@
   shell: |
       source {{ working_dir }}/stackrc;
       {{ working_dir }}/deploy_overcloud.sh &> overcloud_deploy.log
-  tags: run_deploy_overcloud
+
+- name: check that it passed
+  shell:
+      echo $(tail -1 {{ working_dir }}/overcloud_deploy.log)
+  register: deploy_result
+
+- name: check passing
+  fail:
+    msg: "didn't see success message at end of deploy log"
+  when: "'Overcloud Deployed' not in deploy_result.stdout"
+
 

@@ -11,7 +11,7 @@
 
 - name: prep and deploy overcloud
   hosts: undercloud
-  gather_facts: yes
+  gather_facts: no
   roles:
     - {role: add-undercloud-routes, tags: ['setup_routes'] }
     - {role: hack-tripleo, tags: ['hack_tripleo']}

@@ -9,4 +9,8 @@
       source {{ working_dir }}/stackrc;
       openstack stack delete {{ item }} --wait --yes
   with_items: "{{ stack_names.stdout_lines }}"
+
+- name: remove logfile since we check it for success
+  shell: |
+      rm -f {{ working_dir }}/overcloud_deploy.log
  
