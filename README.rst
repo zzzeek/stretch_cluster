@@ -2,11 +2,19 @@
 stretch cluster
 ===============
 
+Builds two HA/Pacemaker overclouds with a Galera cluster streched between
+them which is then used by Keystone for shared identity service.
 
-Builds two HA/Pacemaker overclouds, then runs an additional Galera cluster that
-stretches across both those overclouds, then merges the Keystone databases of
-each overcloud to a single Keystone DB on the new Galera, and points both
-Keystones at it.
+Originally, this process involved building the two overclouds separately
+then configuring a new Galera cluster on top of them.  It has evolved so
+that first the additional Galera cluster would be part of tripleo, but
+still using a separate "merge" step, and now finally to tripleo is patched
+to completely deploy two overclouds, where the second one builds right on
+top of the existing stretched Galera cluster.
+
+Blueprint for the feature being developed at:
+
+https://review.openstack.org/#/c/600555/
 
 Requirements
 ============
@@ -29,14 +37,14 @@ nodes then send packets between the two overclouds using an additional libvirt
 network connecting them.
 
 The two overclouds are deployed with Keystone interacting with a separate
-Galera database that is then stretched so that both overclouds share the
-same database.
+Galera database called the "stretch", or "global" database that is shared
+as one Galera cluster over both overclouds.
 
-The current version of the demo now patches tripleo-heat-templates, puppet-
-tripleo, as well as the galera docker image, so that more and more of the
-deployment process occurs as a function of tripleo itself, rather than as
-ansible playbooks that work against previously deployed overclouds.  This is to
-provide a template for how the feature will be proposed to tripleo directly.
+
+The demo patches tripleo-heat-templates, puppet-
+tripleo with the ability to deploy an addtional Galera cluster.  It
+also patches the galera docker image and the controller image
+a modified version of the Galera resource agent.
 
 Invocation
 ==========
@@ -62,12 +70,11 @@ Breaking down the build further, we can run individual steps::
   $ CMDS="rebuild_vms" ./deploy.sh
 
   # deploy underclouds on both stacks, build out a new hosts file that
-  # will be used for subsequent ansible roles
-  $ STACKS="stack1 stack2" CMDS="deploy_undercloud build_hosts" ./deploy.sh
+  # will be used for subsequent ansible roles, set up routing between
+  # the two overclouds
+  $ STACKS="stack1 stack2" CMDS="build_hosts deploy_undercloud setup_routes" ./deploy.sh
 
   # configure and deploy overclouds on both stacks
   $ STACKS="stack1 stack2" CMDS="deploy_overcloud" ./deploy.sh
 
-  # deploy the "stretch galera" setup across the two overclouds
-  $ CMDS="deploy_stretch" ./deploy.sh
 
