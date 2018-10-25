@@ -3,17 +3,17 @@ Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
     Implement Global Galera database
-    
+
     WIP: This is the patch used from the proof of concept so far.
     Changes will include that we might want to no longer use
     the term "stretch" in favor of "global".
-    
+
     Also includes some KeystoneRegion additions.  this may be
     better as a separate patch, and it needs to be determined where
     this attribute needs to be set up and where it does not.
     for the moment this gerrit is used as a single source for the
     proof of concept.
-    
+
     Change-Id: Ie6364fb57524cff09f4dab99512980b091fcf8e3
     Partial: blueprint global-database
 
@@ -693,7 +693,7 @@ index 2a92ec229..d68045c8e 100644
 @@ -100,6 +100,12 @@ Mysql:
      protocol: mysql+pymysql
      port: 3306
- 
+
 +StretchMysql:
 +    Internal:
 +        net_param: StretchMysql
@@ -703,6 +703,18 @@ index 2a92ec229..d68045c8e 100644
  Heat:
      Internal:
          net_param: HeatApi
+diff --git a/network/service_net_map.j2.yaml b/network/service_net_map.j2.yaml
+index 4c663dbb6..02fd664c5 100644
+--- a/network/service_net_map.j2.yaml
++++ b/network/service_net_map.j2.yaml
+@@ -67,6 +67,7 @@ parameters:
+       RedisNetwork: internal_api
+       GaneshaNetwork: storage_nfs
+       MysqlNetwork: internal_api
++      StretchMysqlNetwork: external
+       SnmpdNetwork: ctrlplane
+       CephClusterNetwork: storage_mgmt
+       CephMonNetwork: storage
 diff --git a/overcloud-resource-registry-puppet.j2.yaml b/overcloud-resource-registry-puppet.j2.yaml
 index d665b2a19..9ca61b26b 100644
 --- a/overcloud-resource-registry-puppet.j2.yaml
@@ -763,7 +775,7 @@ index ace2487b7..c6039bd5e 100644
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
- 
+
  parameter_groups:
  - label: deprecated
 @@ -314,7 +317,7 @@ conditions:
