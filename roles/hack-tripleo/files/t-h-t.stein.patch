@@ -1,4 +1,4 @@
-commit bb734cdacf2dc227e70cea8a45f6c4722955efb7
+commit ef0530c2e218983d4c3f3ed20d727eded3632489
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
@@ -34,7 +34,7 @@ index ee32b2e37..ea2ad5cd8 100644
              image: {get_param: DockerNovaPlacementImage}
 diff --git a/docker/services/pacemaker/database/stretch-mysql.yaml b/docker/services/pacemaker/database/stretch-mysql.yaml
 new file mode 100644
-index 000000000..6b3921c1e
+index 000000000..f2b421e06
 --- /dev/null
 +++ b/docker/services/pacemaker/database/stretch-mysql.yaml
 @@ -0,0 +1,525 @@
@@ -170,7 +170,7 @@ index 000000000..6b3921c1e
 +                  - 4567
 +                  - 4568
 +                  - 9200
-+            mysql_max_connections: {get_param: StretchMysqlMaxConnections}
++            stretch_mysql_max_connections: {get_param: StretchMysqlMaxConnections}
 +            stretch_mysql_bind_host:
 +              str_replace:
 +                template:
