@@ -26,19 +26,24 @@
         enabled: true
   when: vbmc_host == 'undercloud'
 
+# crazy what's going on with vbmc command.  OK.   So it has an automatic 
+# daemonize feature, such that any time you run a vbmc command, if the "daemon"
+# isn't running, it starts it up and puts the pid inside of ~/.vmbc/master.pid.
+# However.  **the process in the ps list shows YOUR ACTUAL COMMAND running, and **NOT**
+# anything that looks like a daemon**, which means it looks like your command hung, or something.
+# IT DID NOT!  all is well.   This would be a great thing to fix in vbmc, but it's status is 
+# non-production grade, so here we are.
 - name: stop existing Virtual BMCs
-  # grab only lines with port number (more than 2 digits)
   shell: |
-      vbmc stop {{ item }}
-  ignore_errors: true
-  with_items: "{{ vbmc_nodes }}"
+      for running in $( vbmc list -c "Domain name" -c "Status" -f value | grep running | awk "{print \$1}" ) ; do
+        vbmc stop $running
+      done
 
-- name: delete existing Virtual BMCs
-  # grab only lines with port number (more than 2 digits)
+- name: delete all Virtual BMCs
   shell: |
-      vbmc delete {{ item }}
-  ignore_errors: true
-  with_items: "{{ vbmc_nodes }}"
+      for node in $(vbmc list -c "Domain name" -f value) ; do
+        vbmc delete $node
+      done
 
 - name: Get current count of used vbmc ports
   shell: vbmc list | grep 62 | wc -l
