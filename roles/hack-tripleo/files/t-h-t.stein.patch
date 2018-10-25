@@ -1,4 +1,4 @@
-commit f232b1d3f30b23171791e386989d58699a233764
+commit bb734cdacf2dc227e70cea8a45f6c4722955efb7
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Oct 24 12:49:50 2018 -0400
 
@@ -34,10 +34,10 @@ index ee32b2e37..ea2ad5cd8 100644
              image: {get_param: DockerNovaPlacementImage}
 diff --git a/docker/services/pacemaker/database/stretch-mysql.yaml b/docker/services/pacemaker/database/stretch-mysql.yaml
 new file mode 100644
-index 000000000..3b234c491
+index 000000000..6b3921c1e
 --- /dev/null
 +++ b/docker/services/pacemaker/database/stretch-mysql.yaml
-@@ -0,0 +1,519 @@
+@@ -0,0 +1,525 @@
 +heat_template_version: queens
 +
 +description: >
@@ -110,6 +110,10 @@ index 000000000..3b234c491
 +  KeystoneStretchEnabled:
 +    type: boolean
 +    default: false
++  StretchMysqlMaxConnections:
++    description: Configures MySQL max_connections config setting
++    type: number
++    default: 2048
 +  StretchMySQLRemoteNodeNames:
 +    type: comma_delimited_list
 +    default: []
@@ -166,6 +170,7 @@ index 000000000..3b234c491
 +                  - 4567
 +                  - 4568
 +                  - 9200
++            mysql_max_connections: {get_param: StretchMysqlMaxConnections}
 +            stretch_mysql_bind_host:
 +              str_replace:
 +                template:
@@ -198,17 +203,18 @@ index 000000000..3b234c491
 +        haproxy:
 +          tripleo::stretch_mysql::haproxy_endpoints:
 +              stretch_mysql:
-+                  internal_ip: "%{hiera('stretch_mysql_vip')}"
-+                  service_port: 3306
-+                  member_options: [ 'port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s' ]
-+                  listen_options:
-+                    option: [ 'tcpka', 'httpchk', 'tcplog' ]
-+                    timeout client: '90m'
-+                    timeout server: '90m'
-+                    stick-table: 'type ip size 1000'
-+                    stick: 'on dst'
-+                    maxconn: "%{hiera('stretch_mysql_max_connections', undef)}"
-+                  haproxy_listen_bind_param: ['transparent']
++                base_service_name: stretch_mysql
++                internal_ip: "%{hiera('stretch_mysql_vip')}"
++                service_port: 3306
++                member_options: [ 'port 9200', 'on-marked-down shutdown-sessions', 'check', 'inter 1s' ]
++                listen_options:
++                  option: [ 'tcpka', 'httpchk', 'tcplog' ]
++                  timeout client: '90m'
++                  timeout server: '90m'
++                  stick-table: 'type ip size 1000'
++                  stick: 'on dst'
++                  maxconn: {get_param: StretchMysqlMaxConnections}
++                haproxy_listen_bind_param: ['transparent']
 +
 +      logging_source: {get_attr: [MysqlPuppetBase, role_data, logging_source]}
 +      logging_groups: {get_attr: [MysqlPuppetBase, role_data, logging_groups]}
