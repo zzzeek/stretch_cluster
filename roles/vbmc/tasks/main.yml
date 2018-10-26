@@ -21,6 +21,11 @@
     vbmc_nodes: "{{ groups.get('stack2_overcloud_nodes', groups.get('overcloud_nodes', [])) }}"
   when: "rh_stack_name == 'stack2'"
 
+- name: set hypervisor management address
+  set_fact:
+    management_ipv4_address: "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}"
+
+
 - include_tasks: install.yml
 
 - include_tasks: configure.yml

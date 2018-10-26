@@ -14,8 +14,6 @@ overcloud_dns_servers:
 # compute is not normally defined but we are setting it here.
 # default_route_networks_compute: ControlPlane
 
-vbmc_username: vbmc
-vbmc_password: vbmc
 
 # should be called "working_undercloud_dir"
 working_dir: "/home/stack/"
