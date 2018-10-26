@@ -390,21 +390,6 @@ deploy_undercloud() {
 }
 
 deploy_overcloud() {
-    if [[ "${STACKS}" == *"stack1"* ]]; then
-        ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
-        SPECIFY_STACK=" -e rh_stack_name=stack1"
-    fi
-
-    if [[ "${STACKS}" == *"stack2"* ]]; then
-        ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
-        SPECIFY_STACK=" -e rh_stack_name=stack2"
-    fi
-
-    if [[ "${STACKS}" == *"stack1"* && "${STACKS}" == *"stack2"* ]]; then
-	ANSIBLE_HOSTS="${COMBINED_HOSTS}"
-        SPECIFY_STACK=""
-    fi
-
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${ANSIBLE_HOSTS} \
@@ -421,7 +406,7 @@ deploy_overcloud() {
 install_vbmc() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${COMBINED_HOSTS} \
+        -i ${ANSIBLE_HOSTS} ${SPECIFY_STACK} \
         playbooks/deploy_vbmc.yml
     popd
 }
@@ -429,12 +414,27 @@ install_vbmc() {
 setup_routes() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${COMBINED_HOSTS} \
+        -i ${ANSIBLE_HOSTS} ${SPECIFY_STACK} \
         playbooks/deploy_undercloud_routes.yml
     popd
 
 
 }
+
+if [[ "${STACKS}" == *"stack1"* ]]; then
+    ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
+    SPECIFY_STACK=" -e rh_stack_name=stack1"
+fi
+
+if [[ "${STACKS}" == *"stack2"* ]]; then
+   ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
+   SPECIFY_STACK=" -e rh_stack_name=stack2"
+fi
+
+if [[ "${STACKS}" == *"stack1"* && "${STACKS}" == *"stack2"* ]]; then
+    ANSIBLE_HOSTS="${COMBINED_HOSTS}"
+    SPECIFY_STACK=""
+fi
 
 
 if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
