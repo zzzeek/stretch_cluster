@@ -9,8 +9,8 @@ CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
 INFRARED_CHECKOUT=${CHECKOUTS}/infrared
 
-#INFRARED_REVISION="master"
-INFRARED_REVISION="31370846e54bec15d816cf3f3e923f0d74fa16a5"
+INFRARED_REVISION="master"
+#INFRARED_REVISION="31370846e54bec15d816cf3f3e923f0d74fa16a5"
 
 INFRARED_WORKSPACE_NAME=stack
 INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
@@ -23,7 +23,6 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc deploy_undercloud s
 
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud"}
 
-: ${SETUP_ROUTES_TAGS:="setup_routes"}
 : ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
 
 
@@ -59,12 +58,25 @@ getinput() {
 cleanup_infrared() {
     getinput "WARNING!  Will wipe out the entire infrared checkout, including all infrared hostfiles, ansible will no longer be able to run against current VMs, (Y)es/(n)o"
 
+    # note this implies cleaning up the workspace 
+    # also
     if [ "$YESNO" = "1" ]; then
         rm -fr ${INFRARED_CHECKOUT}
     else
         exit -1
     fi
 }
+
+reset_workspace() {
+    getinput "WARNING!  Will wipe out the infrared workspace, which erases all infrared hostfiles, ansible will no longer be able to run against current VMs, (Y)es/(n)o "
+
+    if [ "$YESNO" == "1" ]; then
+        rm -fr ${INFRARED_WORKSPACE}
+    else
+       exit -1
+    fi
+}
+
 
 setup_infrared() {
     SYSTEM_PYTHON_2=/usr/bin/python2
@@ -128,16 +140,6 @@ patch_images() {
     rm -fr $TEMPDIR
 }
 
-
-reset_workspace() {
-    getinput "WARNING!  Will wipe out the infrared workspace, which erases all infrared hostfiles, ansible will no longer be able to run against current VMs, (Y)es/(n)o "
-
-    if [ "$YESNO" == "1" ]; then
-        rm -fr ${INFRARED_WORKSPACE}
-    else
-       exit -1
-    fi
-}
 
 setup_infrared_env() {
     if [[ -d $INFRARED_CHECKOUT ]] ; then
@@ -420,7 +422,6 @@ install_vbmc() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${COMBINED_HOSTS} \
-        --tags "${SETUP_ROUTES_TAGS}" \
         playbooks/deploy_vbmc.yml
     popd
 }
@@ -429,7 +430,6 @@ setup_routes() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${COMBINED_HOSTS} \
-        --tags "${SETUP_ROUTES_TAGS}" \
         playbooks/deploy_undercloud_routes.yml
     popd
 
@@ -439,6 +439,8 @@ setup_routes() {
 
 if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
     cleanup_infrared
+elif [[ "${CMDS}" == *"rebuild_vms"* ]]; then
+    reset_workspace
 fi
 
 if [[ "${CMDS}" == *"setup_infrared"* ]]; then
@@ -453,9 +455,6 @@ if [[ "${CMDS}" == *"patch_images"* ]]; then
     patch_images
 fi
 
-if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
-    reset_workspace
-fi
 
 setup_infrared_env
 
@@ -475,10 +474,6 @@ if [[ "${CMDS}" == *"build_hosts"* ]]; then
     build_combined_hosts
 fi
 
-if [[ "${CMDS}" == *"install_vbmc"* ]]; then
-    install_vbmc
-fi
-
 for stack_arg in $STACKS ; do
     STACK="${stack_arg}"
 
@@ -492,6 +487,9 @@ if [[ "${CMDS}" == *"setup_routes"* ]]; then
     setup_routes
 fi
 
+if [[ "${CMDS}" == *"install_vbmc"* ]]; then
+    install_vbmc
+fi
 
 
 if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then

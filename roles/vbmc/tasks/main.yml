@@ -1,3 +1,6 @@
+- name: config
+  include_vars: "{{ playbook_dir }}/../config.yml"
+
 - name: set stack1 name
   set_fact:
     rh_stack_name: "stack1"

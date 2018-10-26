@@ -1,5 +1,6 @@
 
 - block:
+
     - name: Add VirtualBMC as systemd service
       become: true
       copy:
