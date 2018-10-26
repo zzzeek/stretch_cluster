@@ -1,0 +1,6 @@
+
+- name: setup vbmc
+  hosts: undercloud
+  gather_facts: false
+  roles:
+    - {role: vbmc, tags: ['setup_vbmc'] }

@@ -19,12 +19,12 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 COMBINED_HOSTS=${INFRARED_WORKSPACE}/combined_hosts
 
 SETUP_CMDS="cleanup_infrared setup_infrared download_images patch_images"
-BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts deploy_undercloud setup_routes"
+BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc deploy_undercloud setup_routes"
 
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud"}
 
 : ${SETUP_ROUTES_TAGS:="setup_routes"}
-: ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,install_vbmc,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
+: ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
 
 
 
@@ -416,6 +416,15 @@ deploy_overcloud() {
 
 }
 
+install_vbmc() {
+    pushd ${SCRIPT_HOME}
+    ${ANSIBLE_PLAYBOOK} -vv \
+        -i ${COMBINED_HOSTS} \
+        --tags "${SETUP_ROUTES_TAGS}" \
+        playbooks/deploy_vbmc.yml
+    popd
+}
+
 setup_routes() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
@@ -464,6 +473,10 @@ fi
 
 if [[ "${CMDS}" == *"build_hosts"* ]]; then
     build_combined_hosts
+fi
+
+if [[ "${CMDS}" == *"install_vbmc"* ]]; then
+    install_vbmc
 fi
 
 for stack_arg in $STACKS ; do

@@ -1,16 +1,26 @@
-- name: set vars
+- name: set stack1 name
   set_fact:
-      overcloud_deploy: "no"
+    rh_stack_name: "stack1"
+  when: "rh_stack_name is not defined and 'stack1' in group_names"
+
+- name: set stack2 name
+  set_fact:
+    rh_stack_name: "stack2"
+  when: "rh_stack_name is not defined and 'stack2' in group_names"
+
+- name: setup stack1-local variables
+  set_fact:
+    vbmc_nodes: "{{ groups.get('stack1_overcloud_nodes', groups.get('overcloud_nodes', [])) }}"
+  when: "rh_stack_name == 'stack1'"
+
+- name: setup stack2-local variables
+  set_fact:
+    vbmc_nodes: "{{ groups.get('stack2_overcloud_nodes', groups.get('overcloud_nodes', [])) }}"
+  when: "rh_stack_name == 'stack2'"
 
 - include_tasks: install.yml
-  delegate_to: "{{  vbmc_inventory_host }}"
 
 - include_tasks: configure.yml
-  delegate_to: "{{  vbmc_inventory_host }}"
-
-- include_tasks: iptables.yml
-  delegate_to: "{{  vbmc_inventory_host }}"
-  when: vbmc_inventory_host == "hypervisor" and overcloud_deploy == "yes"
 
 - name: Register vars for instackenv template
   set_fact:

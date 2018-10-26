@@ -6,14 +6,6 @@
   import_tasks: undeploy_overcloud.yml
   tags: run_deploy_overcloud
 
-# ironic will mess with vbmc if it has nodes
-# so ensure they are removed if we are re-installing vbmc
-- name: remove existing ironic nodes
-  import_tasks: remove_ironic_nodes.yml
-  tags:
-    - install_vbmc
-    - introspect_nodes
-
 - name: set up vlan
   import_tasks: setup_vlan.yml
   tags: setup_vlan
@@ -21,15 +13,6 @@
 - name: tune undercloud
   import_tasks: tune_undercloud.yml
   tags: tune_undercloud
-
-- name: Configure vbmc
-  include_role:
-    name: vbmc
-  vars:
-    vbmc_nodes: "{{ overcloud_nodes }}"
-    vbmc_host: undercloud
-  tags:
-    - install_vbmc
 
 # creating the instackenv requires some of the vbmc info.
 # the infrared vbmc role currently is hardcoded to remove

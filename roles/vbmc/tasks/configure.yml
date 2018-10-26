@@ -24,14 +24,13 @@
         name: virtualbmc
         state: started
         enabled: true
-  when: vbmc_host == 'undercloud'
 
-# crazy what's going on with vbmc command.  OK.   So it has an automatic 
+# crazy what's going on with vbmc command.  OK.   So it has an automatic
 # daemonize feature, such that any time you run a vbmc command, if the "daemon"
 # isn't running, it starts it up and puts the pid inside of ~/.vmbc/master.pid.
 # However.  **the process in the ps list shows YOUR ACTUAL COMMAND running, and **NOT**
 # anything that looks like a daemon**, which means it looks like your command hung, or something.
-# IT DID NOT!  all is well.   This would be a great thing to fix in vbmc, but it's status is 
+# IT DID NOT!  all is well.   This would be a great thing to fix in vbmc, but it's status is
 # non-production grade, so here we are.
 - name: stop existing Virtual BMCs
   shell: |
@@ -60,18 +59,12 @@
 
 - name: Set management bmc address
   set_fact:
-      vbmc_management_address: "{{ (vbmc_host == 'hypervisor')|ternary(management_ipv4_address, ansible_default_ipv4.address) }}"
+      vbmc_management_address: "{{ ansible_default_ipv4.address }}"
 
 - name: Add nodes to vbmc
   command: "vbmc add {{ item.key }} --port {{ item.value }} --username {{ vbmc_username }} --password {{ vbmc_password }} --address ::ffff:{{ vbmc_management_address }} \
             --libvirt-uri \"qemu+ssh://{{ hostvars['hypervisor'].ansible_user_id }}@{{ management_ipv4_address }}/system?no_verify=1&no_tty=1\""
   with_dict: "{{ vbmc_ports }}"
-  when: vbmc_host == 'undercloud'
-
-- name: Add nodes to vbmc
-  command: "vbmc add {{ item.key }} --port {{ item.value }} --username {{ vbmc_username }} --password {{ vbmc_password }} --address ::ffff:{{ vbmc_management_address }}"
-  with_dict: "{{ vbmc_ports }}"
-  when: vbmc_host == 'hypervisor'
 
 - name: Start nodes using vbmc
   command: "vbmc start {{ item.key }}"
