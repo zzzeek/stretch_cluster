@@ -303,6 +303,18 @@ s2controller-0
 s2controller-1
 s2controller-2
 
+[stack1_overcloud_nodes]
+s1compute-0
+s1controller-0
+s1controller-1
+s1controller-2
+
+[stack2_overcloud_nodes]
+s2compute-0
+s2controller-0
+s2controller-1
+s2controller-2
+
 [pacemaker_control_nodes]
 s1controller-0
 s2controller-0

@@ -1,5 +1,5 @@
-- name: Gather facts for Hypervisor
-  hosts: hypervisor
+- name: Gather facts for Hypervisor and undercloud
+  hosts: hypervisor, undercloud
   gather_facts: yes
   any_errors_fatal: true
 

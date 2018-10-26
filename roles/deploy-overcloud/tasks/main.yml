@@ -26,7 +26,7 @@
   include_role:
     name: vbmc
   vars:
-    vbmc_nodes: "{{ groups.get('overcloud_nodes', []) }}"
+    vbmc_nodes: "{{ overcloud_nodes }}"
     vbmc_host: undercloud
   tags:
     - install_vbmc
