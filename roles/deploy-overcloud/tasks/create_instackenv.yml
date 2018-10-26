@@ -17,7 +17,22 @@
 
 - name: Get overcloud nodes
   set_fact:
-    oc_nodes: "{{ groups.get('overcloud_nodes', []) }}"
+    oc_nodes: "{{ overcloud_nodes }}"
+
+# TODO: vbmc stuff is redundant here
+- name: get vbmc ports
+  shell: |
+    vbmc list -c "Domain name" -c "Port" -f value
+  register: vbmc_names_cmd
+
+- name: Define vbmc_port for each VM
+  set_fact:
+      vbmc_ports: "{{ vbmc_ports|default({})|combine({ item.split()[0]: item.split()[1] }) }}"
+  with_items: "{{ vbmc_names_cmd.stdout_lines }}"
+
+- name: Set management bmc address
+  set_fact:
+      vbmc_management_address: "{{ ansible_default_ipv4.address }}"
 
 - name: grab undercloud private key
   command: "cat ~/.ssh/id_rsa"

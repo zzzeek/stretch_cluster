@@ -54,8 +54,6 @@
   set_fact:
       vbmc_ports: "{{ vbmc_ports|default({})|combine({ item.1: vbmc_start_port + vbmc_used_ports.stdout|int + item.0 }) }}"
   with_indexed_items: "{{ vbmc_nodes }}"
-  vars:
-      vbmc_start_port: 6230
 
 - include_tasks: iptables.yml
 

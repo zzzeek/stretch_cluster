@@ -1,6 +1,7 @@
 - name: config
   include_vars: "{{ playbook_dir }}/../config.yml"
 
+# TODO: this is redundant
 - name: set stack1 name
   set_fact:
     rh_stack_name: "stack1"
@@ -30,7 +31,3 @@
 
 - include_tasks: configure.yml
 
-- name: Register vars for instackenv template
-  set_fact:
-      vbmc_ports: "{{ vbmc_ports }}"
-      vbmc_management_address: "{{ vbmc_management_address }}"

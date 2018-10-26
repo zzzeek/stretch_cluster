@@ -1,6 +1,10 @@
 stretch_network_vlan_name: vlan10
 stretch_galera_imagename: stretch_galera
 
+vbmc_username: vbmc
+vbmc_password: vbmc
+vbmc_start_port: 6230
+
 ntp_server: clock.corp.redhat.com
 
 # we were taking this from the original container,
