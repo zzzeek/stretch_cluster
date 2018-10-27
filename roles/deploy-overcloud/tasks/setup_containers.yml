@@ -37,4 +37,7 @@
           source {{ working_dir }}/stackrc;
           openstack overcloud container image upload --verbose
           --config-file overcloud_containers.yaml
-
+      retries: 3
+      delay: 5
+      register: result
+      until: result.rc == 0
